@@ -15,6 +15,7 @@ struct Stack<T> {
 
 #[deriving(Clone)]
 struct Workspace {
+    id:     uint,
     tag:    String,
     layout: String,
     stack:  Option<Stack<Window>>
@@ -22,8 +23,9 @@ struct Workspace {
 
 #[deriving(Clone)]
 impl Workspace {
-    fn new(tag: String, layout: String, stack: Option<Stack<Window>>) -> Workspace {
+    fn new(id: uint, tag: String, layout: String, stack: Option<Stack<Window>>) -> Workspace {
         Workspace {
+            id: id,
             tag: tag,
             layout: layout,
             stack: stack
@@ -34,15 +36,15 @@ impl Workspace {
 #[deriving(Clone)]
 struct Screen {
     workspace: Workspace,
-    screen:    uint,
+    screen_id:    uint,
     screen_detail: String
 }
 
 impl Screen {
-    fn new(workspace: Workspace, screen: uint, screen_detail: String) -> Screen {
+    fn new(workspace: Workspace, screen_id: uint, screen_detail: String) -> Screen {
         Screen {
             workspace: workspace,
-            screen: screen,
+            screen_id: screen_id,
             screen_detail: screen_detail
         }
     }
@@ -57,9 +59,17 @@ struct Workspaces {
 }
 
 impl Workspaces {
+    /// Create a new stackset, of empty stacks, with given tags,
+    /// with physical screens whose descriptions are given by 'm'. The
+    /// number of physical screens (@length 'm'@) should be less than or
+    /// equal to the number of workspace tags.  The first workspace in the
+    /// list will be current.
+    ///
+    /// Xinerama: Virtual workspaces are assigned to physical screens, starting at 0.
     fn new(layout: String, tags: Vec<String>, screens: Vec<String>) -> Workspaces {
         let workspaces : Vec<Workspace> = tags.iter()
-            .map(|tag| Workspace::new(tag.clone(), layout.clone(), None))
+            .enumerate()
+            .map(|(id, tag)| Workspace::new(id, tag.clone(), layout.clone(), None))
             .collect();
         let seen   : Vec<Workspace> = workspaces.iter().take(screens.len()).map(|x| x.clone()).collect();
         let unseen : Vec<Workspace> = workspaces.iter().skip(screens.len()).map(|x| x.clone()).collect();
@@ -76,5 +86,44 @@ impl Workspaces {
             hidden: unseen,
             floating: TreeMap::new()
         }
+    }
+
+    /// Set focus to the workspace with index \'i\'.
+    /// If the index is out of range, return the original 'StackSet'.
+    ///
+    /// Xinerama: If the workspace is not visible on any Xinerama screen, it
+    /// becomes the current screen. If it is in the visible list, it becomes
+    /// current.
+    fn view(&mut self, index: uint) {
+        match self.visible.iter().position(|s| s.workspace.id == index) {
+            Some(screen_pos) => {
+                let screen = self.visible[screen_pos].clone();
+                self.visible.remove(screen_pos);
+                self.visible.insert(0, self.current.clone());
+                self.current = screen;
+                return;
+            },
+            _ => ()
+        }
+
+        match self.hidden.iter().position(|w| w.id == index) {
+            Some(workspace_pos) => {
+                let current_workspace = self.current.workspace.clone();
+                self.current.workspace = self.hidden[workspace_pos].clone();
+                self.hidden.insert(0, current_workspace);
+                return;
+            },
+            _ => ()
+        }
+    }
+
+    /// Set focus to the given workspace.  If that workspace does not exist
+    /// in the stackset, the original workspace is returned.  If that workspace is
+    /// 'hidden', then display that workspace on the current screen, and move the
+    /// current workspace to 'hidden'.  If that workspace is 'visible' on another
+    /// screen, the workspaces of the current screen and the other screen are
+    /// swapped.
+    fn greedy_view(&mut self, index: uint) {
+
     }
 }
