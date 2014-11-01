@@ -1,2 +1,4 @@
+mod core;
+
 fn main() {
 }
