@@ -1,58 +1,37 @@
-extern crate libc;
-extern crate xlib;
-
-use libc::c_int;
-
-use xlib::{
-    XOpenDisplay,
-    XDisplayWidth,
-    XDisplayHeight,
-    XDefaultRootWindow,
-    XQueryTree,
-    XNextEvent,
-    XEvent,
-    XAnyEvent,
-    XGenericEvent,
-    XMapRequestEvent,
-    XPending,
-    XSelectInput,
-    XMoveWindow,
-    XMapWindow,
-    Window,
-    Display
+use window_system::WindowSystem;
+use window_system::{
+    WindowCreated
 };
+use xlib_window_system::XlibWindowSystem;
 
 mod core;
+mod window_system;
+mod xlib_window_system;
 
 fn main() {
     unsafe {
-        let display = XOpenDisplay(std::ptr::null_mut());
-        let root = XDefaultRootWindow(display);
-        XSelectInput(display, root, 0x1E0000i64);
+        let mut window_system = XlibWindowSystem::new();
 
         println!("Starting wtftw on display with {}x{}", 
-                 XDisplayWidth(display, 0),
-                 XDisplayHeight(display, 0));
-
+                 window_system.get_display_width(0),
+                 window_system.get_display_height(0));
         
-        let mut event = std::mem::uninitialized();;
         loop {
-            if XPending(display) == 0 {
+            if !window_system.event_pending() {
                 continue;
             }
 
-            XNextEvent(display, event);
-            let event_ptr : *const c_int = std::mem::transmute(event);
-            let event_type : c_int = *event_ptr;
-
-            if event_type == 19 {
-                let ev_ptr : *const XMapRequestEvent = std::mem::transmute(event);
-                let ev = *ev_ptr;
-                let window = ev.window;
-                XMapWindow(display, window);
-                XMoveWindow(display, window, 50, 50);
+            match window_system.get_event() {
+                WindowCreated(window) => {
+                    let w = window_system.get_display_width(0);
+                    let h = window_system.get_display_height(0);
+                    window_system.show_window(window);
+                    window_system.resize_window(window, w / 2, h);
+                    window_system.set_window_border_color(window, 0x00FF0000);
+                    window_system.set_window_border_width(window, 2);
+                },
+                _ => ()
             }
-            println!("{}", event_type);
         }
     }
 }
