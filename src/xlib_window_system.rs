@@ -166,26 +166,25 @@ impl WindowSystem for XlibWindowSystem {
     fn get_event(&mut self) -> WindowSystemEvent {
         unsafe {
             XNextEvent(self.display, self.event);
+        }
+        
+        let event_type : c_int = *self.get_event_as();
 
-            let event_type : c_int = *self.get_event_as();
-
-            match event_type as uint {
-                MapRequest => {
-                    let event : &XMapRequestEvent = self.get_event_as();
-                    WindowCreated(event.window)
-                },
-                EnterNotify => {
-                    let event : &XEnterWindowEvent = self.get_event_as();
-                    Enter(event.window) 
-                },
-                LeaveNotify => {
-                    let event : &XLeaveWindowEvent = self.get_event_as();
-                    Leave(event.window) 
-
-                },
-                _  => {
-                    UnknownEvent
-                }
+        match event_type as uint {
+            MapRequest => {
+                let event : &XMapRequestEvent = self.get_event_as();
+                WindowCreated(event.window)
+            },
+            EnterNotify => {
+                let event : &XEnterWindowEvent = self.get_event_as();
+                Enter(event.window) 
+            },
+            LeaveNotify => {
+                let event : &XLeaveWindowEvent = self.get_event_as();
+                Leave(event.window) 
+            },
+            _  => {
+                UnknownEvent
             }
         }
     }
