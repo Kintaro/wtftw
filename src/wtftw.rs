@@ -3,6 +3,7 @@
 extern crate log;
 
 use config::Config;
+use layout::Layout;
 use window_system::WindowSystem;
 use window_system::{
     Enter,
@@ -13,6 +14,8 @@ use xlib_window_system::XlibWindowSystem;
 
 mod config;
 mod core;
+mod layout;
+mod window_manager;
 mod window_system;
 mod xlib_window_system;
 

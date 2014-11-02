@@ -1,20 +1,18 @@
 use std::collections::TreeMap;
+use window_system::Window;
 
 #[deriving(Clone)]
-struct RationalRect(f32, f32, f32, f32);
+pub struct RationalRect(f32, f32, f32, f32);
 
 #[deriving(Clone)]
-struct Window;
-
-#[deriving(Clone)]
-struct Stack<T> {
+pub struct Stack<T> {
     focus: T,
     up:    Vec<T>,
     down:  Vec<T>
 }
 
 #[deriving(Clone)]
-struct Workspace {
+pub struct Workspace {
     id:     uint,
     tag:    String,
     layout: String,
@@ -23,7 +21,7 @@ struct Workspace {
 
 #[deriving(Clone)]
 impl Workspace {
-    fn new(id: uint, tag: String, layout: String, stack: Option<Stack<Window>>) -> Workspace {
+    pub fn new(id: uint, tag: String, layout: String, stack: Option<Stack<Window>>) -> Workspace {
         Workspace {
             id: id,
             tag: tag,
@@ -34,14 +32,14 @@ impl Workspace {
 }
 
 #[deriving(Clone)]
-struct Screen {
+pub struct Screen {
     workspace: Workspace,
     screen_id:    uint,
     screen_detail: String
 }
 
 impl Screen {
-    fn new(workspace: Workspace, screen_id: uint, screen_detail: String) -> Screen {
+    pub fn new(workspace: Workspace, screen_id: uint, screen_detail: String) -> Screen {
         Screen {
             workspace: workspace,
             screen_id: screen_id,
@@ -51,7 +49,7 @@ impl Screen {
 }
 
 #[deriving(Clone)]
-struct Workspaces {
+pub struct Workspaces {
     current: Screen,
     visible: Vec<Screen>,
     hidden: Vec<Workspace>,
@@ -66,7 +64,7 @@ impl Workspaces {
     /// list will be current.
     ///
     /// Xinerama: Virtual workspaces are assigned to physical screens, starting at 0.
-    fn new(layout: String, tags: Vec<String>, screens: Vec<String>) -> Workspaces {
+    pub fn new(layout: String, tags: Vec<String>, screens: Vec<String>) -> Workspaces {
         let workspaces : Vec<Workspace> = tags.iter()
             .enumerate()
             .map(|(id, tag)| Workspace::new(id, tag.clone(), layout.clone(), None))
@@ -99,7 +97,7 @@ impl Workspaces {
     /// Xinerama: If the workspace is not visible on any Xinerama screen, it
     /// becomes the current screen. If it is in the visible list, it becomes
     /// current.
-    fn view(&mut self, index: uint) {
+    pub fn view(&mut self, index: uint) {
         match self.visible.iter().position(|s| s.workspace.id == index) {
             Some(screen_pos) => {
                 let screen = self.visible[screen_pos].clone();
@@ -128,7 +126,7 @@ impl Workspaces {
     /// current workspace to 'hidden'.  If that workspace is 'visible' on another
     /// screen, the workspaces of the current screen and the other screen are
     /// swapped.
-    fn greedy_view(&mut self, index: uint) {
+    pub fn greedy_view(&mut self, index: uint) {
 
     }
 }

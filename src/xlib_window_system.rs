@@ -123,7 +123,7 @@ impl WindowSystem for XlibWindowSystem {
         }
     }
 
-    fn get_window_name(&self, window: u64) -> String {
+    fn get_window_name(&self, window: Window) -> String {
         if window == self.root { return String::from_str("root"); }
         unsafe {
             let mut name : *mut c_char = uninitialized();
@@ -133,33 +133,33 @@ impl WindowSystem for XlibWindowSystem {
         }
     }
 
-    fn set_window_border_width(&mut self, window: u64, border_width: uint) {
+    fn set_window_border_width(&mut self, window: Window, border_width: uint) {
         if window == self.root { return; }
         unsafe {
             XSetWindowBorderWidth(self.display, window, border_width as u32); 
         }
     }
 
-    fn set_window_border_color(&mut self, window: u64, border_color: uint) {
+    fn set_window_border_color(&mut self, window: Window, border_color: uint) {
         if window == self.root { return; }
         unsafe {
-            XSetWindowBorder(self.display, window, border_color as u64);   
+            XSetWindowBorder(self.display, window, border_color as Window);   
         }
     }
 
-    fn resize_window(&mut self, window: u64, width: u32, height: u32) {
+    fn resize_window(&mut self, window: Window, width: u32, height: u32) {
         unsafe {
             XResizeWindow(self.display, window, width, height);
         }
     }
 
-    fn move_window(&mut self, window: u64, x: u32, y: u32) {
+    fn move_window(&mut self, window: Window, x: u32, y: u32) {
         unsafe {
             XMoveWindow(self.display, window, x as i32, y as i32);
         }
     }
 
-    fn show_window(&mut self, window: u64) {
+    fn show_window(&mut self, window: Window) {
         unsafe {
             XMapWindow(self.display, window);
         }
