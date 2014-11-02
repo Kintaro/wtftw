@@ -2,6 +2,7 @@
 #[phase(plugin, link)] 
 extern crate log;
 
+use config::Config;
 use window_system::WindowSystem;
 use window_system::{
     Enter,
@@ -10,6 +11,7 @@ use window_system::{
 };
 use xlib_window_system::XlibWindowSystem;
 
+mod config;
 mod core;
 mod window_system;
 mod xlib_window_system;
@@ -17,6 +19,8 @@ mod xlib_window_system;
 fn main() {
     // Initialize window system. Use xlib here for now
     let mut window_system = XlibWindowSystem::new();
+    // Create a default configuration
+    let mut config = Config::default();
 
     info!("Starting wtftw on display with {}x{}", 
              window_system.get_display_width(0),
@@ -32,18 +36,18 @@ fn main() {
                 window_system.show_window(window);
                 window_system.resize_window(window, w / 2, h);
                 window_system.move_window(window, x, 0);
-                window_system.set_window_border_color(window, 0x00FF00FF);
-                window_system.set_window_border_width(window, 2);
+                window_system.set_window_border_color(window, config.border_color);
+                window_system.set_window_border_width(window, config.border_width);
                 x += w / 2;
 
                 debug!("Created window \"{}\"", window_system.get_window_name(window));
             },
             Enter(window) => {
-                window_system.set_window_border_color(window, 0x00FF0000);
+                window_system.set_window_border_color(window, config.focus_border_color);
                 debug!("Entered window \"{}\"", window_system.get_window_name(window));
             },
             Leave(window) => {
-                window_system.set_window_border_color(window, 0x00FFFFFF);
+                window_system.set_window_border_color(window, config.border_color);
                 debug!("Left window \"{}\"", window_system.get_window_name(window));
             }
             _ => ()
