@@ -10,6 +10,7 @@ use self::xlib::{
     XSetWindowBorder,
     XSetWindowBorderWidth,
     XDefaultRootWindow,
+    XDefaultScreenOfDisplay,
     XDisplayWidth,
     XDisplayHeight,
     XEnterWindowEvent,
@@ -23,7 +24,9 @@ use self::xlib::{
     XOpenDisplay,
     XPending,
     XResizeWindow,
-    XSelectInput
+    XRootWindowOfScreen,
+    XSelectInput,
+    XSync
 };
 
 use std::ptr::null_mut;
@@ -40,14 +43,14 @@ use window_system::{
     UnknownEvent
 };
 
-const KeyPress               : uint = 2;
-const KeyRelease             : uint = 3;
-const ButtonPress            : uint = 4;
-const ButtonRelease          : uint = 5;
-const MotionNotify           : uint = 6;
-const EnterNotify            : uint = 7;
-const LeaveNotify            : uint = 8;
-const FocusIn                : uint = 9;
+const KeyPress               : uint =  2;
+const KeyRelease             : uint =  3;
+const ButtonPress            : uint =  4;
+const ButtonRelease          : uint =  5;
+const MotionNotify           : uint =  6;
+const EnterNotify            : uint =  7;
+const LeaveNotify            : uint =  8;
+const FocusIn                : uint =  9;
 const FocusOut               : uint = 10;
 const KeymapNotify           : uint = 11;
 const Expose                 : uint = 12;
@@ -84,9 +87,11 @@ impl XlibWindowSystem {
     pub fn new() -> XlibWindowSystem {
         unsafe {
             let display = XOpenDisplay(null_mut());
-            let root    = XDefaultRootWindow(display);
+            let screen  = XDefaultScreenOfDisplay(display);
+            let root    = XRootWindowOfScreen(screen);
 
-            XSelectInput(display, root, 0x1E0030i64);
+            XSelectInput(display, root, 0x180030);
+            XSync(display, 0);
 
             XlibWindowSystem {
                 display: display,
@@ -119,6 +124,7 @@ impl WindowSystem for XlibWindowSystem {
     }
 
     fn get_window_name(&self, window: u64) -> String {
+        if window == self.root { return String::from_str("root"); }
         unsafe {
             let mut name : *mut c_char = uninitialized();
             let mut name_ptr : *mut *mut c_char = &mut name;
@@ -128,12 +134,14 @@ impl WindowSystem for XlibWindowSystem {
     }
 
     fn set_window_border_width(&mut self, window: u64, border_width: uint) {
+        if window == self.root { return; }
         unsafe {
             XSetWindowBorderWidth(self.display, window, border_width as u32); 
         }
     }
 
     fn set_window_border_color(&mut self, window: u64, border_color: uint) {
+        if window == self.root { return; }
         unsafe {
             XSetWindowBorder(self.display, window, border_color as u64);   
         }
@@ -165,6 +173,7 @@ impl WindowSystem for XlibWindowSystem {
 
     fn get_event(&mut self) -> WindowSystemEvent {
         unsafe {
+            XSync(self.display, 0);
             XNextEvent(self.display, self.event);
         }
         
@@ -173,6 +182,7 @@ impl WindowSystem for XlibWindowSystem {
         match event_type as uint {
             MapRequest => {
                 let event : &XMapRequestEvent = self.get_event_as();
+                unsafe { XSelectInput(self.display, event.window, 0x000030); }
                 WindowCreated(event.window)
             },
             EnterNotify => {
@@ -184,6 +194,7 @@ impl WindowSystem for XlibWindowSystem {
                 Leave(event.window) 
             },
             _  => {
+                println!("Unknown event {}", event_type);
                 UnknownEvent
             }
         }

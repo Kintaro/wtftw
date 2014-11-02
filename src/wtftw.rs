@@ -32,7 +32,7 @@ fn main() {
                 window_system.show_window(window);
                 window_system.resize_window(window, w / 2, h);
                 window_system.move_window(window, x, 0);
-                window_system.set_window_border_color(window, 0x00FFFFFF);
+                window_system.set_window_border_color(window, 0x00FF00FF);
                 window_system.set_window_border_width(window, 2);
                 x += w / 2;
 
@@ -40,9 +40,11 @@ fn main() {
             },
             Enter(window) => {
                 window_system.set_window_border_color(window, 0x00FF0000);
+                debug!("Entered window \"{}\"", window_system.get_window_name(window));
             },
             Leave(window) => {
                 window_system.set_window_border_color(window, 0x00FFFFFF);
+                debug!("Left window \"{}\"", window_system.get_window_name(window));
             }
             _ => ()
         }
