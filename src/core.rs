@@ -71,9 +71,14 @@ impl Workspaces {
             .enumerate()
             .map(|(id, tag)| Workspace::new(id, tag.clone(), layout.clone(), None))
             .collect();
-        let seen   : Vec<Workspace> = workspaces.iter().take(screens.len()).map(|x| x.clone()).collect();
-        let unseen : Vec<Workspace> = workspaces.iter().skip(screens.len()).map(|x| x.clone()).collect();
-
+        let seen   : Vec<Workspace> = workspaces.iter()
+            .take(screens.len())
+            .map(|x| x.clone())
+            .collect();
+        let unseen : Vec<Workspace> = workspaces.iter()
+            .skip(screens.len())
+            .map(|x| x.clone())
+            .collect();
         let current : Vec<Screen> = seen.iter()
             .zip(range(0, seen.len()))
             .zip(screens.iter())
