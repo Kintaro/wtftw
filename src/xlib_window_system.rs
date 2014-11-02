@@ -95,6 +95,14 @@ impl XlibWindowSystem {
             }
         }
     }
+
+    fn get_event_as<T>(&self) -> &T {
+        unsafe {
+            let event_ptr : *const T = transmute(self.event);
+            let ref event = *event_ptr;
+            event
+        }
+    }
 }
 
 impl WindowSystem for XlibWindowSystem {
@@ -159,37 +167,23 @@ impl WindowSystem for XlibWindowSystem {
         unsafe {
             XNextEvent(self.display, self.event);
 
-            let event_type_ptr : *const c_int = transmute(self.event);
-            let event_type = *event_type_ptr;
+            let event_type : c_int = *self.get_event_as();
 
             match event_type as uint {
                 MapRequest => {
-                    let map_request_event_ptr : *const XMapRequestEvent = transmute(self.event);
-                    let map_request_event = *map_request_event_ptr;
-                    let window = map_request_event.window;
-                    WindowCreated(window)
+                    let event : &XMapRequestEvent = self.get_event_as();
+                    WindowCreated(event.window)
                 },
                 EnterNotify => {
-                    let xcrossing_event_ptr : *const XEnterWindowEvent = transmute(self.event);
-                    let xcrossing_event = *xcrossing_event_ptr;
-                    let window = xcrossing_event.window;
-
-                    if xcrossing_event.mode != 0 {
-                        UnknownEvent
-                    } else {
-                        Enter(window) 
-                    }
+                    let event : &XEnterWindowEvent = self.get_event_as();
+                    Enter(event.window) 
                 },
                 LeaveNotify => {
-                    let xcrossing_event_ptr : *const XLeaveWindowEvent = transmute(self.event);
-                    let xcrossing_event = *xcrossing_event_ptr;
-                    let window = xcrossing_event.window;
-
-                    Leave(window) 
+                    let event : &XLeaveWindowEvent = self.get_event_as();
+                    Leave(event.window) 
 
                 },
                 _  => {
-                    println!("Unknown event {}", event_type);
                     UnknownEvent
                 }
             }
