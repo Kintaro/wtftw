@@ -1,17 +1,24 @@
 extern crate libc;
 extern crate xlib;
 
-use self::libc::{ c_int, c_void };
+use self::libc::{ c_char, c_int, c_void };
 use self::libc::funcs::c95::stdlib::malloc;
 use self::xlib::{
     Display,
+    Window,
+    XCrossingEvent,
     XSetWindowBorder,
     XSetWindowBorderWidth,
     XDefaultRootWindow,
     XDisplayWidth,
     XDisplayHeight,
+    XEnterWindowEvent,
+    XFetchName,
+    XLeaveWindowEvent,
     XMapRequestEvent,
     XMapWindow,
+    XMotionEvent,
+    XMoveWindow,
     XNextEvent,
     XOpenDisplay,
     XPending,
@@ -22,17 +29,55 @@ use self::xlib::{
 use std::ptr::null_mut;
 use std::mem::transmute;
 use std::mem::uninitialized;
+use std::str::raw::c_str_to_static_slice;
 
 use window_system::{ WindowSystem, WindowSystemEvent };
 use window_system::{
+    Enter,
+    Leave,
     WindowCreated,
     WindowDestroyed,
     UnknownEvent
 };
 
+const KeyPress               : uint = 2;
+const KeyRelease             : uint = 3;
+const ButtonPress            : uint = 4;
+const ButtonRelease          : uint = 5;
+const MotionNotify           : uint = 6;
+const EnterNotify            : uint = 7;
+const LeaveNotify            : uint = 8;
+const FocusIn                : uint = 9;
+const FocusOut               : uint = 10;
+const KeymapNotify           : uint = 11;
+const Expose                 : uint = 12;
+const GraphicsExpose         : uint = 13;
+const NoExpose               : uint = 14;
+const VisibilityNotify       : uint = 15;
+const CreateNotify           : uint = 16;
+const DestroyNotify          : uint = 17;
+const UnmapNotify            : uint = 18;
+const MapNotify              : uint = 19;
+const MapRequest             : uint = 20;
+const ReparentNotify         : uint = 21;
+const ConfigureNotify        : uint = 22;
+const ConfigureRequest       : uint = 23;
+const GravityNotify          : uint = 24;
+const ResizeRequest          : uint = 25;
+const CirculateNotify        : uint = 26;
+const CirculateRequest       : uint = 27;
+const PropertyNotify         : uint = 28;
+const SelectionClear         : uint = 29;
+const SelectionRequest       : uint = 30;
+const SelectionNotify        : uint = 31;
+const ColormapNotify         : uint = 32;
+const ClientMessage          : uint = 33;
+const MappingNotify          : uint = 34;
+
 pub struct XlibWindowSystem {
     display: *mut Display,
-    event: *mut c_void
+    root:    Window,
+    event:   *mut c_void
 }
 
 impl XlibWindowSystem {
@@ -41,11 +86,12 @@ impl XlibWindowSystem {
             let display = XOpenDisplay(null_mut());
             let root    = XDefaultRootWindow(display);
 
-            XSelectInput(display, root, 0x1E0000i64);
+            XSelectInput(display, root, 0x1E0030i64);
 
             XlibWindowSystem {
                 display: display,
-                event: malloc(256)
+                root:    root,
+                event:   malloc(256)
             }
         }
     }
@@ -64,6 +110,15 @@ impl WindowSystem for XlibWindowSystem {
         }
     }
 
+    fn get_window_name(&self, window: u64) -> String {
+        unsafe {
+            let mut name : *mut c_char = uninitialized();
+            let mut name_ptr : *mut *mut c_char = &mut name;
+            XFetchName(self.display, window, name_ptr);
+            String::from_str(c_str_to_static_slice(transmute(*name_ptr)))
+        }
+    }
+
     fn set_window_border_width(&mut self, window: u64, border_width: uint) {
         unsafe {
             XSetWindowBorderWidth(self.display, window, border_width as u32); 
@@ -79,6 +134,12 @@ impl WindowSystem for XlibWindowSystem {
     fn resize_window(&mut self, window: u64, width: u32, height: u32) {
         unsafe {
             XResizeWindow(self.display, window, width, height);
+        }
+    }
+
+    fn move_window(&mut self, window: u64, x: u32, y: u32) {
+        unsafe {
+            XMoveWindow(self.display, window, x as i32, y as i32);
         }
     }
 
@@ -101,14 +162,36 @@ impl WindowSystem for XlibWindowSystem {
             let event_type_ptr : *const c_int = transmute(self.event);
             let event_type = *event_type_ptr;
 
-            match event_type {
-                20 => {
+            match event_type as uint {
+                MapRequest => {
                     let map_request_event_ptr : *const XMapRequestEvent = transmute(self.event);
                     let map_request_event = *map_request_event_ptr;
                     let window = map_request_event.window;
                     WindowCreated(window)
                 },
-                _  => UnknownEvent
+                EnterNotify => {
+                    let xcrossing_event_ptr : *const XEnterWindowEvent = transmute(self.event);
+                    let xcrossing_event = *xcrossing_event_ptr;
+                    let window = xcrossing_event.window;
+
+                    if xcrossing_event.mode != 0 {
+                        UnknownEvent
+                    } else {
+                        Enter(window) 
+                    }
+                },
+                LeaveNotify => {
+                    let xcrossing_event_ptr : *const XLeaveWindowEvent = transmute(self.event);
+                    let xcrossing_event = *xcrossing_event_ptr;
+                    let window = xcrossing_event.window;
+
+                    Leave(window) 
+
+                },
+                _  => {
+                    println!("Unknown event {}", event_type);
+                    UnknownEvent
+                }
             }
         }
     }
