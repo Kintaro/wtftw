@@ -1,5 +1,6 @@
-use core::RationalRect;
 use window_manager::WindowManager;
+
+pub struct RationalRect(f32, f32, f32, f32);
 
 pub enum Resize {
     Shrink,

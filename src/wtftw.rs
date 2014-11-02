@@ -13,7 +13,6 @@ use window_system::{
 use xlib_window_system::XlibWindowSystem;
 
 mod config;
-mod core;
 mod layout;
 mod window_manager;
 mod window_system;

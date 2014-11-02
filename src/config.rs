@@ -9,6 +9,8 @@ pub struct Config {
     pub border_color: uint,
     /// Border width. This is the same for both, focused and unfocused.
     pub border_width: uint,
+    /// Default terminal to start
+    pub terminal: String
 }
 
 impl Config {
@@ -18,7 +20,8 @@ impl Config {
             focus_follows_mouse: true,
             focus_border_color:  0x00FF0000,
             border_color:        0x00FFFFFF,
-            border_width:        2
+            border_width:        2,
+            terminal:            String::from_str("xterm")
         }
     }
 }
