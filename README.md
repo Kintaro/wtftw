@@ -3,7 +3,7 @@ wtftw
 
 Window Tiling For The Win. A tiling window manager written in Rust
 
-# Build
+## Build
 
 To build it, just run
 
@@ -11,7 +11,7 @@ To build it, just run
 cargo build
 ```
 
-# Testing
+## Testing
 
 For testing, install either **Xnest** or **Xephyr** on your system and run
 
