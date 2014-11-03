@@ -1,6 +1,6 @@
 pub type Window = u64;
 
-#[deriving(Show)]
+#[deriving(Show, Clone)]
 pub struct Rectangle(pub uint, pub uint, pub uint, pub uint);
 
 pub enum WindowSystemEvent {
@@ -14,6 +14,7 @@ pub enum WindowSystemEvent {
     /// The pointer has left a window's area. Mostly used
     /// for mousefollow focus.
     Leave(Window),
+    ButtonPressed(Window, uint, uint, uint, uint),
     /// The underlying event by xlib or wayland is unknown
     /// and can be ignored.
     UnknownEvent

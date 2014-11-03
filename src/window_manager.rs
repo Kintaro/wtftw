@@ -1,7 +1,7 @@
 use window_system::Rectangle;
 use window_system::Window;
 
-pub type Screen = Rectangle;
+pub type ScreenDetail = Rectangle;
 
 pub struct WindowManager {
     active_screen: uint

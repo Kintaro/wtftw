@@ -9,6 +9,7 @@ use self::libc::funcs::c95::stdlib::malloc;
 use self::xlib::{
     Display,
     Window,
+    XButtonEvent,
     XCrossingEvent,
     XSetWindowBorder,
     XSetWindowBorderWidth,
@@ -52,6 +53,7 @@ use window_system::{
     Leave,
     WindowCreated,
     WindowDestroyed,
+    ButtonPressed,
     UnknownEvent
 };
 
@@ -102,7 +104,7 @@ impl XlibWindowSystem {
 
             if display == null_mut() {
                 error!("No display found at {}",
-                       env().iter()
+                    env().iter()
                        .find(|&&(ref d, _)| *d == String::from_str("DISPLAY"))
                        .map(|&(_, ref v)| v.clone())
                        .unwrap());
@@ -112,7 +114,7 @@ impl XlibWindowSystem {
             let screen  = XDefaultScreenOfDisplay(display);
             let root    = XRootWindowOfScreen(screen);
 
-            XSelectInput(display, root, 0x180030);
+            XSelectInput(display, root, 0x180034);
             XSync(display, 0);
 
             XlibWindowSystem {
@@ -182,9 +184,8 @@ impl WindowSystem for XlibWindowSystem {
         if window == self.root { return String::from_str("root"); }
         unsafe {
             let mut name : *mut c_char = uninitialized();
-            let name_ptr : *mut *mut c_char = &mut name;
-            XFetchName(self.display, window, name_ptr);
-            String::from_str(c_str_to_static_slice(transmute(*name_ptr)))
+            XFetchName(self.display, window, &mut name);
+            String::from_str(c_str_to_static_slice(transmute(name)))
         }
     }
 
@@ -196,15 +197,11 @@ impl WindowSystem for XlibWindowSystem {
             let mut num_children : c_uint = 0;
             XQueryTree(self.display, self.root, &mut unused, &mut unused, children_ptr, &mut num_children);
             let const_children : *const u64 = children as *const u64;
-            buf_as_slice(const_children, num_children as uint, |x| {
-                let mut result : Vec<Window> = Vec::new();
-                for &child in x.iter() {
-                    if child != self.root {
-                        result.push(child);
-                    }
-                }
-                result
-            })
+            buf_as_slice(const_children, num_children as uint, |x| 
+                         x.to_vec().iter()
+                            .filter(|&&c| c != self.root)
+                            .map(|&c| c)
+                            .collect())
         }
     }
 
@@ -262,12 +259,25 @@ impl WindowSystem for XlibWindowSystem {
             },
             EnterNotify => {
                 let event : &XEnterWindowEvent = self.get_event_as();
-                Enter(event.window) 
+                if event.detail != 2 {
+                    Enter(event.window) 
+                } else {
+                    UnknownEvent
+                }
             },
             LeaveNotify => {
                 let event : &XLeaveWindowEvent = self.get_event_as();
-                Leave(event.window) 
+                if event.detail != 2 {
+                    Leave(event.window) 
+                } else {
+                    UnknownEvent
+                }
             },
+            ButtonPress => {
+                let event : &XButtonEvent = self.get_event_as();
+                ButtonPressed(event.window, event.state as uint, event.button as uint, 
+                              event.x_root as uint, event.y_root as uint)
+            }
             _  => {
                 debug!("Unknown event {}", event_type);
                 UnknownEvent

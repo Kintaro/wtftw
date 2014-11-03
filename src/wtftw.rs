@@ -3,21 +3,26 @@
 extern crate log;
 
 use config::Config;
+use core::Workspaces;
 use layout::Layout;
 use window_system::Rectangle;
 use window_system::WindowSystem;
 use window_system::{
     Enter,
     Leave,
-    WindowCreated
+    WindowCreated,
+    ButtonPressed
 };
 use xlib_window_system::XlibWindowSystem;
+use std::io::process::Command;
 
 pub mod config;
+pub mod core;
 pub mod layout;
 pub mod window_manager;
 pub mod window_system;
 pub mod xlib_window_system;
+
 
 fn main() {
     // Initialize window system. Use xlib here for now
@@ -31,6 +36,8 @@ fn main() {
     for (i, &Rectangle(_, _, w, h)) in window_system.get_screen_infos().iter().enumerate() {
         info!("Display {}: {}x{}", i, w, h);
     }
+
+    let workspaces = Workspaces::new(String::from_str("Tall"), config.tags, window_system.get_screen_infos());
 
     let mut screen = 0;
 
@@ -54,6 +61,13 @@ fn main() {
             Leave(window) => {
                 window_system.set_window_border_color(window, config.border_color);
                 debug!("Left window \"{}\"", window_system.get_window_name(window));
+            },
+            ButtonPressed(_, _, _, _, _) => {
+                debug!("Button pressed!");
+                let name = config.terminal.clone();
+                spawn(proc(){
+                    Command::new(name).spawn();
+                });
             }
             _ => ()
         }
