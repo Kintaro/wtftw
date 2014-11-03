@@ -7,17 +7,41 @@ pub struct RationalRect(f32, f32, f32, f32);
 
 #[deriving(Clone)]
 pub struct Stack<T> {
-    focus: T,
-    up:    Vec<T>,
-    down:  Vec<T>
+    pub focus: T,
+    pub up:    Vec<T>,
+    pub down:  Vec<T>
+}
+
+impl<T: Clone> Stack<T> {
+    pub fn from_element(t: T) -> Stack<T> {
+        Stack {
+            focus: t,
+            up:    Vec::new(),
+            down:  Vec::new()
+        }
+    }
+
+    pub fn add(&mut self, t: T) {
+        self.down.push(self.focus.clone());
+        self.focus = t;
+    }
+
+    pub fn integrate(&self) -> Vec<T> {
+        self.up.iter()
+            .rev()
+            .chain((vec!(self.focus.clone())).iter())
+            .chain(self.down.iter())
+            .map(|x| x.clone())
+            .collect()
+    }
 }
 
 #[deriving(Clone)]
 pub struct Workspace {
-    id:     uint,
-    tag:    String,
-    layout: String,
-    stack:  Option<Stack<Window>>
+    pub id:     uint,
+    pub tag:    String,
+    pub layout: String,
+    pub stack:  Option<Stack<Window>>
 }
 
 #[deriving(Clone)]
@@ -30,13 +54,20 @@ impl Workspace {
             stack: stack
         }
     }
+
+    pub fn add(&mut self, window: Window) {
+        match self.stack {
+            Some(ref mut stack) => stack.add(window),
+            _ => self.stack = Some(Stack::from_element(window))
+        }
+    }
 }
 
 #[deriving(Clone)]
 pub struct Screen {
-    workspace: Workspace,
-    screen_id:    uint,
-    screen_detail: ScreenDetail
+    pub workspace:     Workspace,
+    pub screen_id:     uint,
+    pub screen_detail: ScreenDetail
 }
 
 impl Screen {
@@ -51,10 +82,10 @@ impl Screen {
 
 #[deriving(Clone)]
 pub struct Workspaces {
-    current: Screen,
-    visible: Vec<Screen>,
-    hidden: Vec<Workspace>,
-    floating: TreeMap<uint, RationalRect>
+    pub current:  Screen,
+    pub visible:  Vec<Screen>,
+    pub hidden:   Vec<Workspace>,
+    pub floating: TreeMap<uint, RationalRect>
 }
 
 impl Workspaces {

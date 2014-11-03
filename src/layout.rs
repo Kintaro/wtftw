@@ -1,3 +1,5 @@
+use core::Stack;
+use window_system::Window;
 use window_system::Rectangle;
 use window_manager::ScreenDetail;
 use window_manager::WindowManager;
@@ -43,17 +45,27 @@ pub fn split_horizontally_by(ratio: f32, screen: ScreenDetail) -> (Rectangle, Re
 }
 
 pub trait Layout {
-    fn apply_layout(&self, window_manager: &WindowManager) -> Vec<RationalRect>; 
+    fn apply_layout(&self, screen: Rectangle, stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)>; 
 }
 
 pub struct TallLayout {
-    num_master: uint,
-    increment_ratio: f32,
-    ratio: f32
+    pub num_master: uint,
+    pub increment_ratio: f32,
+    pub ratio: f32
 }
 
 impl Layout for TallLayout {
-    fn apply_layout(&self, window_manager: &WindowManager) -> Vec<RationalRect> {
-        panic!("not yet implemented");
+    fn apply_layout(&self, screen: Rectangle, stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
+        match stack {
+            &Some(ref s) => {
+                debug!("Applying TallLayout to {} windows", s.integrate().len());
+                let ws = s.integrate();
+                ws.iter()
+                    .zip(tile(self.ratio, screen, self.num_master, ws.len()).iter())
+                    .map(|(&x, &y)| (x, y))
+                    .collect()
+            },
+            _ => Vec::new()
+        }
     }
 }

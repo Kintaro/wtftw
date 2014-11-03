@@ -9,6 +9,8 @@ pub struct Config {
     pub border_color: uint,
     /// Border width. This is the same for both, focused and unfocused.
     pub border_width: uint,
+    /// Default spacing between windows
+    pub spacing: uint,
     /// Default terminal to start
     pub terminal: String,
     /// Default tags for workspaces
@@ -23,6 +25,7 @@ impl Config {
             focus_border_color:  0x00FF0000,
             border_color:        0x00FFFFFF,
             border_width:        2,
+            spacing:             10,
             terminal:            String::from_str("xterm"),
             tags:                vec!(
                                      String::from_str("1"), 

@@ -32,7 +32,8 @@ use self::xlib::{
     XRootWindowOfScreen,
     XScreenCount,
     XSelectInput,
-    XSync
+    XSync,
+    XUnmapEvent
 };
 use self::xinerama::{
     XineramaQueryScreens,
@@ -256,6 +257,10 @@ impl WindowSystem for XlibWindowSystem {
                 let event : &XMapRequestEvent = self.get_event_as();
                 unsafe { XSelectInput(self.display, event.window, 0x000030); }
                 WindowCreated(event.window)
+            },
+            UnmapNotify => {
+                let event : &XUnmapEvent = self.get_event_as();
+                WindowDestroyed(event.window)
             },
             EnterNotify => {
                 let event : &XEnterWindowEvent = self.get_event_as();
