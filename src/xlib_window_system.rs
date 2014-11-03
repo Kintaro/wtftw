@@ -1,7 +1,10 @@
+#![allow(non_upper_case_globals)]
+
 extern crate libc;
 extern crate xlib;
+extern crate xinerama;
 
-use self::libc::{ c_char, c_int, c_void };
+use self::libc::{ c_char, c_int, c_uint, c_void };
 use self::libc::funcs::c95::stdlib::malloc;
 use self::xlib::{
     Display,
@@ -23,18 +26,25 @@ use self::xlib::{
     XNextEvent,
     XOpenDisplay,
     XPending,
+    XQueryTree,
     XResizeWindow,
     XRootWindowOfScreen,
+    XScreenCount,
     XSelectInput,
     XSync
+};
+use self::xinerama::{
+    XineramaQueryScreens,
+    XineramaScreenInfo
 };
 
 use std::ptr::null_mut;
 use std::mem::transmute;
 use std::mem::uninitialized;
 use std::str::raw::c_str_to_static_slice;
+use std::slice::raw::buf_as_slice;
 
-use window_system::{ WindowSystem, WindowSystemEvent };
+use window_system::{ Rectangle, WindowSystem, WindowSystemEvent };
 use window_system::{
     Enter,
     Leave,
@@ -111,6 +121,39 @@ impl XlibWindowSystem {
 }
 
 impl WindowSystem for XlibWindowSystem {
+    fn get_screen_infos(&self) -> Vec<Rectangle> {
+        unsafe {
+            let mut num : c_int = 0;
+            let screen_ptr = XineramaQueryScreens(self.display, &mut num);
+
+            // If xinerama is not active, just return the default display
+            // dimensions and "emulate" xinerama.
+            if num == 0 {
+                return vec!(Rectangle(0, 0, 
+                                      self.get_display_width(0) as uint, 
+                                      self.get_display_height(0) as uint));
+            }
+            
+            buf_as_slice(screen_ptr, num as uint, |x| {
+                let mut result : Vec<Rectangle> = Vec::new();
+                for &screen_info in x.iter() {
+                    result.push(Rectangle(
+                            screen_info.x_org as uint,
+                            screen_info.y_org as uint,
+                            screen_info.width as uint,
+                            screen_info.height as uint));
+                }
+                result
+            })
+        }
+    }
+
+    fn get_number_of_screens(&self) -> uint {
+        unsafe {
+            XScreenCount(self.display) as uint
+        }
+    }
+
     fn get_display_width(&self, screen: uint) -> u32 {
         unsafe {
             XDisplayWidth(self.display, screen as i32) as u32
@@ -127,9 +170,29 @@ impl WindowSystem for XlibWindowSystem {
         if window == self.root { return String::from_str("root"); }
         unsafe {
             let mut name : *mut c_char = uninitialized();
-            let mut name_ptr : *mut *mut c_char = &mut name;
+            let name_ptr : *mut *mut c_char = &mut name;
             XFetchName(self.display, window, name_ptr);
             String::from_str(c_str_to_static_slice(transmute(*name_ptr)))
+        }
+    }
+
+    fn get_windows(&self) -> Vec<Window> {
+        unsafe {
+            let mut unused = 0u64;
+            let mut children : *mut u64 = uninitialized();
+            let children_ptr : *mut *mut u64 = &mut children;
+            let mut num_children : c_uint = 0;
+            XQueryTree(self.display, self.root, &mut unused, &mut unused, children_ptr, &mut num_children);
+            let const_children : *const u64 = children as *const u64;
+            buf_as_slice(const_children, num_children as uint, |x| {
+                let mut result : Vec<Window> = Vec::new();
+                for &child in x.iter() {
+                    if child != self.root {
+                        result.push(child);
+                    }
+                }
+                result
+            })
         }
     }
 
@@ -194,7 +257,7 @@ impl WindowSystem for XlibWindowSystem {
                 Leave(event.window) 
             },
             _  => {
-                println!("Unknown event {}", event_type);
+                debug!("Unknown event {}", event_type);
                 UnknownEvent
             }
         }

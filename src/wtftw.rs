@@ -4,6 +4,7 @@ extern crate log;
 
 use config::Config;
 use layout::Layout;
+use window_system::Rectangle;
 use window_system::WindowSystem;
 use window_system::{
     Enter,
@@ -12,11 +13,11 @@ use window_system::{
 };
 use xlib_window_system::XlibWindowSystem;
 
-mod config;
-mod layout;
-mod window_manager;
-mod window_system;
-mod xlib_window_system;
+pub mod config;
+pub mod layout;
+pub mod window_manager;
+pub mod window_system;
+pub mod xlib_window_system;
 
 fn main() {
     // Initialize window system. Use xlib here for now
@@ -24,9 +25,12 @@ fn main() {
     // Create a default configuration
     let mut config = Config::default();
 
-    info!("Starting wtftw on display with {}x{}", 
-             window_system.get_display_width(0),
-             window_system.get_display_height(0));
+    info!("WTFTW - Window Tiling For The Win");
+    info!("Starting wtftw on {} screen(s)", window_system.get_number_of_screens());
+
+    for (i, &Rectangle(_, _, w, h)) in window_system.get_screen_infos().iter().enumerate() {
+        info!("Display {}: {}x{}", i, w, h);
+    }
 
     let mut x = 0;
 
@@ -42,7 +46,7 @@ fn main() {
                 window_system.set_window_border_width(window, config.border_width);
                 x += w / 2;
 
-                debug!("Created window \"{}\"", window_system.get_window_name(window));
+                debug!("Created window \"{}\" at {}", window_system.get_window_name(window), x);
             },
             Enter(window) => {
                 window_system.set_window_border_color(window, config.focus_border_color);
