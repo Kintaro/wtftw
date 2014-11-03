@@ -210,13 +210,13 @@ impl WindowSystem for XlibWindowSystem {
         }
     }
 
-    fn resize_window(&mut self, window: Window, width: u32, height: u32) {
+    fn resize_window(&mut self, window: Window, width: uint, height: uint) {
         unsafe {
-            XResizeWindow(self.display, window, width, height);
+            XResizeWindow(self.display, window, width as u32, height as u32);
         }
     }
 
-    fn move_window(&mut self, window: Window, x: u32, y: u32) {
+    fn move_window(&mut self, window: Window, x: uint, y: uint) {
         unsafe {
             XMoveWindow(self.display, window, x as i32, y as i32);
         }

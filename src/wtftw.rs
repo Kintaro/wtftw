@@ -32,21 +32,20 @@ fn main() {
         info!("Display {}: {}x{}", i, w, h);
     }
 
-    let mut x = 0;
+    let mut screen = 0;
 
     loop {
         match window_system.get_event() {
             WindowCreated(window) => {
-                let w = window_system.get_display_width(0);
-                let h = window_system.get_display_height(0);
+                let Rectangle(sx, sy, w, h) = window_system.get_screen_infos()[screen];;
                 window_system.show_window(window);
                 window_system.resize_window(window, w / 2, h);
-                window_system.move_window(window, x, 0);
+                window_system.move_window(window, sx, sy);
                 window_system.set_window_border_color(window, config.border_color);
                 window_system.set_window_border_width(window, config.border_width);
-                x += w / 2;
+                screen = (screen + 1) % window_system.get_screen_infos().len();
 
-                debug!("Created window \"{}\" at {}", window_system.get_window_name(window), x);
+                debug!("Created window \"{}\" at {}", window_system.get_window_name(window), sx);
             },
             Enter(window) => {
                 window_system.set_window_border_color(window, config.focus_border_color);
