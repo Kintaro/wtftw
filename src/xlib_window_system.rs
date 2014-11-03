@@ -38,6 +38,8 @@ use self::xinerama::{
     XineramaScreenInfo
 };
 
+use std::os::env;
+use std::ptr::null;
 use std::ptr::null_mut;
 use std::mem::transmute;
 use std::mem::uninitialized;
@@ -97,6 +99,16 @@ impl XlibWindowSystem {
     pub fn new() -> XlibWindowSystem {
         unsafe {
             let display = XOpenDisplay(null_mut());
+
+            if display == null_mut() {
+                error!("No display found at {}",
+                       env().iter()
+                       .find(|&&(ref d, _)| *d == String::from_str("DISPLAY"))
+                       .map(|&(_, ref v)| v.clone())
+                       .unwrap());
+                panic!("Exiting");
+            }
+
             let screen  = XDefaultScreenOfDisplay(display);
             let root    = XRootWindowOfScreen(screen);
 
