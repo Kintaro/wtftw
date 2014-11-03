@@ -5,6 +5,7 @@ extern crate log;
 use config::Config;
 use core::Workspaces;
 use layout::Layout;
+use layout::tile;
 use window_system::Rectangle;
 use window_system::WindowSystem;
 use window_system::{
@@ -37,22 +38,25 @@ fn main() {
         info!("Display {}: {}x{}", i, w, h);
     }
 
-    let workspaces = Workspaces::new(String::from_str("Tall"), config.tags, window_system.get_screen_infos());
+    let mut windows = Vec::new();
 
-    let mut screen = 0;
+    let workspaces = Workspaces::new(String::from_str("Tall"), config.tags, window_system.get_screen_infos());
 
     loop {
         match window_system.get_event() {
             WindowCreated(window) => {
-                let Rectangle(sx, sy, w, h) = window_system.get_screen_infos()[screen];;
+                let r = window_system.get_screen_infos()[0];
                 window_system.show_window(window);
-                window_system.resize_window(window, w / 2, h);
-                window_system.move_window(window, sx, sy);
-                window_system.set_window_border_color(window, config.border_color);
-                window_system.set_window_border_width(window, config.border_width);
-                screen = (screen + 1) % window_system.get_screen_infos().len();
+                windows.push(window);
 
-                debug!("Created window \"{}\" at {}", window_system.get_window_name(window), sx);
+                let layout = tile(0.5, r, 1, windows.len());
+
+                for (&win, &Rectangle(x, y, w, h)) in windows.iter().zip(layout.iter()) {
+                    window_system.resize_window(win, w, h);
+                    window_system.move_window(win, x, y);
+                }
+
+                debug!("Created window \"{}\"", window_system.get_window_name(window));
             },
             Enter(window) => {
                 window_system.set_window_border_color(window, config.focus_border_color);
