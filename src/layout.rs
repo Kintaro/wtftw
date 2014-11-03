@@ -1,3 +1,4 @@
+use config::Config;
 use core::Stack;
 use window_system::Window;
 use window_system::Rectangle;
@@ -42,6 +43,18 @@ pub fn split_horizontally_by(ratio: f32, screen: ScreenDetail) -> (Rectangle, Re
     let leftw = (sw as f32 * ratio).floor() as uint;
 
     (Rectangle(sx, sy, leftw, sh), Rectangle(sx + leftw, sy, sw - leftw, sh))
+}
+
+pub struct LayoutManager;
+
+impl LayoutManager {
+    pub fn get_layout(name: String) -> Box<Layout + 'static> {
+        box TallLayout { 
+            num_master: 1, 
+            increment_ratio: 0.03, 
+            ratio: 0.5 
+        }
+    }
 }
 
 pub trait Layout {

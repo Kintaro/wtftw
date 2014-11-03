@@ -22,7 +22,7 @@ impl Config {
     pub fn default() -> Config {
         Config {
             focus_follows_mouse: true,
-            focus_border_color:  0x00FF0000,
+            focus_border_color:  0x00FFB6B0,
             border_color:        0x00FFFFFF,
             border_width:        2,
             spacing:             10,

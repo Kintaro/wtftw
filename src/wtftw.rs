@@ -7,6 +7,7 @@ use core::Workspaces;
 use layout::Layout;
 use layout::TallLayout;
 use layout::tile;
+use window_manager::WindowManager;
 use window_system::Rectangle;
 use window_system::WindowSystem;
 use window_system::{
@@ -32,7 +33,10 @@ fn main() {
     let mut window_system = XlibWindowSystem::new();
     // Create a default configuration
     let mut config = Config::default();
+    // Create the actual window manager
+    let mut window_manager = WindowManager::new(&window_system, &config); 
 
+    // Output some initial information
     info!("WTFTW - Window Tiling For The Win");
     info!("Starting wtftw on {} screen(s)", window_system.get_number_of_screens());
 
@@ -40,37 +44,27 @@ fn main() {
         info!("Display {}: {}x{}", i, w, h);
     }
 
-    let mut workspaces = Workspaces::new(String::from_str("Tall"), config.tags, window_system.get_screen_infos());
-    let layout = TallLayout { num_master: 1, increment_ratio: 0.03, ratio: 0.5 }; 
-
+    // Enter the event loop and just listen for events
     loop {
         match window_system.get_event() {
             WindowCreated(window) => {
-                let r = window_system.get_screen_infos()[0];
-                window_system.show_window(window);
-                workspaces.current.workspace.add(window);
-
-                let screen = &workspaces.current;
-                let workspace = &screen.workspace;
-                let window_layout = layout.apply_layout(screen.screen_detail, &workspace.stack); 
-
-                for &(win, Rectangle(x, y, w, h)) in window_layout.iter() {
-                    window_system.resize_window(win, w - config.spacing, h - config.spacing);
-                    window_system.move_window(win, x + config.spacing / 2, y + config.spacing / 2);
-                    window_system.set_window_border_width(win, config.border_width);
+                if !window_manager.is_window_managed(window) {
+                    window_manager.manage(&mut window_system, window, &config);
                 }
-
-                debug!("Created window \"{}\"", window_system.get_window_name(window));
             },
             WindowDestroyed(window) => {
                 
             },
             Enter(window) => {
-                window_system.set_window_border_color(window, config.focus_border_color);
+                if config.focus_follows_mouse {
+                    window_system.set_window_border_color(window, config.focus_border_color);
+                }
                 debug!("Entered window \"{}\"", window_system.get_window_name(window));
             },
             Leave(window) => {
-                window_system.set_window_border_color(window, config.border_color);
+                if config.focus_follows_mouse {
+                    window_system.set_window_border_color(window, config.border_color);
+                }
                 debug!("Left window \"{}\"", window_system.get_window_name(window));
             },
             ButtonPressed(_, _, _, _, _) => {

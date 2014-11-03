@@ -34,6 +34,23 @@ impl<T: Clone> Stack<T> {
             .map(|x| x.clone())
             .collect()
     }
+
+    pub fn filter(&self, f: |&T| -> bool) -> Option<Stack<T>> {
+        let lrs : Vec<T> = (vec!(self.focus.clone())).iter()
+            .chain(self.down.iter())
+            .map(|x| x.clone())
+            .collect();
+
+        if lrs.len() == 0 {
+            Some(Stack {
+                focus: self.focus.clone(),
+                up:    self.up.iter().map(|x| x.clone()).filter(f).collect(),
+                down:  self.down.clone()
+            })
+        } else {
+            None
+        }
+    }
 }
 
 #[deriving(Clone)]
@@ -85,7 +102,7 @@ pub struct Workspaces {
     pub current:  Screen,
     pub visible:  Vec<Screen>,
     pub hidden:   Vec<Workspace>,
-    pub floating: TreeMap<uint, RationalRect>
+    pub floating: TreeMap<Window, RationalRect>
 }
 
 impl Workspaces {
@@ -160,5 +177,29 @@ impl Workspaces {
     /// swapped.
     pub fn greedy_view(&mut self, index: uint) {
 
+    }
+
+    pub fn sink(&mut self, window: Window) {
+        self.floating.remove(&window);
+    }
+
+    pub fn delete(&mut self, window: Window) {
+        self.delete_p(window);
+        self.sink(window);
+    }
+
+    pub fn delete_p(&mut self, window: Window) {
+        let hidden = self.hidden.iter()
+            .map(|workspace| { 
+                let mut w = workspace.clone();
+                if w.stack.is_some() {
+                    w.stack = w.clone().stack.unwrap().filter(|&x| x != window); 
+                }
+                workspace 
+            })
+            .map(|x| x.clone())
+            .collect();
+
+        self.hidden = hidden;
     }
 }
