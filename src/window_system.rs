@@ -17,6 +17,7 @@ pub enum WindowSystemEvent {
     /// for mousefollow focus.
     Leave(Window),
     ButtonPressed(Window, uint, uint, uint, uint),
+    KeyPressed(Window, uint, uint),
     /// The underlying event by xlib or wayland is unknown
     /// and can be ignored.
     UnknownEvent
@@ -45,6 +46,7 @@ pub trait WindowSystem {
     fn move_window(&mut self, window: Window, x: uint, height: uint);
     /// Map the window to the screen and show it
     fn show_window(&mut self, window: Window);
+    fn hide_window(&mut self, window: Window);
     /// Check if there are events pending
     fn event_pending(&self) -> bool;
     /// Get the next event from the queue

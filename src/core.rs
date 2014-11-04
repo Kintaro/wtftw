@@ -197,6 +197,7 @@ impl Workspaces {
     /// becomes the current screen. If it is in the visible list, it becomes
     /// current.
     pub fn view(&mut self, index: uint) {
+        debug!("Setting focus to {}", index);
         match self.visible.iter().position(|s| s.workspace.id == index) {
             Some(screen_pos) => {
                 let screen = self.visible[screen_pos].clone();

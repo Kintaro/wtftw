@@ -20,6 +20,7 @@ use self::xlib::{
     XEnterWindowEvent,
     XErrorEvent,
     XFetchName,
+    XKeyEvent,
     XLeaveWindowEvent,
     XMapRequestEvent,
     XMapWindow,
@@ -34,12 +35,14 @@ use self::xlib::{
     XSelectInput,
     XSetErrorHandler,
     XSync,
-    XUnmapEvent
+    XUnmapEvent,
+    XUnmapWindow,
 };
 use self::xinerama::{
     XineramaQueryScreens,
 };
 
+use std::collections::TreeSet;
 use std::os::env;
 use std::ptr::null_mut;
 use std::mem::transmute;
@@ -56,6 +59,7 @@ use window_system::{
     WindowDestroyed,
     WindowUnmapped,
     ButtonPressed,
+    KeyPressed,
     UnknownEvent
 };
 
@@ -100,7 +104,8 @@ extern fn error_handler(display: *mut Display, event: *mut XErrorEvent) -> c_int
 pub struct XlibWindowSystem {
     display: *mut Display,
     root:    Window,
-    event:   *mut c_void
+    event:   *mut c_void,
+    awaiting_unmap: TreeSet<Window>
 }
 
 impl XlibWindowSystem {
@@ -122,13 +127,14 @@ impl XlibWindowSystem {
 
             XSetErrorHandler(error_handler as *mut u8);
 
-            XSelectInput(display, root, 0x180034);
+            XSelectInput(display, root, 0x180037);
             XSync(display, 0);
 
             XlibWindowSystem {
                 display: display,
                 root:    root,
-                event:   malloc(256)
+                event:   malloc(256),
+                awaiting_unmap: TreeSet::new()
             }
         }
     }
@@ -136,7 +142,7 @@ impl XlibWindowSystem {
     fn get_event_as<T>(&self) -> &T {
         unsafe {
             let event_ptr : *const T = transmute(self.event);
-            let ref event = *event_ptr;
+            let ref event : T = *event_ptr;
             event
         }
     }
@@ -245,6 +251,13 @@ impl WindowSystem for XlibWindowSystem {
         }
     }
 
+    fn hide_window(&mut self, window: Window) {
+        self.awaiting_unmap.insert(window);
+        unsafe {
+            XUnmapWindow(self.display, window);
+        }
+    }
+
     fn event_pending(&self) -> bool {
         unsafe {
             XPending(self.display) != 0
@@ -266,7 +279,7 @@ impl WindowSystem for XlibWindowSystem {
             },
             MapRequest => {
                 let event : &XMapRequestEvent = self.get_event_as();
-                unsafe { XSelectInput(self.display, event.window, 0x000030); }
+                unsafe { XSelectInput(self.display, event.window, 0x000037); }
                 WindowCreated(event.window)
             },
             UnmapNotify => {
@@ -297,7 +310,11 @@ impl WindowSystem for XlibWindowSystem {
                 let event : &XButtonEvent = self.get_event_as();
                 ButtonPressed(event.window, event.state as uint, event.button as uint, 
                               event.x_root as uint, event.y_root as uint)
-            }
+            },
+            KeyPress => {
+                let event : &XKeyEvent = self.get_event_as();
+                KeyPressed(event.window, event.keycode as uint, event.state as uint)
+            },
             _  => {
                 UnknownEvent
             }

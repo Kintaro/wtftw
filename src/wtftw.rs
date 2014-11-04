@@ -10,6 +10,7 @@ use window_system::{
     ConfigurationRequest,
     Enter,
     Leave,
+    KeyPressed,
     WindowCreated,
     WindowDestroyed,
     WindowUnmapped,
@@ -68,6 +69,12 @@ fn main() {
                     window_system.set_window_border_color(window, config.border_color);
                 }
             },
+            KeyPressed(window, key, mask) => {
+                if mask & 4 != 0 && key >= 10 && key <= 18 && (key - 10) < config.tags.len() {
+                    window_manager.view(&mut window_system, key - 10, &config);
+                }
+                debug!("key = {}", key);
+            }
             _ => ()
         }
     }
