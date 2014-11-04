@@ -14,7 +14,9 @@ pub struct WindowManager {
 impl WindowManager {
     pub fn new(window_system: &WindowSystem, config: &Config) -> WindowManager {
         WindowManager {
-            workspaces: Workspaces::new(String::from_str("Tall"), config.tags.clone(), window_system.get_screen_infos())
+            workspaces: Workspaces::new(String::from_str("Tall"), 
+                                        config.tags.clone(), 
+                                        window_system.get_screen_infos())
         }
     }
 
@@ -22,11 +24,7 @@ impl WindowManager {
         false
     }
 
-    pub fn manage(&mut self, window_system: &mut WindowSystem, window: Window, config: &Config) {
-        let r = window_system.get_screen_infos()[0];
-        window_system.show_window(window);
-        self.workspaces.current.workspace.add(window);
-
+    pub fn reapply_layout(&mut self, window_system: &mut WindowSystem, config: &Config) {
         let screen = &self.workspaces.current;
         let workspace = &screen.workspace;
         let layout = LayoutManager::get_layout(workspace.layout.clone());
@@ -37,7 +35,20 @@ impl WindowManager {
             window_system.move_window(win, x, y);
             window_system.set_window_border_width(win, config.border_width);
         }
+    }
 
-        debug!("Created window \"{}\"", window_system.get_window_name(window));
+    pub fn manage(&mut self, window_system: &mut WindowSystem, window: Window, config: &Config) {
+        window_system.show_window(window);
+        self.workspaces.current.workspace.add(window);
+        self.reapply_layout(window_system, config);   
+        debug!("managing window \"{}\" ({})", window_system.get_window_name(window), window);
+    }
+
+    pub fn unmanage(&mut self, window_system: &mut WindowSystem, window: Window, config: &Config) {
+        if self.workspaces.contains(window) {
+            debug!("unmanaging window {}", window);
+            self.workspaces.delete(window);
+            self.reapply_layout(window_system, config);
+        }
     }
 }

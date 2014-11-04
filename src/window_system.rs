@@ -4,10 +4,12 @@ pub type Window = u64;
 pub struct Rectangle(pub uint, pub uint, pub uint, pub uint);
 
 pub enum WindowSystemEvent {
+    ConfigurationRequest(Window),
     /// A window has been created and needs to be managed.
     WindowCreated(Window),
     /// A window has been destroyed and needs to be unmanaged.
     WindowDestroyed(Window),
+    WindowUnmapped(Window, bool),
     /// The pointer has entered a window's area. Mostly used
     /// for mousefollow focus.
     Enter(Window),

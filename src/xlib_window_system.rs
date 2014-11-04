@@ -1,5 +1,5 @@
 #![allow(non_upper_case_globals)]
-
+#![allow(dead_code)]
 extern crate libc;
 extern crate xlib;
 extern crate xinerama;
@@ -9,20 +9,20 @@ use self::libc::funcs::c95::stdlib::malloc;
 use self::xlib::{
     Display,
     Window,
+    XConfigureRequestEvent,
     XButtonEvent,
-    XCrossingEvent,
     XSetWindowBorder,
     XSetWindowBorderWidth,
-    XDefaultRootWindow,
     XDefaultScreenOfDisplay,
+    XDestroyWindowEvent,
     XDisplayWidth,
     XDisplayHeight,
     XEnterWindowEvent,
+    XErrorEvent,
     XFetchName,
     XLeaveWindowEvent,
     XMapRequestEvent,
     XMapWindow,
-    XMotionEvent,
     XMoveWindow,
     XNextEvent,
     XOpenDisplay,
@@ -32,16 +32,15 @@ use self::xlib::{
     XRootWindowOfScreen,
     XScreenCount,
     XSelectInput,
+    XSetErrorHandler,
     XSync,
     XUnmapEvent
 };
 use self::xinerama::{
     XineramaQueryScreens,
-    XineramaScreenInfo
 };
 
 use std::os::env;
-use std::ptr::null;
 use std::ptr::null_mut;
 use std::mem::transmute;
 use std::mem::uninitialized;
@@ -50,10 +49,12 @@ use std::slice::raw::buf_as_slice;
 
 use window_system::{ Rectangle, WindowSystem, WindowSystemEvent };
 use window_system::{
+    ConfigurationRequest,
     Enter,
     Leave,
     WindowCreated,
     WindowDestroyed,
+    WindowUnmapped,
     ButtonPressed,
     UnknownEvent
 };
@@ -92,6 +93,10 @@ const ColormapNotify         : uint = 32;
 const ClientMessage          : uint = 33;
 const MappingNotify          : uint = 34;
 
+extern fn error_handler(display: *mut Display, event: *mut XErrorEvent) -> c_int {
+    return 0;
+}
+
 pub struct XlibWindowSystem {
     display: *mut Display,
     root:    Window,
@@ -114,6 +119,8 @@ impl XlibWindowSystem {
 
             let screen  = XDefaultScreenOfDisplay(display);
             let root    = XRootWindowOfScreen(screen);
+
+            XSetErrorHandler(error_handler as *mut u8);
 
             XSelectInput(display, root, 0x180034);
             XSync(display, 0);
@@ -246,13 +253,17 @@ impl WindowSystem for XlibWindowSystem {
 
     fn get_event(&mut self) -> WindowSystemEvent {
         unsafe {
-            XSync(self.display, 0);
+            //XSync(self.display, 0);
             XNextEvent(self.display, self.event);
         }
         
         let event_type : c_int = *self.get_event_as();
 
         match event_type as uint {
+            ConfigureRequest => {
+                let event : &XConfigureRequestEvent = self.get_event_as();
+                ConfigurationRequest(event.window)
+            },
             MapRequest => {
                 let event : &XMapRequestEvent = self.get_event_as();
                 unsafe { XSelectInput(self.display, event.window, 0x000030); }
@@ -260,6 +271,10 @@ impl WindowSystem for XlibWindowSystem {
             },
             UnmapNotify => {
                 let event : &XUnmapEvent = self.get_event_as();
+                WindowUnmapped(event.window, event.send_event > 0)
+            },
+            DestroyNotify => {
+                let event : &XDestroyWindowEvent = self.get_event_as();
                 WindowDestroyed(event.window)
             },
             EnterNotify => {
@@ -284,7 +299,6 @@ impl WindowSystem for XlibWindowSystem {
                               event.x_root as uint, event.y_root as uint)
             }
             _  => {
-                debug!("Unknown event {}", event_type);
                 UnknownEvent
             }
         }

@@ -1,18 +1,9 @@
-use config::Config;
 use core::Stack;
 use window_system::Window;
 use window_system::Rectangle;
 use window_manager::ScreenDetail;
-use window_manager::WindowManager;
 
 pub struct RationalRect(f32, f32, f32, f32);
-
-pub enum Resize {
-    Shrink,
-    Expand
-}
-
-struct IncreaseMasterClients(uint);
 
 pub fn tile(ratio: f32, screen: ScreenDetail, num_master: uint, num_windows: uint) -> Vec<Rectangle> {
     if num_windows <= num_master || num_master == 0 {

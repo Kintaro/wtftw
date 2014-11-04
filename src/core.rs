@@ -1,4 +1,5 @@
 use std::collections::TreeMap;
+use std::iter::AdditiveIterator;
 use window_manager::ScreenDetail;
 use window_system::Window;
 
@@ -12,7 +13,15 @@ pub struct Stack<T> {
     pub down:  Vec<T>
 }
 
-impl<T: Clone> Stack<T> {
+impl<T: Clone + Eq> Stack<T> {
+    pub fn new<T>(f: T, up: Vec<T>, down: Vec<T>) -> Stack<T> {
+        Stack {
+            focus: f,
+            up:    up,
+            down:  down
+        }
+    }
+
     pub fn from_element(t: T) -> Stack<T> {
         Stack {
             focus: t,
@@ -35,21 +44,40 @@ impl<T: Clone> Stack<T> {
             .collect()
     }
 
-    pub fn filter(&self, f: |&T| -> bool) -> Option<Stack<T>> {
+    pub fn filter<'r>(&self, f: |&T| : 'r -> bool) -> Option<Stack<T>> {
         let lrs : Vec<T> = (vec!(self.focus.clone())).iter()
             .chain(self.down.iter())
             .map(|x| x.clone())
+            .filter(|x| f(x))
             .collect();
 
-        if lrs.len() == 0 {
-            Some(Stack {
-                focus: self.focus.clone(),
-                up:    self.up.iter().map(|x| x.clone()).filter(f).collect(),
-                down:  self.down.clone()
-            })
+        if lrs.len() > 0 {
+            let first : T         = lrs.head().unwrap().clone();
+            let rest : Vec<T>     = lrs.iter().skip(1).map(|x| x.clone()).collect();
+            let filtered : Vec<T> = self.up.iter().map(|x| x.clone()).filter(f).map(|x| x.clone()).collect();
+            let stack : Stack<T>  = Stack::<T>::new(first, filtered, rest);
+
+            Some(stack)
         } else {
-            None
+            let filtered : Vec<T> = self.up.iter().map(|x| x.clone()).filter(f).collect();
+            if filtered.len() > 0 {
+                let first : T        = filtered.head().unwrap().clone();
+                let rest : Vec<T>    = filtered.iter().skip(1).map(|x| x.clone()).collect();
+                let stack : Stack<T> = Stack::<T>::new(first, rest, Vec::new());
+
+                Some(stack)
+            } else {
+                None
+            }
         }
+    }
+
+    pub fn len(&self) -> uint {
+        1 + self.up.len() + self.down.len()
+    }
+
+    pub fn contains(&self, window: T) -> bool {
+        self.focus == window || self.up.contains(&window) || self.down.contains(&window)
     }
 }
 
@@ -78,6 +106,20 @@ impl Workspace {
             _ => self.stack = Some(Stack::from_element(window))
         }
     }
+
+    pub fn len(&self) -> uint {
+        match self.stack {
+            Some(ref s) => s.len(),
+            _       => 0
+        }
+    }
+
+    pub fn contains(&self, window: Window) -> bool {
+        match self.stack {
+            Some(ref s) => s.contains(window),
+            _       => false
+        }
+    }
 }
 
 #[deriving(Clone)]
@@ -94,6 +136,14 @@ impl Screen {
             screen_id: screen_id,
             screen_detail: screen_detail
         }
+    }
+
+    pub fn contains(&self, window: Window) -> bool {
+        self.workspace.contains(window)
+    }
+
+    pub fn len(&self) -> uint {
+        self.workspace.len()
     }
 }
 
@@ -189,17 +239,35 @@ impl Workspaces {
     }
 
     pub fn delete_p(&mut self, window: Window) {
-        let hidden = self.hidden.iter()
-            .map(|workspace| { 
-                let mut w = workspace.clone();
-                if w.stack.is_some() {
-                    w.stack = w.clone().stack.unwrap().filter(|&x| x != window); 
-                }
-                workspace 
-            })
-            .map(|x| x.clone())
-            .collect();
+        self.hidden.iter_mut().fold((), |_, workspace| {
+            if workspace.stack.is_some() {
+                workspace.stack = workspace.clone().stack.unwrap().filter(|&x| x != window);
+            }
+        });
 
-        self.hidden = hidden;
+        self.visible.iter_mut().fold((), |_, screen| {
+            if screen.workspace.stack.is_some() {
+                screen.workspace.stack = screen.workspace.clone().stack.unwrap().filter(|&x| x != window);
+            }
+        });
+
+        self.current.workspace.stack = match self.current.workspace.stack {
+            Some(ref s) => s.filter(|&x| x != window),
+            _           => self.current.workspace.stack.clone()
+        };
+    }
+
+    pub fn len(&self) -> uint {
+        self.current.len() + 
+        self.visible.iter().map(|x| x.len()).sum() + 
+        self.hidden.iter().map(|x| x.len()).sum() +
+        self.floating.len()
+    }
+
+    pub fn contains(&self, window: Window) -> bool {
+        self.current.contains(window) ||
+        self.visible.iter().any(|x| x.contains(window)) ||
+        self.hidden.iter().any(|x| x.contains(window)) ||
+        self.floating.contains_key(&window)
     }
 }
