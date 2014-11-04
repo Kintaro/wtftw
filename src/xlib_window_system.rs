@@ -10,6 +10,7 @@ use self::xlib::{
     Display,
     Window,
     Screen,
+    XConfigureEvent,
     XConfigureRequestEvent,
     XButtonEvent,
     XSetWindowBorder,
@@ -37,6 +38,7 @@ use self::xlib::{
     XScreenCount,
     XSelectInput,
     XSetErrorHandler,
+    XSetInputFocus,
     XSync,
     XUnmapEvent,
     XUnmapWindow,
@@ -55,6 +57,7 @@ use std::slice::raw::buf_as_slice;
 
 use window_system::{ Rectangle, WindowSystem, WindowSystemEvent };
 use window_system::{
+    ConfigurationNotification,
     ConfigurationRequest,
     Enter,
     Leave,
@@ -101,7 +104,10 @@ const ClientMessage          : uint = 33;
 const MappingNotify          : uint = 34;
 
 extern fn error_handler(display: *mut Display, event: *mut XErrorEvent) -> c_int {
-    error!("error");
+    unsafe {
+        let ev : XErrorEvent = *event;
+        error!("error: {}", ev.request_code);
+    }
     return 0;
 }
 
@@ -155,6 +161,9 @@ impl XlibWindowSystem {
 }
 
 impl WindowSystem for XlibWindowSystem {
+    fn get_root(&self) -> Window {
+        self.root
+    }
     fn get_screen_infos(&self) -> Vec<Rectangle> {
         unsafe {
             let mut num : c_int = 0;
@@ -266,6 +275,12 @@ impl WindowSystem for XlibWindowSystem {
         }
     }
 
+    fn focus_window(&mut self, window: Window) {
+        unsafe {
+            XSetInputFocus(self.display, window, 1, 0);
+        }
+    }
+
     fn flush(&mut self) {
         unsafe {
             XFlush(self.display);
@@ -290,6 +305,10 @@ impl WindowSystem for XlibWindowSystem {
             ConfigureRequest => {
                 let event : &XConfigureRequestEvent = self.get_event_as();
                 ConfigurationRequest(event.window)
+            },
+            ConfigureNotify => {
+                let event : &XConfigureEvent = self.get_event_as();
+                ConfigurationNotification(event.window)
             },
             MapRequest => {
                 let event : &XMapRequestEvent = self.get_event_as();

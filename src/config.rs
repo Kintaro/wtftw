@@ -13,6 +13,8 @@ pub struct Config {
     pub spacing: uint,
     /// Default terminal to start
     pub terminal: (String, String),
+    /// Path to the logfile
+    pub logfile: String,
     /// Default tags for workspaces
     pub tags: Vec<String>
 }
@@ -27,9 +29,12 @@ impl Config {
             border_width:        2,
             spacing:             10,
             terminal:            (String::from_str("xterm"), String::from_str("-fg White -bg Black")),
+            logfile:             String::from_str("/home/wollwage/wtftw.log"),
             tags:                vec!(
-                                     String::from_str("1"), 
-                                     String::from_str("2"))
+                                     String::from_str("1: term"), 
+                                     String::from_str("2: web"),
+                                     String::from_str("3: code"),
+                                     String::from_str("4 media"))
 
         }
     }

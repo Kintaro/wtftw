@@ -3,7 +3,16 @@ pub type Window = u64;
 #[deriving(Show, Clone)]
 pub struct Rectangle(pub uint, pub uint, pub uint, pub uint);
 
+impl Rectangle {
+    pub fn is_inside(&self, x: uint, y: uint) -> bool {
+        let &Rectangle(rx, ry, rw, rh) = self;
+
+        x >= rx && x <= rx + rw && y >= ry && y <= ry + rh 
+    }
+}
+
 pub enum WindowSystemEvent {
+    ConfigurationNotification(Window),
     ConfigurationRequest(Window),
     /// A window has been created and needs to be managed.
     WindowCreated(Window),
@@ -24,6 +33,7 @@ pub enum WindowSystemEvent {
 }
 
 pub trait WindowSystem {
+    fn get_root(&self) -> Window;
     /// Retrieve geometry infos over all screens
     fn get_screen_infos(&self) -> Vec<Rectangle>;
     /// Get the number of physical displays
@@ -47,6 +57,7 @@ pub trait WindowSystem {
     /// Map the window to the screen and show it
     fn show_window(&mut self, window: Window);
     fn hide_window(&mut self, window: Window);
+    fn focus_window(&mut self, window: Window);
     /// Check if there are events pending
     fn event_pending(&self) -> bool;
     /// Get the next event from the queue
