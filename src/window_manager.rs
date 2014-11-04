@@ -21,7 +21,7 @@ impl WindowManager {
     }
 
     pub fn is_window_managed(&self, window: Window) -> bool {
-        false
+        self.workspaces.contains(window)
     }
 
     pub fn view(&mut self, window_system: &mut WindowSystem, index: uint, config: &Config) {
@@ -56,7 +56,6 @@ impl WindowManager {
     }
 
     pub fn manage(&mut self, window_system: &mut WindowSystem, window: Window, config: &Config) {
-        window_system.show_window(window);
         self.workspaces.current.workspace.add(window);
         self.reapply_layout(window_system, config);   
         debug!("managing window \"{}\" ({})", window_system.get_window_name(window), window);

@@ -138,10 +138,14 @@ impl Screen {
         }
     }
 
+    /// Checks if the screen's workspace contains
+    /// the given window
     pub fn contains(&self, window: Window) -> bool {
         self.workspace.contains(window)
     }
 
+    /// Returns the number of windows in the
+    /// screen's workspace
     pub fn len(&self) -> uint {
         self.workspace.len()
     }

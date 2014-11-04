@@ -127,7 +127,7 @@ impl XlibWindowSystem {
 
             XSetErrorHandler(error_handler as *mut u8);
 
-            XSelectInput(display, root, 0x180037);
+            XSelectInput(display, root, 0x180034);
             XSync(display, 0);
 
             XlibWindowSystem {
@@ -269,7 +269,7 @@ impl WindowSystem for XlibWindowSystem {
             //XSync(self.display, 0);
             XNextEvent(self.display, self.event);
         }
-        
+
         let event_type : c_int = *self.get_event_as();
 
         match event_type as uint {
@@ -279,7 +279,7 @@ impl WindowSystem for XlibWindowSystem {
             },
             MapRequest => {
                 let event : &XMapRequestEvent = self.get_event_as();
-                unsafe { XSelectInput(self.display, event.window, 0x000037); }
+                unsafe { XSelectInput(self.display, event.window, 0x180034); }
                 WindowCreated(event.window)
             },
             UnmapNotify => {

@@ -52,28 +52,29 @@ fn main() {
                 }
             },
             WindowUnmapped(window, synthetic) => {
-                if synthetic {
+                if synthetic && window_manager.is_window_managed(window) {
                     window_manager.unmanage(&mut window_system, window, &config);
                 }
             },
             WindowDestroyed(window) => {
-                window_manager.unmanage(&mut window_system, window, &config); 
+                if window_manager.is_window_managed(window) {
+                    window_manager.unmanage(&mut window_system, window, &config); 
+                }
             },
             Enter(window) => {
-                if config.focus_follows_mouse {
+                if config.focus_follows_mouse && window_manager.is_window_managed(window) {
                     window_system.set_window_border_color(window, config.focus_border_color);
                 }
             },
             Leave(window) => {
-                if config.focus_follows_mouse {
+                if config.focus_follows_mouse && window_manager.is_window_managed(window) {
                     window_system.set_window_border_color(window, config.border_color);
                 }
             },
-            KeyPressed(window, key, mask) => {
+            KeyPressed(_, key, mask) => {
                 if mask & 4 != 0 && key >= 10 && key <= 18 && (key - 10) < config.tags.len() {
                     window_manager.view(&mut window_system, key - 10, &config);
                 }
-                debug!("key = {}", key);
             }
             _ => ()
         }
