@@ -1,3 +1,5 @@
+use std::os::homedir;
+
 /// Common configuration options for the window manager.
 pub struct Config {
     /// Whether focus follows mouse movements or
@@ -29,7 +31,7 @@ impl Config {
             border_width:        2,
             spacing:             10,
             terminal:            (String::from_str("xterm"), String::from_str("-fg White -bg Black")),
-            logfile:             String::from_str("/home/wollwage/wtftw.log"),
+            logfile:             format!("{}/.wtftw.log", homedir().unwrap().to_c_str()),
             tags:                vec!(
                                      String::from_str("1: term"), 
                                      String::from_str("2: web"),
