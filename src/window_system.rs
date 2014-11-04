@@ -51,6 +51,7 @@ pub trait WindowSystem {
     fn event_pending(&self) -> bool;
     /// Get the next event from the queue
     fn get_event(&mut self) -> WindowSystemEvent;
+    fn flush(&mut self);
 }
 
 

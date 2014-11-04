@@ -16,6 +16,7 @@ use window_system::{
     WindowUnmapped,
 };
 use xlib_window_system::XlibWindowSystem;
+use std::io::process::Command;
 
 pub mod config;
 pub mod core;
@@ -72,8 +73,21 @@ fn main() {
                 }
             },
             KeyPressed(_, key, mask) => {
-                if mask & 4 != 0 && key >= 10 && key <= 18 && (key - 10) < config.tags.len() {
+                if mask & 8 != 0 && key >= 10 && key <= 18 && (key - 10) < config.tags.len() {
+                    debug!("switching workspace");
                     window_manager.view(&mut window_system, key - 10, &config);
+                }
+
+                if mask & 9 == 9 && key == 36 {
+                    let (terminal, args) = config.terminal.clone();
+                    let arguments : Vec<String> = args.split(' ').map(String::from_str).collect();
+                    spawn(proc() {
+                        Command::new(terminal).args(arguments.as_slice()).detached().spawn();
+                    });
+                }
+
+                if mask & 9 == 9 && key == 24 {
+                    break;
                 }
             }
             _ => ()

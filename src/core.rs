@@ -202,6 +202,10 @@ impl Workspaces {
     /// current.
     pub fn view(&mut self, index: uint) {
         debug!("Setting focus to {}", index);
+        if self.current.workspace.id == index {
+            return;
+        }
+
         match self.visible.iter().position(|s| s.workspace.id == index) {
             Some(screen_pos) => {
                 let screen = self.visible[screen_pos].clone();

@@ -34,15 +34,7 @@ impl WindowManager {
         let workspace = &screen.workspace;
         let layout = LayoutManager::get_layout(workspace.layout.clone());
         let window_layout = layout.apply_layout(screen.screen_detail, &workspace.stack); 
-
-        for &(win, Rectangle(x, y, w, h)) in window_layout.iter() {
-            debug!("Show window {}", win);
-            window_system.show_window(win);
-            window_system.resize_window(win, w - config.border_width * 2, h - config.border_width * 2);
-            window_system.move_window(win, x, y);
-            window_system.set_window_border_width(win, config.border_width);
-        }
-
+        
         for workspace in self.workspaces.hidden.iter() {
             match workspace.stack {
                 Some(ref s) => {
@@ -53,6 +45,17 @@ impl WindowManager {
                 _ => ()
             }
         }
+
+        for &(win, Rectangle(x, y, w, h)) in window_layout.iter() {
+            debug!("Show window {} ({})", win, window_system.get_window_name(win));
+            window_system.show_window(win);
+            window_system.resize_window(win, w - config.border_width * 2, h - config.border_width * 2);
+            window_system.move_window(win, x, y);
+            window_system.set_window_border_width(win, config.border_width);
+        }
+
+        
+        window_system.flush();
     }
 
     pub fn manage(&mut self, window_system: &mut WindowSystem, window: Window, config: &Config) {

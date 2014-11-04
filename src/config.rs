@@ -12,7 +12,7 @@ pub struct Config {
     /// Default spacing between windows
     pub spacing: uint,
     /// Default terminal to start
-    pub terminal: String,
+    pub terminal: (String, String),
     /// Default tags for workspaces
     pub tags: Vec<String>
 }
@@ -26,7 +26,7 @@ impl Config {
             border_color:        0x00FFB6B0,
             border_width:        2,
             spacing:             10,
-            terminal:            String::from_str("xterm"),
+            terminal:            (String::from_str("xterm"), String::from_str("-fg White -bg Black")),
             tags:                vec!(
                                      String::from_str("1"), 
                                      String::from_str("2"))

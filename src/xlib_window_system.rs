@@ -9,6 +9,7 @@ use self::libc::funcs::c95::stdlib::malloc;
 use self::xlib::{
     Display,
     Window,
+    Screen,
     XConfigureRequestEvent,
     XButtonEvent,
     XSetWindowBorder,
@@ -20,7 +21,9 @@ use self::xlib::{
     XEnterWindowEvent,
     XErrorEvent,
     XFetchName,
+    XFlush,
     XKeyEvent,
+    XIconifyWindow,
     XLeaveWindowEvent,
     XMapRequestEvent,
     XMapWindow,
@@ -98,11 +101,13 @@ const ClientMessage          : uint = 33;
 const MappingNotify          : uint = 34;
 
 extern fn error_handler(display: *mut Display, event: *mut XErrorEvent) -> c_int {
+    error!("error");
     return 0;
 }
 
 pub struct XlibWindowSystem {
     display: *mut Display,
+    screen:  *mut Screen,
     root:    Window,
     event:   *mut c_void,
     awaiting_unmap: TreeSet<Window>
@@ -127,11 +132,12 @@ impl XlibWindowSystem {
 
             XSetErrorHandler(error_handler as *mut u8);
 
-            XSelectInput(display, root, 0x180034);
+            XSelectInput(display, root, 0x1A0035);
             XSync(display, 0);
 
             XlibWindowSystem {
                 display: display,
+                screen:  screen,
                 root:    root,
                 event:   malloc(256),
                 awaiting_unmap: TreeSet::new()
@@ -229,7 +235,7 @@ impl WindowSystem for XlibWindowSystem {
     fn set_window_border_color(&mut self, window: Window, border_color: uint) {
         if window == self.root { return; }
         unsafe {
-            XSetWindowBorder(self.display, window, border_color as Window);   
+            XSetWindowBorder(self.display, window, border_color as u64);   
         }
     }
 
@@ -255,6 +261,14 @@ impl WindowSystem for XlibWindowSystem {
         self.awaiting_unmap.insert(window);
         unsafe {
             XUnmapWindow(self.display, window);
+            XIconifyWindow(self.display, window, 0);
+            XSelectInput(self.display, window, 0x000031);
+        }
+    }
+
+    fn flush(&mut self) {
+        unsafe {
+            XFlush(self.display);
         }
     }
 
@@ -279,7 +293,7 @@ impl WindowSystem for XlibWindowSystem {
             },
             MapRequest => {
                 let event : &XMapRequestEvent = self.get_event_as();
-                unsafe { XSelectInput(self.display, event.window, 0x180030); }
+                unsafe { XSelectInput(self.display, event.window, 0x000031); }
                 WindowCreated(event.window)
             },
             UnmapNotify => {
