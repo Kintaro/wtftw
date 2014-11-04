@@ -279,7 +279,7 @@ impl WindowSystem for XlibWindowSystem {
             },
             MapRequest => {
                 let event : &XMapRequestEvent = self.get_event_as();
-                unsafe { XSelectInput(self.display, event.window, 0x180034); }
+                unsafe { XSelectInput(self.display, event.window, 0x180030); }
                 WindowCreated(event.window)
             },
             UnmapNotify => {
