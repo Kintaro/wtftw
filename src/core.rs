@@ -168,6 +168,7 @@ impl Workspaces {
     ///
     /// Xinerama: Virtual workspaces are assigned to physical screens, starting at 0.
     pub fn new(layout: String, tags: Vec<String>, screens: Vec<ScreenDetail>) -> Workspaces {
+        debug!("creating new workspaces with {} screen(s)", screens.len());
         let workspaces : Vec<Workspace> = tags.iter()
             .enumerate()
             .map(|(id, tag)| Workspace::new(id, tag.clone(), layout.clone(), None))

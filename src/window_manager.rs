@@ -12,6 +12,7 @@ pub struct WindowManager {
 }
 
 impl WindowManager {
+    /// Create a new window manager for the given window system and configuration
     pub fn new(window_system: &WindowSystem, config: &Config) -> WindowManager {
         WindowManager {
             workspaces: Workspaces::new(String::from_str("Tall"), 
@@ -20,21 +21,28 @@ impl WindowManager {
         }
     }
 
+    /// Checks if the given window is already managed by the WindowManager
     pub fn is_window_managed(&self, window: Window) -> bool {
         self.workspaces.contains(window)
     }
 
+    /// Switch to the workspace given by index. If index is out of bounds, 
+    /// just do nothing and return.
+    /// Then, reapply the layout to show the changes.
     pub fn view(&mut self, window_system: &mut WindowSystem, index: uint, config: &Config) {
         self.workspaces.view(index);
         self.reapply_layout(window_system, config);
     }
 
+    /// Reapply the layout to the whole workspace.
     pub fn reapply_layout(&mut self, window_system: &mut WindowSystem, config: &Config) {
         let screen = &self.workspaces.current;
         let workspace = &screen.workspace;
         let layout = LayoutManager::get_layout(workspace.layout.clone());
         let window_layout = layout.apply_layout(screen.screen_detail, &workspace.stack); 
         
+        // First, hide all the windows that are marked as hidden now,
+        // by unmapping them from the server.
         for workspace in self.workspaces.hidden.iter() {
             match workspace.stack {
                 Some(ref s) => {
@@ -46,6 +54,7 @@ impl WindowManager {
             }
         }
 
+        // Then, show, place and resize all now visible windows.
         for &(win, Rectangle(x, y, w, h)) in window_layout.iter() {
             debug!("Show window {} ({})", win, window_system.get_window_name(win));
             window_system.show_window(win);
@@ -53,8 +62,8 @@ impl WindowManager {
             window_system.move_window(win, x, y);
             window_system.set_window_border_width(win, config.border_width);
         }
-
         
+        // Force a redraw on all windows.
         window_system.flush();
     }
 

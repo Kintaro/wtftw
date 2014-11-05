@@ -42,10 +42,10 @@ fn main() {
 
     // Output some initial information
     info!("WTFTW - Window Tiling For The Win");
-    info!("Starting wtftw on {} screen(s)", window_system.get_number_of_screens());
+    info!("Starting wtftw on {} screen(s)", window_system.get_screen_infos().len());
 
-    for (i, &Rectangle(_, _, w, h)) in window_system.get_screen_infos().iter().enumerate() {
-        debug!("Display {}: {}x{}", i, w, h);
+    for (i, &Rectangle(x, y, w, h)) in window_system.get_screen_infos().iter().enumerate() {
+        debug!("Display {}: {}x{} ({}, {})", i, w, h, x, y);
     }
 
     // Enter the event loop and just listen for events
@@ -59,8 +59,8 @@ fn main() {
                     info!("WTFTW - Window Tiling For The Win");
                     info!("Starting wtftw on {} screen(s)", window_system.get_number_of_screens());
 
-                    for (i, &Rectangle(_, _, w, h)) in window_system.get_screen_infos().iter().enumerate() {
-                        debug!("Display {}: {}x{}", i, w, h);
+                    for (i, &Rectangle(x, y, w, h)) in window_system.get_screen_infos().iter().enumerate() {
+                        debug!("Display {}: {}x{} ({}, {})", i, w, h, x, y);
                     }
                 }
             },
