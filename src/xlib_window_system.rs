@@ -314,7 +314,6 @@ impl WindowSystem for XlibWindowSystem {
 
     fn get_event(&mut self) -> WindowSystemEvent {
         unsafe {
-            //XSync(self.display, 0);
             XNextEvent(self.display, self.event);
         }
 

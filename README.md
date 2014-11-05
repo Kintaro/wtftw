@@ -28,3 +28,23 @@ Xnest -geometry 800x600+0+0 :1 &
 DISPLAY=:1 ./target/wtftw &
 DISPLAY=:1 thunar &
 ```
+
+## Commands
+
+So far, the commands are hardcoded.
+
+### Switch workspace
+```
+ALT+num
+```
+
+### Open terminal
+```
+ALT+SHIFT+Enter
+```
+
+### Run program
+```
+ALT+SHIFT+p
+```
+You'll need to install gmrun for this
