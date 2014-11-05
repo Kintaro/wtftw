@@ -1,10 +1,10 @@
 pub type Window = u64;
 
 #[deriving(Show, Clone)]
-pub struct Rectangle(pub uint, pub uint, pub uint, pub uint);
+pub struct Rectangle(pub u32, pub u32, pub u32, pub u32);
 
 impl Rectangle {
-    pub fn is_inside(&self, x: uint, y: uint) -> bool {
+    pub fn is_inside(&self, x: u32, y: u32) -> bool {
         let &Rectangle(rx, ry, rw, rh) = self;
 
         x >= rx && x <= rx + rw && y >= ry && y <= ry + rh 
@@ -12,13 +12,13 @@ impl Rectangle {
 }
 
 pub struct WindowChanges {
-    pub x: uint,
-    pub y: uint,
-    pub width: uint,
-    pub height: uint,
-    pub border_width: uint,
+    pub x: u32,
+    pub y: u32,
+    pub width: u32,
+    pub height: u32,
+    pub border_width: u32,
     pub sibling: Window,
-    pub stack_mode: uint,
+    pub stack_mode: u32,
 }
 
 pub enum WindowSystemEvent {
@@ -35,8 +35,8 @@ pub enum WindowSystemEvent {
     /// The pointer has left a window's area. Mostly used
     /// for mousefollow focus.
     Leave(Window),
-    ButtonPressed(Window, uint, uint, uint, uint),
-    KeyPressed(Window, uint, uint),
+    ButtonPressed(Window, u32, u32, u32, u32),
+    KeyPressed(Window, u32, u32),
     ClientMessageEvent(Window),
     /// The underlying event by xlib or wayland is unknown
     /// and can be ignored.
@@ -58,13 +58,13 @@ pub trait WindowSystem {
     /// Get a list of all windows
     fn get_windows(&self) -> Vec<Window>;
     /// Set the given window's border width
-    fn set_window_border_width(&mut self, window: Window, border_width: uint);
+    fn set_window_border_width(&mut self, window: Window, border_width: u32);
     /// Set the given window's border color
-    fn set_window_border_color(&mut self, window: Window, border_color: uint);
+    fn set_window_border_color(&mut self, window: Window, border_color: u32);
     /// Resize the window to the given dimensions
-    fn resize_window(&mut self, window: Window, width: uint, height: uint);
+    fn resize_window(&mut self, window: Window, width: u32, height: u32);
     /// Move the window's top left corner to the given coordinates
-    fn move_window(&mut self, window: Window, x: uint, height: uint);
+    fn move_window(&mut self, window: Window, x: u32, height: u32);
     /// Map the window to the screen and show it
     fn show_window(&mut self, window: Window);
     fn hide_window(&mut self, window: Window);

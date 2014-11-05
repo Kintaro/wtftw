@@ -31,7 +31,7 @@ impl WindowManager {
     /// Switch to the workspace given by index. If index is out of bounds, 
     /// just do nothing and return.
     /// Then, reapply the layout to show the changes.
-    pub fn view(&mut self, window_system: &mut WindowSystem, index: uint, config: &Config) {
+    pub fn view(&mut self, window_system: &mut WindowSystem, index: u32, config: &Config) {
         self.workspaces.view(index);
         self.reapply_layout(window_system, config);
     }

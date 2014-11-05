@@ -177,18 +177,18 @@ impl WindowSystem for XlibWindowSystem {
             // dimensions and "emulate" xinerama.
             if num == 0 {
                 return vec!(Rectangle(0, 0, 
-                                      self.get_display_width(0) as uint, 
-                                      self.get_display_height(0) as uint));
+                                      self.get_display_width(0), 
+                                      self.get_display_height(0)));
             }
             
             buf_as_slice(screen_ptr, num as uint, |x| {
                 let mut result : Vec<Rectangle> = Vec::new();
                 for &screen_info in x.iter() {
                     result.push(Rectangle(
-                            screen_info.x_org as uint,
-                            screen_info.y_org as uint,
-                            screen_info.width as uint,
-                            screen_info.height as uint));
+                            screen_info.x_org as u32,
+                            screen_info.y_org as u32,
+                            screen_info.width as u32,
+                            screen_info.height as u32));
                 }
                 result
             })
@@ -238,27 +238,27 @@ impl WindowSystem for XlibWindowSystem {
         }
     }
 
-    fn set_window_border_width(&mut self, window: Window, border_width: uint) {
+    fn set_window_border_width(&mut self, window: Window, border_width: u32) {
         if window == self.root { return; }
         unsafe {
-            XSetWindowBorderWidth(self.display, window, border_width as u32); 
+            XSetWindowBorderWidth(self.display, window, border_width); 
         }
     }
 
-    fn set_window_border_color(&mut self, window: Window, border_color: uint) {
+    fn set_window_border_color(&mut self, window: Window, border_color: u32) {
         if window == self.root { return; }
         unsafe {
             XSetWindowBorder(self.display, window, border_color as u64);   
         }
     }
 
-    fn resize_window(&mut self, window: Window, width: uint, height: uint) {
+    fn resize_window(&mut self, window: Window, width: u32, height: u32) {
         unsafe {
-            XResizeWindow(self.display, window, width as u32, height as u32);
+            XResizeWindow(self.display, window, width, height);
         }
     }
 
-    fn move_window(&mut self, window: Window, x: uint, y: uint) {
+    fn move_window(&mut self, window: Window, x: u32, y: u32) {
         unsafe {
             XMoveWindow(self.display, window, x as i32, y as i32);
         }
@@ -327,13 +327,13 @@ impl WindowSystem for XlibWindowSystem {
             ConfigureRequest => {
                 let event : &XConfigureRequestEvent = self.get_event_as();
                 let window_changes = WindowChanges {
-                    x: event.x as uint,
-                    y: event.y as uint,
-                    width: event.width as uint,
-                    height: event.height as uint,
-                    border_width: event.border_width as uint,
+                    x: event.x as u32,
+                    y: event.y as u32,
+                    width: event.width as u32,
+                    height: event.height as u32,
+                    border_width: event.border_width as u32,
                     sibling: event.above as Window,
-                    stack_mode: event.detail as uint
+                    stack_mode: event.detail as u32
                 };
                 ConfigurationRequest(event.window, window_changes, event.value_mask)
             },
@@ -372,12 +372,12 @@ impl WindowSystem for XlibWindowSystem {
             },
             ButtonPress => {
                 let event : &XButtonEvent = self.get_event_as();
-                ButtonPressed(event.window, event.state as uint, event.button as uint, 
-                              event.x_root as uint, event.y_root as uint)
+                ButtonPressed(event.window, event.state, event.button, 
+                              event.x_root as u32, event.y_root as u32)
             },
             KeyPress => {
                 let event : &XKeyEvent = self.get_event_as();
-                KeyPressed(event.window, event.keycode as uint, event.state as uint)
+                KeyPressed(event.window, event.keycode as u32, event.state as u32)
             },
             _  => {
                 debug!("unknown event {}", event_type);

@@ -201,13 +201,13 @@ impl Workspaces {
     /// Xinerama: If the workspace is not visible on any Xinerama screen, it
     /// becomes the current screen. If it is in the visible list, it becomes
     /// current.
-    pub fn view(&mut self, index: uint) {
+    pub fn view(&mut self, index: u32) {
         debug!("Setting focus to {}", index);
-        if self.current.workspace.id == index {
+        if self.current.workspace.id == index as uint {
             return;
         }
 
-        match self.visible.iter().position(|s| s.workspace.id == index) {
+        match self.visible.iter().position(|s| s.workspace.id == index as uint) {
             Some(screen_pos) => {
                 let screen = self.visible[screen_pos].clone();
                 self.visible.remove(screen_pos);
@@ -218,7 +218,7 @@ impl Workspaces {
             _ => ()
         }
 
-        match self.hidden.iter().position(|w| w.id == index) {
+        match self.hidden.iter().position(|w| w.id == index as uint) {
             Some(workspace_pos) => {
                 let current_workspace = self.current.workspace.clone();
                 self.current.workspace = self.hidden[workspace_pos].clone();

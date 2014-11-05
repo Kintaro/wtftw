@@ -99,8 +99,8 @@ fn main() {
                 }
             },
             KeyPressed(_, key, mask) => {
-                if mask & 8 != 0 && key >= 10 && key <= 18 && (key - 10) < config.tags.len() {
-                    debug!("switching workspace to {}", config.tags[key - 10].clone());
+                if mask & 8 != 0 && key >= 10 && key <= 18 && (key - 10) < config.tags.len() as u32 {
+                    debug!("switching workspace to {}", config.tags[key as uint - 10].clone());
                     window_manager.view(&mut window_system, key - 10, &config);
                 }
 

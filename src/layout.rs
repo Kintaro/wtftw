@@ -5,7 +5,7 @@ use window_manager::ScreenDetail;
 
 pub struct RationalRect(f32, f32, f32, f32);
 
-pub fn tile(ratio: f32, screen: ScreenDetail, num_master: uint, num_windows: uint) -> Vec<Rectangle> {
+pub fn tile(ratio: f32, screen: ScreenDetail, num_master: u32, num_windows: u32) -> Vec<Rectangle> {
     if num_windows <= num_master || num_master == 0 {
         split_vertically(num_windows, screen)
     } else {
@@ -16,7 +16,7 @@ pub fn tile(ratio: f32, screen: ScreenDetail, num_master: uint, num_windows: uin
     }
 }
 
-pub fn split_vertically(num: uint, screen: ScreenDetail) -> Vec<Rectangle> {
+pub fn split_vertically(num: u32, screen: ScreenDetail) -> Vec<Rectangle> {
     if num < 2 {
         return vec!(screen);
     }
@@ -31,7 +31,7 @@ pub fn split_vertically(num: uint, screen: ScreenDetail) -> Vec<Rectangle> {
 
 pub fn split_horizontally_by(ratio: f32, screen: ScreenDetail) -> (Rectangle, Rectangle) {
     let Rectangle(sx, sy, sw, sh) = screen;
-    let leftw = (sw as f32 * ratio).floor() as uint;
+    let leftw = (sw as f32 * ratio).floor() as u32;
 
     (Rectangle(sx, sy, leftw, sh), Rectangle(sx + leftw, sy, sw - leftw, sh))
 }
@@ -53,7 +53,7 @@ pub trait Layout {
 }
 
 pub struct TallLayout {
-    pub num_master: uint,
+    pub num_master: u32,
     pub increment_ratio: f32,
     pub ratio: f32
 }
@@ -65,7 +65,7 @@ impl Layout for TallLayout {
                 debug!("Applying TallLayout to {} windows", s.integrate().len());
                 let ws = s.integrate();
                 ws.iter()
-                    .zip(tile(self.ratio, screen, self.num_master, ws.len()).iter())
+                    .zip(tile(self.ratio, screen, self.num_master, ws.len() as u32).iter())
                     .map(|(&x, &y)| (x, y))
                     .collect()
             },

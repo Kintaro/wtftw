@@ -6,13 +6,13 @@ pub struct Config {
     /// only click events and keyboard movements.
     pub focus_follows_mouse: bool,
     /// Border color for focused windows.
-    pub focus_border_color: uint,
+    pub focus_border_color: u32,
     /// Border color for unfocused windows.
-    pub border_color: uint,
+    pub border_color: u32,
     /// Border width. This is the same for both, focused and unfocused.
-    pub border_width: uint,
+    pub border_width: u32,
     /// Default spacing between windows
-    pub spacing: uint,
+    pub spacing: u32,
     /// Default terminal to start
     pub terminal: (String, String),
     /// Path to the logfile
