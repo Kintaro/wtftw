@@ -8,6 +8,7 @@ use window_manager::WindowManager;
 use window_system::Rectangle;
 use window_system::WindowSystem;
 use window_system::{
+    ClientMessageEvent,
     ConfigurationNotification,
     ConfigurationRequest,
     Enter,
@@ -51,6 +52,8 @@ fn main() {
     // Enter the event loop and just listen for events
     loop {
         match window_system.get_event() {
+            ClientMessageEvent(window) => {
+            },
             ConfigurationNotification(window) => {
                 if window_system.get_root() == window {
                     debug!("X configuration changed. Rescreen");
@@ -62,9 +65,12 @@ fn main() {
                     for (i, &Rectangle(x, y, w, h)) in window_system.get_screen_infos().iter().enumerate() {
                         debug!("Display {}: {}x{} ({}, {})", i, w, h, x, y);
                     }
+
+                    window_manager.rescreen(&mut window_system, &config);
                 }
             },
-            ConfigurationRequest(window) => {
+            ConfigurationRequest(window, window_changes, mask) => {
+                window_system.configure_window(window, window_changes, mask);
             },
             WindowCreated(window) => {
                 if !window_manager.is_window_managed(window) {

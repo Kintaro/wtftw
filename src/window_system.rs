@@ -11,9 +11,19 @@ impl Rectangle {
     }
 }
 
+pub struct WindowChanges {
+    pub x: uint,
+    pub y: uint,
+    pub width: uint,
+    pub height: uint,
+    pub border_width: uint,
+    pub sibling: Window,
+    pub stack_mode: uint,
+}
+
 pub enum WindowSystemEvent {
     ConfigurationNotification(Window),
-    ConfigurationRequest(Window),
+    ConfigurationRequest(Window, WindowChanges, u64),
     /// A window has been created and needs to be managed.
     WindowCreated(Window),
     /// A window has been destroyed and needs to be unmanaged.
@@ -27,6 +37,7 @@ pub enum WindowSystemEvent {
     Leave(Window),
     ButtonPressed(Window, uint, uint, uint, uint),
     KeyPressed(Window, uint, uint),
+    ClientMessageEvent(Window),
     /// The underlying event by xlib or wayland is unknown
     /// and can be ignored.
     UnknownEvent
@@ -58,6 +69,7 @@ pub trait WindowSystem {
     fn show_window(&mut self, window: Window);
     fn hide_window(&mut self, window: Window);
     fn focus_window(&mut self, window: Window);
+    fn configure_window(&mut self, window: Window, window_changes: WindowChanges, mask: u64);
     /// Check if there are events pending
     fn event_pending(&self) -> bool;
     /// Get the next event from the queue

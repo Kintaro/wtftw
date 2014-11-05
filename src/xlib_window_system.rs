@@ -10,8 +10,10 @@ use self::xlib::{
     Display,
     Window,
     Screen,
+    XClientMessageEvent,
     XConfigureEvent,
     XConfigureRequestEvent,
+    XConfigureWindow,
     XButtonEvent,
     XSetWindowBorder,
     XSetWindowBorderWidth,
@@ -42,6 +44,7 @@ use self::xlib::{
     XSync,
     XUnmapEvent,
     XUnmapWindow,
+    XWindowChanges,
 };
 use self::xinerama::{
     XineramaQueryScreens,
@@ -55,8 +58,9 @@ use std::mem::uninitialized;
 use std::str::raw::c_str_to_static_slice;
 use std::slice::raw::buf_as_slice;
 
-use window_system::{ Rectangle, WindowSystem, WindowSystemEvent };
+use window_system::{ Rectangle, WindowSystem, WindowSystemEvent, WindowChanges };
 use window_system::{
+    ClientMessageEvent,
     ConfigurationNotification,
     ConfigurationRequest,
     Enter,
@@ -281,6 +285,21 @@ impl WindowSystem for XlibWindowSystem {
         }
     }
 
+    fn configure_window(&mut self, window: Window, window_changes: WindowChanges, mask: u64) {
+        unsafe {
+            let mut xlib_window_changes = XWindowChanges {
+                x: window_changes.x as i32,
+                y: window_changes.y as i32,
+                width: window_changes.width as i32,
+                height: window_changes.height as i32,
+                border_width: window_changes.border_width as i32,
+                sibling: window_changes.sibling,
+                stack_mode: window_changes.stack_mode as i32
+            };
+            XConfigureWindow(self.display, window, mask as u32, &mut xlib_window_changes);
+        }
+    }
+
     fn flush(&mut self) {
         unsafe {
             XFlush(self.display);
@@ -302,9 +321,22 @@ impl WindowSystem for XlibWindowSystem {
         let event_type : c_int = *self.get_event_as();
 
         match event_type as uint {
+            ClientMessage => {
+                let event : &XClientMessageEvent = self.get_event_as();
+                ClientMessageEvent(event.window)
+            },
             ConfigureRequest => {
                 let event : &XConfigureRequestEvent = self.get_event_as();
-                ConfigurationRequest(event.window)
+                let window_changes = WindowChanges {
+                    x: event.x as uint,
+                    y: event.y as uint,
+                    width: event.width as uint,
+                    height: event.height as uint,
+                    border_width: event.border_width as uint,
+                    sibling: event.above as Window,
+                    stack_mode: event.detail as uint
+                };
+                ConfigurationRequest(event.window, window_changes, event.value_mask)
             },
             ConfigureNotify => {
                 let event : &XConfigureEvent = self.get_event_as();
@@ -349,6 +381,7 @@ impl WindowSystem for XlibWindowSystem {
                 KeyPressed(event.window, event.keycode as uint, event.state as uint)
             },
             _  => {
+                debug!("unknown event {}", event_type);
                 UnknownEvent
             }
         }

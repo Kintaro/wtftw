@@ -1,3 +1,5 @@
+use core::Screen;
+use core::Workspace;
 use core::Workspaces;
 use config::Config;
 use layout::LayoutManager;
@@ -32,6 +34,30 @@ impl WindowManager {
     pub fn view(&mut self, window_system: &mut WindowSystem, index: uint, config: &Config) {
         self.workspaces.view(index);
         self.reapply_layout(window_system, config);
+    }
+
+    pub fn rescreen(&mut self, window_system: &mut WindowSystem, config: &Config) {
+        let screens = window_system.get_screen_infos();
+        let visible : Vec<Workspace> = (vec!(self.workspaces.current.clone())).iter()
+            .chain(self.workspaces.visible.iter())
+            .map(|x| x.workspace.clone())
+            .collect();
+        let ws : Vec<Workspace> = visible.iter()
+            .chain(self.workspaces.hidden.iter())
+            .map(|x| x.clone())
+            .collect();
+
+        let xs : Vec<Workspace> = ws.iter().take(screens.len()).map(|x| x.clone()).collect();
+        let ys : Vec<Workspace> = ws.iter().skip(screens.len()).map(|x| x.clone()).collect();
+
+        let sc : Vec<Screen> = xs.iter()
+            .zip(range(0, xs.len()))
+            .zip(screens.iter())
+            .map(|((a, b), &c)| Screen::new(a.clone(), b, c))
+            .collect();
+
+        self.workspaces.current = sc.head().unwrap().clone();
+        self.workspaces.visible = sc.iter().skip(1).map(|x| x.clone()).collect();
     }
 
     /// Reapply the layout to the whole workspace.
