@@ -3,6 +3,8 @@ wtftw
 
 Window Tiling For The Win. A tiling window manager written in Rust
 
+![GIF sample](http://i.imgur.com/9pFfOZj.gif)
+
 ## Build
 
 To build it, just run
