@@ -54,6 +54,8 @@ fn main() {
         match window_system.get_event() {
             ClientMessageEvent(window) => {
             },
+            // The X11/Wayland configuration changed, so we need to readjust the 
+            // screen configurations.
             ConfigurationNotification(window) => {
                 if window_system.get_root() == window {
                     debug!("X configuration changed. Rescreen");
@@ -69,9 +71,12 @@ fn main() {
                     window_manager.rescreen(&mut window_system, &config);
                 }
             },
+            // A window asked to be reconfigured (i.e. resized, border change, etc.)
             ConfigurationRequest(window, window_changes, mask) => {
                 window_system.configure_window(window, window_changes, mask);
             },
+            // A new window was created, so we need to manage
+            // it unless it is already managed by us.
             WindowCreated(window) => {
                 if !window_manager.is_window_managed(window) {
                     window_manager.manage(&mut window_system, window, &config);
@@ -87,12 +92,15 @@ fn main() {
                     window_manager.unmanage(&mut window_system, window, &config); 
                 }
             },
+            // The mouse pointer entered a window's region. If focus following
+            // is enabled, we need to set focus to it.
             Enter(window) => {
                 if config.focus_follows_mouse && window_manager.is_window_managed(window) {
                     window_system.set_window_border_color(window, config.focus_border_color);
                     window_system.focus_window(window);
                 }
             },
+            // The mouse pointer 
             Leave(window) => {
                 if config.focus_follows_mouse && window_manager.is_window_managed(window) {
                     window_system.set_window_border_color(window, config.border_color);
