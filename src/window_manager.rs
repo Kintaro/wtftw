@@ -51,9 +51,9 @@ impl WindowManager {
         let ys : Vec<Workspace> = ws.iter().skip(screens.len()).map(|x| x.clone()).collect();
 
         let sc : Vec<Screen> = xs.iter()
-            .zip(range(0, xs.len()))
+            .enumerate()
             .zip(screens.iter())
-            .map(|((a, b), &c)| Screen::new(a.clone(), b, c))
+            .map(|((a, b), &c)| Screen::new(b.clone(), a, c))
             .collect();
 
         self.workspaces.current = sc.head().unwrap().clone();

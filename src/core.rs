@@ -182,9 +182,9 @@ impl Workspaces {
             .map(|x| x.clone())
             .collect();
         let current : Vec<Screen> = seen.iter()
-            .zip(range(0, seen.len()))
+            .enumerate()
             .zip(screens.iter())
-            .map(|((a, b), c)| Screen::new(a.clone(), b, c.clone()))
+            .map(|((a, b), c)| Screen::new(b.clone(), a, c.clone()))
             .collect();
 
         Workspaces {
