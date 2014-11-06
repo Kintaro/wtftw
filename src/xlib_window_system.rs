@@ -155,12 +155,8 @@ impl XlibWindowSystem {
         }
     }
 
-    fn get_event_as<T>(&self) -> &T {
-        unsafe {
-            let event_ptr : *const T = transmute(self.event);
-            let ref event : T = *event_ptr;
-            event
-        }
+    unsafe fn get_event_as<T>(&self) -> &T {
+        &*(self.event as *const T)
     }
 }
 
@@ -317,15 +313,17 @@ impl WindowSystem for XlibWindowSystem {
             XNextEvent(self.display, self.event);
         }
 
-        let event_type : c_int = *self.get_event_as();
+        let event_type : c_int = unsafe { *self.get_event_as() };
 
         match event_type as uint {
             ClientMessage => {
-                let event : &XClientMessageEvent = self.get_event_as();
-                ClientMessageEvent(event.window)
+                unsafe {
+                    let event : &XClientMessageEvent = self.get_event_as();
+                    ClientMessageEvent(event.window)
+                }
             },
             ConfigureRequest => {
-                let event : &XConfigureRequestEvent = self.get_event_as();
+                let event : &XConfigureRequestEvent = unsafe { self.get_event_as() };
                 let window_changes = WindowChanges {
                     x: event.x as u32,
                     y: event.y as u32,
@@ -335,53 +333,72 @@ impl WindowSystem for XlibWindowSystem {
                     sibling: event.above as Window,
                     stack_mode: event.detail as u32
                 };
+
                 ConfigurationRequest(event.window, window_changes, event.value_mask)
             },
             ConfigureNotify => {
-                let event : &XConfigureEvent = self.get_event_as();
-                ConfigurationNotification(event.window)
+                unsafe {
+                    let event : &XConfigureEvent = self.get_event_as();
+                    ConfigurationNotification(event.window)
+                }
             },
             MapRequest => {
-                let event : &XMapRequestEvent = self.get_event_as();
-                unsafe { XSelectInput(self.display, event.window, 0x000031); }
-                WindowCreated(event.window)
+                unsafe {
+                    let event : &XMapRequestEvent = self.get_event_as();
+                    unsafe { XSelectInput(self.display, event.window, 0x000031); }
+                    WindowCreated(event.window)
+                }
             },
             UnmapNotify => {
-                let event : &XUnmapEvent = self.get_event_as();
-                WindowUnmapped(event.window, event.send_event > 0)
+                unsafe {
+                    let event : &XUnmapEvent = self.get_event_as();
+                    WindowUnmapped(event.window, event.send_event > 0)
+                }
             },
             DestroyNotify => {
-                let event : &XDestroyWindowEvent = self.get_event_as();
-                WindowDestroyed(event.window)
+                unsafe {
+                    let event : &XDestroyWindowEvent = self.get_event_as();
+                    WindowDestroyed(event.window)
+                }
             },
             EnterNotify => {
-                let event : &XEnterWindowEvent = self.get_event_as();
-                if event.detail != 2 {
-                    Enter(event.window) 
-                } else {
-                    UnknownEvent
+                unsafe {
+                    let event : &XEnterWindowEvent = self.get_event_as();
+                    if event.detail != 2 {
+                        Enter(event.window) 
+                    } else {
+                        UnknownEvent
+                    }
                 }
             },
             LeaveNotify => {
-                let event : &XLeaveWindowEvent = self.get_event_as();
-                if event.detail != 2 {
-                    Leave(event.window) 
-                } else {
-                    UnknownEvent
+                unsafe {
+                    let event : &XLeaveWindowEvent = self.get_event_as();
+                    if event.detail != 2 {
+                        Leave(event.window) 
+                    } else {
+                        UnknownEvent
+                    }
                 }
             },
             ButtonPress => {
-                let event : &XButtonEvent = self.get_event_as();
-                ButtonPressed(event.window, event.state, event.button, 
-                              event.x_root as u32, event.y_root as u32)
+                unsafe {
+                    let event : &XButtonEvent = self.get_event_as();
+                    ButtonPressed(event.window, event.state, event.button, 
+                                  event.x_root as u32, event.y_root as u32)
+                }
             },
             KeyPress => {
-                let event : &XKeyEvent = self.get_event_as();
-                KeyPressed(event.window, event.keycode as u32, event.state as u32)
+                unsafe {
+                    let event : &XKeyEvent = self.get_event_as();
+                    KeyPressed(event.window, event.keycode as u32, event.state as u32)
+                }
             },
             _  => {
-                debug!("unknown event {}", event_type);
-                UnknownEvent
+                unsafe {
+                    debug!("unknown event {}", event_type);
+                    UnknownEvent
+                }
             }
         }
     }
