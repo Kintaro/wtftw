@@ -123,8 +123,9 @@ fn main() {
                 }
 
                 if mask & 9 == 9 && key == curr_conf.launch_key.char_at(0) as u32 {
+                    let launcher = curr_conf.launcher.clone();
                     spawn(proc() {
-                        Command::new(String::from_str("dmenu")).detached().spawn();
+                        Command::new(launcher).detached().spawn();
                     });
                 }
                 if mask & 8 != 0 && key == curr_conf.launch_key.char_at(0) as u32 {

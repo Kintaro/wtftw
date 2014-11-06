@@ -1,8 +1,10 @@
 extern crate serialize;
+
 use std::os::homedir;
 use std::sync::{RWLock,RWLockReadGuard};
 use serialize::{Encodable,Decodable,json,Decoder};
 use std::io::{File,Open,ReadWrite,Reader};
+
 /// Common configuration options for the window manager.
 #[deriving(Encodable,Decodable,Clone)]
 pub struct Config {
@@ -28,24 +30,13 @@ pub struct Config {
     /// Keybind for the launcher and configuration reloading
     pub launch_key: String
 }
-//Will pass around RWLock<ConfigLock>, deref to Config, and be updatable for conf
+
+/// Will pass around RWLock<ConfigLock>, deref to Config, and be updatable for conf
 pub struct ConfigLock {
     conf: RWLock<Config>
 }
 
 //Allow existing code to use the ConfigLock
-//jk deref is terrible
-/*
-impl<'a> Deref<Config> for &'a ConfigLock {
-    fn deref(&self) -> &Config {
-        &self.conf.read().deref().clone()
-    }
-}
-impl Deref<Config> for ConfigLock {
-    fn deref(&self) -> &Config {
-        (&self.conf.read().deref()).clone()
-    }
-}*/
 impl ConfigLock {
     pub fn current(&self) -> Config {
         self.conf.read().deref().clone()
