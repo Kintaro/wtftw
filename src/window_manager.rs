@@ -1,11 +1,12 @@
 use core::Screen;
 use core::Workspace;
 use core::Workspaces;
-use config::Config;
+use config::{Config,ConfigLock};
 use layout::LayoutManager;
 use window_system::Rectangle;
 use window_system::Window;
 use window_system::WindowSystem;
+use std::sync::RWLock;
 
 pub type ScreenDetail = Rectangle;
 
@@ -15,10 +16,10 @@ pub struct WindowManager {
 
 impl WindowManager {
     /// Create a new window manager for the given window system and configuration
-    pub fn new(window_system: &WindowSystem, config: &Config) -> WindowManager {
+    pub fn new(window_system: &WindowSystem, config: &ConfigLock) -> WindowManager {
         WindowManager {
-            workspaces: Workspaces::new(String::from_str("Tall"), 
-                                        config.tags.clone(), 
+            workspaces: Workspaces::new(String::from_str("Tall"),
+                                        config.current().tags.clone(),
                                         window_system.get_screen_infos())
         }
     }
