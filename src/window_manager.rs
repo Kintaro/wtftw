@@ -6,7 +6,6 @@ use layout::LayoutManager;
 use window_system::Rectangle;
 use window_system::Window;
 use window_system::WindowSystem;
-use std::sync::RWLock;
 
 pub type ScreenDetail = Rectangle;
 

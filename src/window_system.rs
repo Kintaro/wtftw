@@ -44,6 +44,7 @@ pub enum WindowSystemEvent {
 }
 
 pub trait WindowSystem {
+    fn get_keycode_from_string(&self, key: &String) -> u32; 
     fn get_root(&self) -> Window;
     /// Retrieve geometry infos over all screens
     fn get_screen_infos(&self) -> Vec<Rectangle>;

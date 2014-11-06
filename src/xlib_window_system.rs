@@ -26,6 +26,7 @@ use self::xlib::{
     XFetchName,
     XFlush,
     XKeyEvent,
+    XKeysymToKeycode,
     XIconifyWindow,
     XLeaveWindowEvent,
     XMapRequestEvent,
@@ -41,6 +42,7 @@ use self::xlib::{
     XSelectInput,
     XSetErrorHandler,
     XSetInputFocus,
+    XStringToKeysym,
     XSync,
     XUnmapEvent,
     XUnmapWindow,
@@ -161,9 +163,17 @@ impl XlibWindowSystem {
 }
 
 impl WindowSystem for XlibWindowSystem {
+    fn get_keycode_from_string(&self, key: &String) -> u32 {
+        unsafe {
+            let keysym = XStringToKeysym(key.to_c_str().as_mut_ptr());
+            XKeysymToKeycode(self.display, keysym) as u32
+        }
+    }
+
     fn get_root(&self) -> Window {
         self.root
     }
+
     fn get_screen_infos(&self) -> Vec<Rectangle> {
         unsafe {
             let mut num : c_int = 0;
@@ -345,7 +355,7 @@ impl WindowSystem for XlibWindowSystem {
             MapRequest => {
                 unsafe {
                     let event : &XMapRequestEvent = self.get_event_as();
-                    unsafe { XSelectInput(self.display, event.window, 0x000031); }
+                    XSelectInput(self.display, event.window, 0x000031);
                     WindowCreated(event.window)
                 }
             },
@@ -395,10 +405,8 @@ impl WindowSystem for XlibWindowSystem {
                 }
             },
             _  => {
-                unsafe {
-                    debug!("unknown event {}", event_type);
-                    UnknownEvent
-                }
+                debug!("unknown event {}", event_type);
+                UnknownEvent
             }
         }
     }

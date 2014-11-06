@@ -37,10 +37,11 @@ impl<T: Clone + Eq> Stack<T> {
 
     pub fn integrate(&self) -> Vec<T> {
         self.up.iter()
-            .rev()
+            //.rev()
             .chain((vec!(self.focus.clone())).iter())
             .chain(self.down.iter())
             .map(|x| x.clone())
+            .rev()
             .collect()
     }
 
