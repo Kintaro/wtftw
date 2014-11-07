@@ -1,3 +1,4 @@
+#![allow(non_upper_case_globals)]
 pub type Window = u64;
 
 #[deriving(Show, Clone)]
@@ -21,6 +22,34 @@ pub struct WindowChanges {
     pub stack_mode: u32,
 }
 
+/// Represents a keyboard input
+/// with an abstracted modifier mask
+/// and the key represented as a string
+pub struct KeyCommand {
+    pub mask: KeyModifiers,
+    pub key: String
+}
+
+bitflags! {
+    flags KeyModifiers : u32 {
+        const NoneMask    = (0<<0),
+        const ShiftMask   = (1<<0),
+        const LockMask    = (1<<1),
+        const ControlMask = (1<<2),
+        const Mod1Mask    = (1<<3),
+        const Mod2Mask    = (1<<4),
+        const Mod3Mask    = (1<<5),
+        const Mod4Mask    = (1<<6),
+        const Mod5Mask    = (1<<7),
+    }
+}
+
+impl KeyModifiers {
+    pub fn get_mask(&self) -> u32 {
+        self.bits()
+    }
+}
+
 pub enum WindowSystemEvent {
     ConfigurationNotification(Window),
     ConfigurationRequest(Window, WindowChanges, u64),
@@ -36,7 +65,7 @@ pub enum WindowSystemEvent {
     /// for mousefollow focus.
     Leave(Window),
     ButtonPressed(Window, u32, u32, u32, u32),
-    KeyPressed(Window, u32, u32),
+    KeyPressed(Window, KeyCommand),
     ClientMessageEvent(Window),
     /// The underlying event by xlib or wayland is unknown
     /// and can be ignored.
@@ -44,6 +73,7 @@ pub enum WindowSystemEvent {
 }
 
 pub trait WindowSystem {
+    fn get_string_from_keycode(&self, key: u32) -> String;
     fn get_keycode_from_string(&self, key: &String) -> u32; 
     fn get_root(&self) -> Window;
     /// Retrieve geometry infos over all screens
@@ -76,6 +106,7 @@ pub trait WindowSystem {
     /// Get the next event from the queue
     fn get_event(&mut self) -> WindowSystemEvent;
     fn flush(&mut self);
+    fn grab_keys(&mut self, keys: Vec<KeyCommand>);
 }
 
 

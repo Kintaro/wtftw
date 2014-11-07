@@ -15,9 +15,12 @@ use window_system::{
     Enter,
     Leave,
     KeyPressed,
+    KeyCommand,
     WindowCreated,
     WindowDestroyed,
     WindowUnmapped,
+    Mod1Mask,
+    ShiftMask
 };
 use xlib_window_system::XlibWindowSystem;
 use std::io::process::Command;
@@ -30,7 +33,6 @@ pub mod window_manager;
 pub mod window_system;
 pub mod xlib_window_system;
 
-
 fn main() {
     // Initialize window system. Use xlib here for now
     let mut window_system = XlibWindowSystem::new();
@@ -39,7 +41,7 @@ fn main() {
     // Create the actual window manager
     let mut window_manager = WindowManager::new(&window_system, &config);
     // 
-    let mut logger = FileLogger::new(&config.current().logfile); //Not hotswappable
+    let logger = FileLogger::new(&config.current().logfile); //Not hotswappable
     log::set_logger(box logger);
 
     // Output some initial information
@@ -50,11 +52,19 @@ fn main() {
         debug!("Display {}: {}x{} ({}, {})", i, w, h, x, y);
     }
 
+    // Temporary hack
+    window_system.grab_keys(vec!(
+            KeyCommand { key: String::from_str("Return"), mask: Mod1Mask | ShiftMask },
+            KeyCommand { key: String::from_str("q"), mask: Mod1Mask | ShiftMask },
+            KeyCommand { key: String::from_str("p"), mask: Mod1Mask | ShiftMask },
+            KeyCommand { key: String::from_str("s"), mask: Mod1Mask | ShiftMask },
+    ));
+
     // Enter the event loop and just listen for events
     loop {
         let curr_conf = config.current();
         match window_system.get_event() {
-            ClientMessageEvent(window) => {
+            ClientMessageEvent(_) => {
             },
             // The X11/Wayland configuration changed, so we need to readjust the 
             // screen configurations.
@@ -97,7 +107,7 @@ fn main() {
             // The mouse pointer entered a window's region. If focus following
             // is enabled, we need to set focus to it.
             Enter(window) => {
-                if curr_conf.focus_follows_mouse && window_manager.is_window_managed(window) {
+               if curr_conf.focus_follows_mouse && window_manager.is_window_managed(window) {
                     window_system.set_window_border_color(window, curr_conf.focus_border_color);
                     window_system.focus_window(window);
                 }
@@ -108,34 +118,29 @@ fn main() {
                     window_system.set_window_border_color(window, curr_conf.border_color);
                 }
             },
-            KeyPressed(_, key, mask) => {
-                if mask & 8 != 0 && key >= 10 && key <= 18 && (key - 10) < curr_conf.tags.len() as u32 {
-                    debug!("switching workspace to {}", curr_conf.tags[key as uint - 10].clone());
-                    window_manager.view(&mut window_system, key - 10, &curr_conf);
-                }
-
-                if mask & 9 == 9 && key == 36 {
+            KeyPressed(_, key) => {
+//                if key.mask == Mod1Mask && key >= 10 && key <= 18 && (key - 10) < curr_conf.tags.len() as u32 {
+//                    debug!("switching workspace to {}", curr_conf.tags[key as uint - 10].clone());
+//                    window_manager.view(&mut window_system, key - 10, &curr_conf);
+//                } else 
+                if key.mask == Mod1Mask | ShiftMask && key.key == curr_conf.terminal_key {
                     let (terminal, args) = curr_conf.terminal.clone();
                     let arguments : Vec<String> = args.split(' ').map(String::from_str).collect();
                     spawn(proc() {
                         Command::new(terminal).args(arguments.as_slice()).detached().spawn();
                     });
-                }
-
-                if mask & 9 == 9 && key == curr_conf.launch_key.char_at(0) as u32 {
+                } else if key.mask == Mod1Mask | ShiftMask && key.key == curr_conf.launch_key {
                     let launcher = curr_conf.launcher.clone();
                     spawn(proc() {
                         Command::new(launcher).detached().spawn();
                     });
-                }
-                if mask & 8 != 0 && key == curr_conf.launch_key.char_at(0) as u32 {
+                } else if key.mask == Mod1Mask | ShiftMask && key.key == curr_conf.save_config_key {
                     config = Config::initialize();
-                    println!("Configuration reloaded!");
-                }
-                if mask & 9 == 9 && key == 24 {
+                    debug!("configuration reloaded!");
+                } else if key.mask == Mod1Mask | ShiftMask && key.key == curr_conf.exit_key {
                     break;
-                }
-            }
+                } 
+            },
             _ => ()
         }
     }

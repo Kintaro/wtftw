@@ -25,8 +25,11 @@ use self::xlib::{
     XErrorEvent,
     XFetchName,
     XFlush,
+    XGrabKey,
     XKeyEvent,
+    XKeycodeToKeysym,
     XKeysymToKeycode,
+    XKeysymToString,
     XIconifyWindow,
     XLeaveWindowEvent,
     XMapRequestEvent,
@@ -60,7 +63,7 @@ use std::mem::uninitialized;
 use std::str::raw::c_str_to_static_slice;
 use std::slice::raw::buf_as_slice;
 
-use window_system::{ Rectangle, WindowSystem, WindowSystemEvent, WindowChanges };
+use window_system::{ KeyCommand, KeyModifiers, Rectangle, WindowSystem, WindowSystemEvent, WindowChanges };
 use window_system::{
     ClientMessageEvent,
     ConfigurationNotification,
@@ -122,7 +125,8 @@ pub struct XlibWindowSystem {
     screen:  *mut Screen,
     root:    Window,
     event:   *mut c_void,
-    awaiting_unmap: TreeSet<Window>
+    awaiting_unmap: TreeSet<Window>,
+    last_key_event: Option<XKeyEvent>,
 }
 
 impl XlibWindowSystem {
@@ -152,7 +156,8 @@ impl XlibWindowSystem {
                 screen:  screen,
                 root:    root,
                 event:   malloc(256),
-                awaiting_unmap: TreeSet::new()
+                awaiting_unmap: TreeSet::new(),
+                last_key_event: None
             }
         }
     }
@@ -163,6 +168,14 @@ impl XlibWindowSystem {
 }
 
 impl WindowSystem for XlibWindowSystem {
+    fn get_string_from_keycode(&self, key: u32) -> String {
+        unsafe {
+            let keysym = XKeycodeToKeysym(self.display, key as u8, 0);
+            let keyname : *mut c_char = XKeysymToString(keysym);
+            String::from_str(c_str_to_static_slice(transmute(keyname)))
+        } 
+    }
+
     fn get_keycode_from_string(&self, key: &String) -> u32 {
         unsafe {
             let keysym = XStringToKeysym(key.to_c_str().as_mut_ptr());
@@ -279,9 +292,10 @@ impl WindowSystem for XlibWindowSystem {
     fn hide_window(&mut self, window: Window) {
         self.awaiting_unmap.insert(window);
         unsafe {
+            XSelectInput(self.display, window, 0x1A0030);
             XUnmapWindow(self.display, window);
+            XSelectInput(self.display, window, 0x1A0030);
             XIconifyWindow(self.display, window, 0);
-            XSelectInput(self.display, window, 0x000031);
         }
     }
 
@@ -355,7 +369,8 @@ impl WindowSystem for XlibWindowSystem {
             MapRequest => {
                 unsafe {
                     let event : &XMapRequestEvent = self.get_event_as();
-                    XSelectInput(self.display, event.window, 0x000031);
+                    XSelectInput(self.display, event.window, 0x420033);
+                    debug!("map request {}", self.get_window_name(event.window));
                     WindowCreated(event.window)
                 }
             },
@@ -400,13 +415,39 @@ impl WindowSystem for XlibWindowSystem {
             },
             KeyPress => {
                 unsafe {
-                    let event : &XKeyEvent = self.get_event_as();
-                    KeyPressed(event.window, event.keycode as u32, event.state as u32)
+                    let event : XKeyEvent = *self.get_event_as();
+                    self.last_key_event = Some(event);
+                    let key = KeyCommand { 
+                        key: self.get_string_from_keycode(event.keycode),
+                        mask: KeyModifiers::from_bits(event.state as u32).unwrap()
+                    };
+                    KeyPressed(event.window, key)
                 }
             },
+            //KeyRelease => {
+            //    unsafe {
+            //        let mut event : XKeyEvent = *self.get_event_as();
+            //        let event_ptr : *mut XKeyEvent = &mut event;
+            //        XUngrabKeyboard(self.display, 0);
+            //        XSendEvent(self.display, 1, 1, 0, event_ptr as (*mut c_void));
+            //        XGrabKeyboard(self.display, self.root, 1, 1, 1, 0);
+
+                    //XSendEvent(self.display, 1, 1, 0, event_ptr as (*mut c_void));
+            //        UnknownEvent
+            //    }
+            //}
             _  => {
-                debug!("unknown event {}", event_type);
+                //debug!("unknown event {}", event_type);
                 UnknownEvent
+            }
+        }
+    }
+
+    fn grab_keys(&mut self, keys: Vec<KeyCommand>) {
+        for key in keys.iter() {
+            unsafe {
+                XGrabKey(self.display, self.get_keycode_from_string(&key.key) as i32, 
+                         key.mask.get_mask(), self.root, 1, 1, 1); 
             }
         }
     }

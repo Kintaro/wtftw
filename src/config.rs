@@ -2,7 +2,7 @@ extern crate serialize;
 
 use std::os::homedir;
 use std::sync::RWLock;
-use serialize::{Encodable, Decodable, json, Decoder};
+use serialize::{Encodable, json, Decoder};
 use std::io::{File, Open, ReadWrite, Reader};
 
 /// Common configuration options for the window manager.
@@ -30,7 +30,9 @@ pub struct Config {
     /// Default launcher application
     pub launcher: String,
     /// Keybind for the launcher and configuration reloading
-    pub launch_key: String
+    pub launch_key: String,
+    pub save_config_key: String,
+    pub exit_key: String,
 }
 
 /// Will pass around RWLock<ConfigLock>, deref to Config, and be updatable for conf
@@ -78,7 +80,9 @@ impl Config {
                                             String::from_str("3: code"),
                                             String::from_str("4 media")),
                     launcher:            String::from_str("gmrun"),
-                    launch_key:          String::from_str("p")
+                    launch_key:          String::from_str("p"),
+                    save_config_key:     String::from_str("s"),
+                    exit_key:            String::from_str("q")
         };
 
         let path = Path::new(format!("{}/.wtftwrc", homedir().unwrap().to_c_str()));
