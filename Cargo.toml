@@ -11,5 +11,5 @@ git = "https://github.com/servo/rust-xlib.git"
 git = "https://github.com/Kintaro/rust-xinerama.git"
 
 [[bin]]
-
 name = "wtftw"
+plugin = true

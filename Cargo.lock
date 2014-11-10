@@ -3,7 +3,7 @@ name = "wtftw"
 version = "0.0.1"
 dependencies = [
  "xinerama 0.0.1 (git+https://github.com/Kintaro/rust-xinerama.git#d6095d32d595f07fbff8883970c2b7d8807857a5)",
- "xlib 0.1.0 (git+https://github.com/servo/rust-xlib.git#c20e866829df884b46749deea4f542f6fab1652e)",
+ "xlib 0.1.0 (git+https://github.com/servo/rust-xlib.git#58ec3847b592aeabdcfeb6a2d02033d3a2c7f427)",
 ]
 
 [[package]]
@@ -11,11 +11,11 @@ name = "xinerama"
 version = "0.0.1"
 source = "git+https://github.com/Kintaro/rust-xinerama.git#d6095d32d595f07fbff8883970c2b7d8807857a5"
 dependencies = [
- "xlib 0.1.0 (git+https://github.com/servo/rust-xlib.git#c20e866829df884b46749deea4f542f6fab1652e)",
+ "xlib 0.1.0 (git+https://github.com/servo/rust-xlib.git#58ec3847b592aeabdcfeb6a2d02033d3a2c7f427)",
 ]
 
 [[package]]
 name = "xlib"
 version = "0.1.0"
-source = "git+https://github.com/servo/rust-xlib.git#c20e866829df884b46749deea4f542f6fab1652e"
+source = "git+https://github.com/servo/rust-xlib.git#58ec3847b592aeabdcfeb6a2d02033d3a2c7f427"
 

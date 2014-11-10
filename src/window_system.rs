@@ -12,6 +12,7 @@ impl Rectangle {
     }
 }
 
+#[deriving(Clone)]
 pub struct WindowChanges {
     pub x: u32,
     pub y: u32,
@@ -25,22 +26,24 @@ pub struct WindowChanges {
 /// Represents a keyboard input
 /// with an abstracted modifier mask
 /// and the key represented as a string
+#[deriving(Show, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct KeyCommand {
     pub mask: KeyModifiers,
     pub key: String
 }
 
 bitflags! {
+    #[deriving(Show)]
     flags KeyModifiers : u32 {
-        const NoneMask    = (0<<0),
-        const ShiftMask   = (1<<0),
-        const LockMask    = (1<<1),
-        const ControlMask = (1<<2),
-        const Mod1Mask    = (1<<3),
-        const Mod2Mask    = (1<<4),
-        const Mod3Mask    = (1<<5),
-        const Mod4Mask    = (1<<6),
-        const Mod5Mask    = (1<<7),
+        const NoneMask    = (0 << 0),
+        const ShiftMask   = (1 << 0),
+        const LockMask    = (1 << 1),
+        const ControlMask = (1 << 2),
+        const Mod1Mask    = (1 << 3),
+        const Mod2Mask    = (1 << 4),
+        const Mod3Mask    = (1 << 5),
+        const Mod4Mask    = (1 << 6),
+        const Mod5Mask    = (1 << 7),
     }
 }
 
@@ -50,6 +53,7 @@ impl KeyModifiers {
     }
 }
 
+#[deriving(Clone)]
 pub enum WindowSystemEvent {
     ConfigurationNotification(Window),
     ConfigurationRequest(Window, WindowChanges, u64),
@@ -89,24 +93,25 @@ pub trait WindowSystem {
     /// Get a list of all windows
     fn get_windows(&self) -> Vec<Window>;
     /// Set the given window's border width
-    fn set_window_border_width(&mut self, window: Window, border_width: u32);
+    fn set_window_border_width(&self, window: Window, border_width: u32);
     /// Set the given window's border color
-    fn set_window_border_color(&mut self, window: Window, border_color: u32);
+    fn set_window_border_color(&self, window: Window, border_color: u32);
     /// Resize the window to the given dimensions
-    fn resize_window(&mut self, window: Window, width: u32, height: u32);
+    fn resize_window(&self, window: Window, width: u32, height: u32);
     /// Move the window's top left corner to the given coordinates
-    fn move_window(&mut self, window: Window, x: u32, height: u32);
+    fn move_window(&self, window: Window, x: u32, height: u32);
     /// Map the window to the screen and show it
-    fn show_window(&mut self, window: Window);
-    fn hide_window(&mut self, window: Window);
-    fn focus_window(&mut self, window: Window);
-    fn configure_window(&mut self, window: Window, window_changes: WindowChanges, mask: u64);
+    fn show_window(&self, window: Window);
+    fn hide_window(&self, window: Window);
+    fn focus_window(&self, window: Window);
+    fn get_focused_window(&self) -> Window;
+    fn configure_window(&self, window: Window, window_changes: WindowChanges, mask: u64);
     /// Check if there are events pending
     fn event_pending(&self) -> bool;
     /// Get the next event from the queue
-    fn get_event(&mut self) -> WindowSystemEvent;
-    fn flush(&mut self);
-    fn grab_keys(&mut self, keys: Vec<KeyCommand>);
+    fn get_event(&self) -> WindowSystemEvent;
+    fn flush(&self);
+    fn grab_keys(&self, keys: Vec<KeyCommand>);
 }
 
 

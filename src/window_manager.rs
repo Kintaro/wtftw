@@ -1,7 +1,7 @@
 use core::Screen;
 use core::Workspace;
 use core::Workspaces;
-use config::{Config,ConfigLock};
+use config::Config;
 use layout::LayoutManager;
 use window_system::Rectangle;
 use window_system::Window;
@@ -9,16 +9,17 @@ use window_system::WindowSystem;
 
 pub type ScreenDetail = Rectangle;
 
+#[deriving(Clone)]
 pub struct WindowManager {
     workspaces: Workspaces
 }
 
 impl WindowManager {
     /// Create a new window manager for the given window system and configuration
-    pub fn new(window_system: &WindowSystem, config: &ConfigLock) -> WindowManager {
+    pub fn new(window_system: &WindowSystem, config: &Config) -> WindowManager {
         WindowManager {
             workspaces: Workspaces::new(String::from_str("Tall"),
-                                        config.current().tags.clone(),
+                                        config.tags.clone(),
                                         window_system.get_screen_infos())
         }
     }
@@ -31,12 +32,14 @@ impl WindowManager {
     /// Switch to the workspace given by index. If index is out of bounds, 
     /// just do nothing and return.
     /// Then, reapply the layout to show the changes.
-    pub fn view(&mut self, window_system: &mut WindowSystem, index: u32, config: &Config) {
+    pub fn view(&mut self, window_system: &WindowSystem, index: u32, config: &Config) {
         self.workspaces.view(index);
         self.reapply_layout(window_system, config);
     }
 
-    pub fn rescreen(&mut self, window_system: &mut WindowSystem, config: &Config) {
+    /// Rearrange the workspaces across the given screens.
+    /// Needs to be called when the screen arrangement changes.
+    pub fn rescreen(&mut self, window_system: &WindowSystem, config: &Config) {
         let screens = window_system.get_screen_infos();
         let visible : Vec<Workspace> = (vec!(self.workspaces.current.clone())).iter()
             .chain(self.workspaces.visible.iter())
@@ -61,7 +64,7 @@ impl WindowManager {
     }
 
     /// Reapply the layout to the whole workspace.
-    pub fn reapply_layout(&mut self, window_system: &mut WindowSystem, config: &Config) {
+    pub fn reapply_layout(&mut self, window_system: &WindowSystem, config: &Config) {
         let screen = &self.workspaces.current;
         let workspace = &screen.workspace;
         let layout = LayoutManager::get_layout(workspace.layout.clone());
@@ -93,13 +96,16 @@ impl WindowManager {
         window_system.flush();
     }
 
-    pub fn manage(&mut self, window_system: &mut WindowSystem, window: Window, config: &Config) {
+    /// Manage a new window that was either created just now or already present
+    /// when the WM started.
+    pub fn manage(&mut self, window_system: &WindowSystem, window: Window, config: &Config) {
         self.workspaces.current.workspace.add(window);
         self.reapply_layout(window_system, config);   
         debug!("managing window \"{}\" ({})", window_system.get_window_name(window), window);
     }
 
-    pub fn unmanage(&mut self, window_system: &mut WindowSystem, window: Window, config: &Config) {
+    /// Unmanage a window. This happens when a window is closed.
+    pub fn unmanage(&mut self, window_system: &WindowSystem, window: Window, config: &Config) {
         if self.workspaces.contains(window) {
             debug!("unmanaging window {}", window);
             self.workspaces.delete(window);
