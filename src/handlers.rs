@@ -55,7 +55,7 @@ pub mod default {
         debug!("moving window to workspace {}", 
                config.tags[index].clone());
 
-        local_window_manager.view(window_system, index as u32, config);
+        local_window_manager.move_window_to_workspace(window_system, index as u32, config);
 
         local_window_manager
     }

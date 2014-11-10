@@ -281,4 +281,12 @@ impl Workspaces {
         self.hidden.iter().any(|x| x.contains(window)) ||
         self.floating.contains_key(&window)
     }
+
+    pub fn shift(&mut self, index: u32) {
+
+    }
+
+    pub fn shift_window(&mut self, index: u32, window: Window) {
+
+    }
 }

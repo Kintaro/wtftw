@@ -37,6 +37,11 @@ impl WindowManager {
         self.reapply_layout(window_system, config);
     }
 
+    pub fn move_window_to_workspace(&mut self, window_system: &WindowSystem, index: u32, config: &Config) {
+        let focused_window = window_system.get_focused_window();
+        self.workspaces.shift(index);
+    }
+
     /// Rearrange the workspaces across the given screens.
     /// Needs to be called when the screen arrangement changes.
     pub fn rescreen(&mut self, window_system: &WindowSystem, config: &Config) {
