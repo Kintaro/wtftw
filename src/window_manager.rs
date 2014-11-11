@@ -32,16 +32,18 @@ impl WindowManager {
     /// Switch to the workspace given by index. If index is out of bounds, 
     /// just do nothing and return.
     /// Then, reapply the layout to show the changes.
-    pub fn view(&mut self, window_system: &WindowSystem, index: u32, config: &Config) {
+    pub fn view(&self, window_system: &WindowSystem, index: u32, config: &Config) -> WindowManager {
         if index < self.workspaces.number_workspaces() {
             debug!("switching to workspace {}", config.tags[index as uint].clone());
-            self.workspaces.view(index);
-            self.reapply_layout(window_system, config);
+            self.windows(window_system, config, |w| w.view(index)).reapply_layout(window_system, config)
+        } else {
+            self.clone()
         }
     }
 
-    pub fn move_window_to_workspace(&mut self, index: u32) {
-        self.workspaces.shift(index);
+    pub fn move_window_to_workspace(&self, window_system: &WindowSystem, 
+                                    config: &Config, index: u32) -> WindowManager {
+        self.windows(window_system, config, |w| w.shift(index))
     }
 
     /// Rearrange the workspaces across the given screens.
@@ -71,7 +73,7 @@ impl WindowManager {
     }
 
     /// Reapply the layout to the whole workspace.
-    pub fn reapply_layout(&mut self, window_system: &WindowSystem, config: &Config) {
+    pub fn reapply_layout(&self, window_system: &WindowSystem, config: &Config) -> WindowManager {
         let screen = &self.workspaces.current;
         let workspace = &screen.workspace;
         let layout = LayoutManager::get_layout(workspace.layout.clone());
@@ -107,6 +109,8 @@ impl WindowManager {
         
         // Force a redraw on all windows.
         window_system.flush();
+
+        self.clone()
     }
 
     /// Manage a new window that was either created just now or already present
@@ -122,22 +126,26 @@ impl WindowManager {
     pub fn unmanage(&mut self, window_system: &WindowSystem, window: Window, config: &Config) {
         if self.workspaces.contains(window) {
             debug!("unmanaging window {}", window);
-            self.workspaces.delete(window);
+            self.workspaces = self.workspaces.delete(window);
             self.reapply_layout(window_system, config);
             self.windows(window_system, config, |x| x.clone());
         }
     }
 
-    pub fn focus_down(&mut self) {
-        self.workspaces.focus_down();
+    pub fn focus_down(&self) -> WindowManager {
+        let mut w = self.clone();
+        w.workspaces = self.workspaces.focus_down();
+        w
     }
 
-    pub fn focus_up(&mut self) {
-        self.workspaces.focus_up();
+    pub fn focus_up(&self) -> WindowManager {
+        let mut w = self.clone();
+        w.workspaces = self.workspaces.focus_up();
+        w
     }
 
-    pub fn windows(&mut self, window_system: &WindowSystem, config: &Config, 
-                   f: |&Workspaces| -> Workspaces) {
+    pub fn windows(&self, window_system: &WindowSystem, config: &Config, 
+                   f: |&Workspaces| -> Workspaces) -> WindowManager {
         let old_visible_vecs : Vec<Vec<Window>> = (vec!(self.workspaces.current.clone())).iter()
             .chain(self.workspaces.visible.iter())
             .filter_map(|x| x.workspace.stack.clone())
@@ -160,6 +168,8 @@ impl WindowManager {
             None => ()
         }
 
-        self.workspaces = ws;
+        let mut r = self.clone();
+        r.workspaces = ws;
+        r
     }
 }

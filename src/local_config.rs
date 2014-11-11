@@ -9,24 +9,12 @@ pub fn configure(_: &mut WindowManager, _: &WindowSystem, config: &mut Config) {
 
     config.add_key_handler(KeyCommand::new(String::from_str("j"), modm),
             box |&: m: WindowManager, w: &WindowSystem, c: &Config| { 
-                let mut wm = m.clone();
-                wm.windows(w, c, |x| {
-                    let mut xm = x.clone();
-                    xm.focus_down();
-                    xm
-                });
-                wm
+                m.windows(w, c, |x| x.focus_down())
             });
 
     config.add_key_handler(KeyCommand::new(String::from_str("k"), modm),
             box |&: m: WindowManager, w: &WindowSystem, c: &Config| { 
-                let mut wm = m.clone();
-                wm.windows(w, c, |x| {
-                    let mut xm = x.clone();
-                    xm.focus_up();
-                    xm
-                });
-                wm
+                m.windows(w, c, |x| x.focus_up())
             });
 
 
