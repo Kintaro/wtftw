@@ -7,6 +7,10 @@ use window_system::Window;
 #[deriving(Clone)]
 pub struct RationalRect(f32, f32, f32, f32);
 
+/// Handles focus tracking on a workspace.
+/// `focus` keeps track of the focused window's id
+/// and `up` and `down` are the windows above or
+/// below the focus stack respectively.
 #[deriving(Clone)]
 pub struct Stack<T> {
     pub focus: T,
@@ -15,6 +19,7 @@ pub struct Stack<T> {
 }
 
 impl<T: Clone + Eq> Stack<T> {
+    /// Create a new stack with the given values
     pub fn new<T>(f: T, up: Vec<T>, down: Vec<T>) -> Stack<T> {
         Stack {
             focus: f,
@@ -23,6 +28,8 @@ impl<T: Clone + Eq> Stack<T> {
         }
     }
 
+    /// Create a new stack with only the given element
+    /// as the focused one and initialize the rest to empty.
     pub fn from_element(t: T) -> Stack<T> {
         Stack {
             focus: t,
@@ -36,6 +43,7 @@ impl<T: Clone + Eq> Stack<T> {
         self.focus = t;
     }
 
+    /// Flatten the stack into a list
     pub fn integrate(&self) -> Vec<T> {
         self.up.iter()
             //.rev()
@@ -46,6 +54,8 @@ impl<T: Clone + Eq> Stack<T> {
             .collect()
     }
 
+    /// Filter the stack to retain only windows
+    /// that yield true in the given filter function
     pub fn filter<'r>(&self, f: |&T| : 'r -> bool) -> Option<Stack<T>> {
         let lrs : Vec<T> = (vec!(self.focus.clone())).iter()
             .chain(self.down.iter())
@@ -74,6 +84,7 @@ impl<T: Clone + Eq> Stack<T> {
         }
     }
 
+    /// Move the focus to the next element in the `down` list
     pub fn focus_down(&self) -> Stack<T> {
         let mut s = self.clone();
         if self.up.is_empty() {
@@ -100,28 +111,35 @@ impl<T: Clone + Eq> Stack<T> {
         s
     }
 
+    /// Move the focus up
     pub fn focus_up(&self) -> Stack<T> {
         self.reverse().focus_down().reverse()
     }
 
+    /// Reverse the stack by exchanging
+    /// the `up` and `down` lists
     pub fn reverse(&self) -> Stack<T> {
         let mut s = self.clone();
         swap(&mut s.up, &mut s.down);
         s
     }
 
+    /// Return the number of elements tracked by the stack
     pub fn len(&self) -> uint {
         1 + self.up.len() + self.down.len()
     }
 
+    /// Checks if the given window is tracked by the stack
     pub fn contains(&self, window: T) -> bool {
         self.focus == window || self.up.contains(&window) || self.down.contains(&window)
     }
 }
 
+/// Represents a single workspace with a `tag` (name),
+/// `id`, a `layout` and a `stack` for all windows
 #[deriving(Clone)]
 pub struct Workspace {
-    pub id:     uint,
+    pub id:     u32,
     pub tag:    String,
     pub layout: String,
     pub stack:  Option<Stack<Window>>
@@ -129,7 +147,8 @@ pub struct Workspace {
 
 #[deriving(Clone)]
 impl Workspace {
-    pub fn new(id: uint, tag: String, layout: String, stack: Option<Stack<Window>>) -> Workspace {
+    /// Create a new workspace
+    pub fn new(id: u32, tag: String, layout: String, stack: Option<Stack<Window>>) -> Workspace {
         Workspace {
             id: id,
             tag: tag,
@@ -145,30 +164,26 @@ impl Workspace {
         }
     }
 
+    /// Returns the number of windows contained in this workspace
     pub fn len(&self) -> uint {
-        match self.stack {
-            Some(ref s) => s.len(),
-            _       => 0
-        }
+        self.stack.clone().map_or(0, |x| x.len())
     }
 
+    /// Checks if the workspace contains the given window
     pub fn contains(&self, window: Window) -> bool {
-        match self.stack {
-            Some(ref s) => s.contains(window),
-            _       => false
-        }
+        self.stack.clone().map_or(false, |x| x.contains(window))
     }
 }
 
 #[deriving(Clone)]
 pub struct Screen {
     pub workspace:     Workspace,
-    pub screen_id:     uint,
+    pub screen_id:     u32,
     pub screen_detail: ScreenDetail
 }
 
 impl Screen {
-    pub fn new(workspace: Workspace, screen_id: uint, screen_detail: ScreenDetail) -> Screen {
+    pub fn new(workspace: Workspace, screen_id: u32, screen_detail: ScreenDetail) -> Screen {
         Screen {
             workspace: workspace,
             screen_id: screen_id,
@@ -209,7 +224,7 @@ impl Workspaces {
         debug!("creating new workspaces with {} screen(s)", screens.len());
         let workspaces : Vec<Workspace> = tags.iter()
             .enumerate()
-            .map(|(id, tag)| Workspace::new(id, tag.clone(), layout.clone(), None))
+            .map(|(id, tag)| Workspace::new(id as u32, tag.clone(), layout.clone(), None))
             .collect();
         let seen   : Vec<Workspace> = workspaces.iter()
             .take(screens.len())
@@ -222,7 +237,7 @@ impl Workspaces {
         let current : Vec<Screen> = seen.iter()
             .enumerate()
             .zip(screens.iter())
-            .map(|((a, b), c)| Screen::new(b.clone(), a, c.clone()))
+            .map(|((a, b), c)| Screen::new(b.clone(), a as u32, c.clone()))
             .collect();
 
         Workspaces {
@@ -241,13 +256,13 @@ impl Workspaces {
     /// current.
     pub fn view(&self, index: u32) -> Workspaces {
         debug!("setting focus to {}", index);
-        if self.current.workspace.id == index as uint {
+        if self.current.workspace.id == index {
             return self.clone();
         }
 
         let mut w = self.clone();
 
-        match w.visible.iter().position(|s| s.workspace.id == index as uint) {
+        match w.visible.iter().position(|s| s.workspace.id == index) {
             Some(screen_pos) => {
                 let screen = self.visible[screen_pos].clone();
                 w.visible.remove(screen_pos);
@@ -258,7 +273,7 @@ impl Workspaces {
             _ => ()
         }
 
-        match self.hidden.iter().position(|w| w.id == index as uint) {
+        match self.hidden.iter().position(|w| w.id == index) {
             Some(workspace_pos) => {
                 let current_workspace = self.current.workspace.clone();
                 w.current.workspace = self.hidden[workspace_pos].clone();
@@ -313,29 +328,21 @@ impl Workspaces {
         w
     }
 
+    /// Move the focus of the currently focused workspace down
     pub fn focus_down(&self) -> Workspaces {
         let mut w = self.clone();
-        w.current.workspace.stack = match w.current.workspace.stack {
-            Some(s) => Some(s.focus_down()),
-            None    => None
-        };
+        w.current.workspace.stack = w.current.workspace.stack.map(|s| s.focus_down());
         w
     }
     
     pub fn focus_up(&self) -> Workspaces {
         let mut w = self.clone();
-        w.current.workspace.stack = match w.current.workspace.stack {
-            Some(s) => Some(s.focus_up()),
-            None    => None
-        };
+        w.current.workspace.stack = w.current.workspace.stack.map(|s| s.focus_up());
         w
     }
 
-    pub fn get_focus_window(&self) -> Window {
-        match self.current.workspace.stack {
-            Some(ref s) => s.focus,
-            None        => 0
-        }
+    pub fn get_focus_window(&self) -> Option<Window> {
+        self.current.workspace.stack.clone().map(|s| s.focus)
     }
 
     pub fn peek(&self) -> Option<Window> {
@@ -368,10 +375,7 @@ impl Workspaces {
     }
 
     pub fn shift(&self, index: u32) -> Workspaces {
-        match self.peek() {
-            Some(w) => self.shift_window(index, w),
-            None    => self.clone()
-        }
+        self.peek().map_or(self.clone(), |w| self.shift_window(index, w))
     }
 
     pub fn insert_up(&self, window: Window) -> Workspaces {
@@ -425,7 +429,6 @@ impl Workspaces {
                 let b = self.on_workspace(index, second_closure);
 
                 debug!("shifting window from {} to {}", from, index);
-
                 (*b).call(((*a).call((self.clone(),)),))
             },
             None => self.clone()

@@ -65,7 +65,7 @@ impl WindowManager {
         let sc : Vec<Screen> = xs.iter()
             .enumerate()
             .zip(screens.iter())
-            .map(|((a, b), &c)| Screen::new(b.clone(), a, c))
+            .map(|((a, b), &c)| Screen::new(b.clone(), a as u32, c))
             .collect();
 
         self.workspaces.current = sc.head().unwrap().clone();
@@ -144,6 +144,12 @@ impl WindowManager {
         w
     }
 
+    pub fn modify_workspaces(&self, f: |&Workspaces| -> Workspaces) -> WindowManager {
+        let mut w = self.clone();
+        w.workspaces = f(&self.workspaces);
+        w
+    }
+
     pub fn windows(&self, window_system: &WindowSystem, config: &Config, 
                    f: |&Workspaces| -> Workspaces) -> WindowManager {
         let old_visible_vecs : Vec<Vec<Window>> = (vec!(self.workspaces.current.clone())).iter()
@@ -155,12 +161,13 @@ impl WindowManager {
             .flat_map(|x| x.iter())
             .map(|x| x.clone())
             .collect();
-        let ws = f(&self.workspaces); 
+
+        let result = self.modify_workspaces(f); 
 
         old_visible.iter().fold((), 
             |_, &x| window_system.set_window_border_color(x, config.border_color.clone()));
 
-        match ws.peek() {
+        match result.workspaces.peek() {
             Some(focused_window) => {
                 window_system.set_window_border_color(focused_window, config.focus_border_color.clone());
                 window_system.focus_window(focused_window);
@@ -168,8 +175,6 @@ impl WindowManager {
             None => ()
         }
 
-        let mut r = self.clone();
-        r.workspaces = ws;
-        r
+        result
     }
 }
