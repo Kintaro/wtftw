@@ -433,6 +433,7 @@ impl Workspaces {
             .nth(0)
     }
 
+    /// Flatten all workspaces into a list
     pub fn workspaces(&self) -> Vec<Workspace> {
         let v : Vec<Workspace> = self.visible.iter().map(|x| x.workspace.clone()).collect();
         (vec!(self.current.workspace.clone())).iter()
@@ -442,6 +443,7 @@ impl Workspaces {
             .collect()
     }
 
+    /// Shift the given window to the given workspace
     pub fn shift_window(&self, index: u32, window: Window) -> Workspaces {
         let first_closure = (box move |&: w: Workspaces| {
             w.delete(window)
@@ -463,6 +465,7 @@ impl Workspaces {
         }
     }
 
+    /// Apply the given function to the given workspace
     pub fn on_workspace(&self, index: u32, f: Box<Fn<(Workspaces,), Workspaces> + 'static>) 
             -> Box<Fn<(Workspaces,), Workspaces> + 'static> {
         (box move |&: x: Workspaces| {
