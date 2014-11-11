@@ -2,10 +2,8 @@ extern crate serialize;
 
 use std::os::homedir;
 use std::collections::TreeMap;
-use window_manager::WindowManager;
 use window_system::*;
 use handlers::KeyHandler;
-use std::ops::Fn;
 
 /// Common configuration options for the window manager.
 pub struct Config<'a> {
@@ -43,7 +41,7 @@ impl<'a> Config<'a> {
         Config {
             focus_follows_mouse: true,
             focus_border_color:  0x00B6FFB0,
-            border_color:        0x00FFB6B0,
+            border_color:        0x00444444,
             border_width:        2,
             spacing:             10,
             terminal:            (String::from_str("xterm"), String::from_str("-fg White -bg Black")),

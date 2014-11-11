@@ -3,6 +3,11 @@ use window_system::Window;
 use window_system::Rectangle;
 use window_manager::ScreenDetail;
 
+pub enum LayoutMessage {
+    Increase,
+    Decrease
+}
+
 pub struct RationalRect(f32, f32, f32, f32);
 
 pub fn tile(ratio: f32, screen: ScreenDetail, num_master: u32, num_windows: u32) -> Vec<Rectangle> {
@@ -50,6 +55,7 @@ impl LayoutManager {
 
 pub trait Layout {
     fn apply_layout(&self, screen: Rectangle, stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)>; 
+    fn apply_message(&mut self, message: LayoutMessage);
 }
 
 pub struct TallLayout {
@@ -70,6 +76,13 @@ impl Layout for TallLayout {
                     .collect()
             },
             _ => Vec::new()
+        }
+    }
+
+    fn apply_message(&mut self, message: LayoutMessage) {
+        match message {
+            Increase => self.ratio += 0.05,
+            Decrease => self.ratio -= 0.05
         }
     }
 }

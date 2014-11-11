@@ -6,15 +6,11 @@ extern crate log;
 extern crate serialize;
 
 use std::ops::Fn;
-use std::io::process::Command;
-
 use config::Config;
 use logger::FileLogger;
 use window_manager::WindowManager;
 use window_system::*;
 use xlib_window_system::XlibWindowSystem;
-
-use handlers::KeyHandler;
 use handlers::default::*;
 
 pub mod config;
@@ -74,7 +70,7 @@ fn main() {
                         debug!("Display {}: {}x{} ({}, {})", i, w, h, x, y);
                     }
 
-                    window_manager.rescreen(&window_system, &config);
+                    window_manager.rescreen(&window_system);
                 }
             },
             // A window asked to be reconfigured (i.e. resized, border change, etc.)

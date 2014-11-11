@@ -9,7 +9,6 @@ use self::libc::funcs::c95::stdlib::malloc;
 use self::xlib::*;
 use self::xinerama::XineramaQueryScreens;
 
-use std::collections::TreeSet;
 use std::os::env;
 use std::ptr::null_mut;
 use std::mem::transmute;
@@ -53,7 +52,7 @@ const ColormapNotify         : uint = 32;
 const ClientMessage          : uint = 33;
 const MappingNotify          : uint = 34;
 
-extern fn error_handler(display: *mut Display, event: *mut XErrorEvent) -> c_int {
+extern fn error_handler(_: *mut Display, _: *mut XErrorEvent) -> c_int {
     return 0;
 }
 
@@ -360,8 +359,9 @@ impl WindowSystem for XlibWindowSystem {
                     let event : XKeyEvent = *self.get_event_as();
                     let key = KeyCommand { 
                         key: self.get_string_from_keycode(event.keycode),
-                        mask: KeyModifiers::from_bits(0xF & event.state as u32).unwrap()
+                        mask: KeyModifiers::from_bits(0xEF & event.state as u32).unwrap()
                     };
+                    debug!("key pressed: {} with mask {}", key.key, key.mask);
                     KeyPressed(event.window, key)
                 }
             },

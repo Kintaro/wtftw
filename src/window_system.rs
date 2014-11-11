@@ -32,6 +32,12 @@ pub struct KeyCommand {
     pub key: String
 }
 
+impl KeyCommand {
+    pub fn new(key: String, mask: KeyModifiers) -> KeyCommand {
+        KeyCommand { key: key, mask: mask }
+    }
+}
+
 bitflags! {
     #[deriving(Show)]
     flags KeyModifiers : u32 {

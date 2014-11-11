@@ -1,10 +1,11 @@
-#![feature(unboxed_closures, unboxed_closure_sugar, overloaded_calls)]
 use window_manager::WindowManager;
 use window_system::WindowSystem;
+use window_system::Window;
 use config::Config;
 
 #[deriving(Clone)]
-pub type KeyHandler<'a> = Box<Fn<(WindowManager, &'a WindowSystem + 'a, &'a Config<'a>), WindowManager> + 'static>;
+pub type KeyHandler<'a> = Box<Fn<(WindowManager, &'a WindowSystem + 'a, &'a Config<'a>), WindowManager> + 'static>;pub type ManageHook<'a> = Box<Fn<(WindowManager, &'a WindowSystem + 'a, &'a Config<'a>, Window), 
+    WindowManager> + 'static>;
 
 /// Some default handlers for easier config scripts
 pub mod default {
@@ -40,10 +41,7 @@ pub mod default {
     pub fn switch_to_workspace(window_manager: WindowManager, window_system: &WindowSystem, 
                                config: &Config, index: uint) -> WindowManager {
         let mut local_window_manager = window_manager.clone();
-
-        debug!("switching to workspace {}", config.tags[index].clone());
         local_window_manager.view(window_system, index as u32, config);
-
         local_window_manager
     }
 
@@ -55,9 +53,7 @@ pub mod default {
         debug!("moving window to workspace {}", 
                config.tags[index].clone());
 
-        local_window_manager.move_window_to_workspace(window_system, index as u32, config);
-
+        local_window_manager.move_window_to_workspace(index as u32);
         local_window_manager
     }
-
 }
