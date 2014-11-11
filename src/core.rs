@@ -389,7 +389,7 @@ impl Workspaces {
                 s.down.insert(0, s.focus.clone());
                 s.focus = window;
             },
-            None => ()
+            None => w.current.workspace.stack = Some(Stack::from_element(window))
         }
         w
     }

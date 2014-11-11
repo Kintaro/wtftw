@@ -44,6 +44,7 @@ impl WindowManager {
     pub fn move_window_to_workspace(&self, window_system: &WindowSystem, 
                                     config: &Config, index: u32) -> WindowManager {
         self.windows(window_system, config, |w| w.shift(index))
+            .reapply_layout(window_system, config)
     }
 
     /// Rearrange the workspaces across the given screens.
