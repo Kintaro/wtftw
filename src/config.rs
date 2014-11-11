@@ -63,7 +63,7 @@ impl<'a> Config<'a> {
         self.mod_mask
     }
 
-    pub fn add_key_handler(&mut self, keycommand: KeyCommand, keyhandler: KeyHandler<'a>) {
-        self.key_handlers.insert(keycommand, keyhandler);
+    pub fn add_key_handler(&mut self, key: String, mask: KeyModifiers, keyhandler: KeyHandler<'a>) {
+        self.key_handlers.insert(KeyCommand::new(key, mask), keyhandler);
     }
 }
