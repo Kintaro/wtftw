@@ -117,7 +117,7 @@ impl WindowManager {
     /// Manage a new window that was either created just now or already present
     /// when the WM started.
     pub fn manage(&mut self, window_system: &WindowSystem, window: Window, config: &Config) {
-        self.workspaces.current.workspace.add(window);
+        self.workspaces.current.workspace = self.workspaces.current.workspace.add(window);
         self.reapply_layout(window_system, config);   
         self.windows(window_system, config, |x| x.clone());
         debug!("managing window \"{}\" ({})", window_system.get_window_name(window), window);
@@ -128,8 +128,8 @@ impl WindowManager {
         if self.workspaces.contains(window) {
             debug!("unmanaging window {}", window);
             self.workspaces = self.workspaces.delete(window);
-            self.reapply_layout(window_system, config);
             self.windows(window_system, config, |x| x.clone());
+            self.reapply_layout(window_system, config);
         }
     }
 

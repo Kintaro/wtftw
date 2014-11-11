@@ -38,19 +38,21 @@ impl<T: Clone + Eq> Stack<T> {
         }
     }
 
-    pub fn add(&mut self, t: T) {
-        self.down.push(self.focus.clone());
-        self.focus = t;
+    pub fn add(&self, t: T) -> Stack<T> {
+        let mut s = self.clone();
+        s.down.push(self.focus.clone());
+        s.focus = t;
+        s
     }
 
     /// Flatten the stack into a list
     pub fn integrate(&self) -> Vec<T> {
         self.up.iter()
-            //.rev()
+            .rev()
             .chain((vec!(self.focus.clone())).iter())
             .chain(self.down.iter())
             .map(|x| x.clone())
-            .rev()
+            //.rev()
             .collect()
     }
 
@@ -157,11 +159,10 @@ impl Workspace {
         }
     }
 
-    pub fn add(&mut self, window: Window) {
-        match self.stack {
-            Some(ref mut stack) => stack.add(window),
-            _ => self.stack = Some(Stack::from_element(window))
-        }
+    pub fn add(&self, window: Window) -> Workspace {
+        let mut w = self.clone();
+        w.stack = Some(self.stack.clone().map_or(Stack::from_element(window), |s| s.add(window)));
+        w
     }
 
     /// Returns the number of windows contained in this workspace
@@ -291,7 +292,7 @@ impl Workspaces {
     /// current workspace to 'hidden'.  If that workspace is 'visible' on another
     /// screen, the workspaces of the current screen and the other screen are
     /// swapped.
-    pub fn greedy_view(&mut self, _: uint) {
+    pub fn greedy_view(&self, _: uint) {
 
     }
 
@@ -308,22 +309,21 @@ impl Workspaces {
     pub fn delete_p(&self, window: Window) -> Workspaces {
         let mut w = self.clone();
 
-        w.hidden.iter_mut().fold((), |_, workspace| {
+        let remove_from_workspace = |workspace: &mut Workspace| {
             if workspace.stack.is_some() {
                 workspace.stack = workspace.clone().stack.unwrap().filter(|&x| x != window);
             }
+        };
+
+        remove_from_workspace(&mut w.current.workspace);
+
+        w.hidden.iter_mut().fold((), |_, workspace| {
+            remove_from_workspace(workspace)
         });
 
         w.visible.iter_mut().fold((), |_, screen| {
-            if screen.workspace.stack.is_some() {
-                screen.workspace.stack = screen.workspace.clone().stack.unwrap().filter(|&x| x != window);
-            }
+            remove_from_workspace(&mut screen.workspace)
         });
-
-        w.current.workspace.stack = match w.current.workspace.stack {
-            Some(ref s) => s.filter(|&x| x != window),
-            _           => self.current.workspace.stack.clone()
-        };
 
         w
     }
