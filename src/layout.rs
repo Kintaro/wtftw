@@ -44,7 +44,7 @@ pub fn split_horizontally_by(ratio: f32, screen: ScreenDetail) -> (Rectangle, Re
 pub struct LayoutManager;
 
 impl LayoutManager {
-    pub fn get_layout(name: String) -> Box<Layout + 'static> {
+    pub fn get_layout(_: String) -> Box<Layout + 'static> {
         box TallLayout { 
             num_master: 1, 
             increment_ratio: 0.03, 
