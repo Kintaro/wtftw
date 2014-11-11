@@ -38,6 +38,8 @@ impl<T: Clone + Eq> Stack<T> {
         }
     }
 
+    /// Add a new element to the stack
+    /// and automatically focus it.
     pub fn add(&self, t: T) -> Stack<T> {
         let mut s = self.clone();
         s.down.push(self.focus.clone());
@@ -159,6 +161,8 @@ impl Workspace {
         }
     }
 
+    /// Add a new window to the workspace by adding it to the stack.
+    /// If the stack doesn't exist yet, create one.
     pub fn add(&self, window: Window) -> Workspace {
         let mut w = self.clone();
         w.stack = Some(self.stack.clone().map_or(Stack::from_element(window), |s| s.add(window)));
@@ -184,6 +188,8 @@ pub struct Screen {
 }
 
 impl Screen {
+    /// Create a new screen for the given workspace
+    /// and the given dimensions
     pub fn new(workspace: Workspace, screen_id: u32, screen_detail: ScreenDetail) -> Screen {
         Screen {
             workspace: workspace,
@@ -207,9 +213,13 @@ impl Screen {
 
 #[deriving(Clone)]
 pub struct Workspaces {
+    /// The currently focused and visible screen
     pub current:  Screen,
+    /// The other visible, but non-focused screens
     pub visible:  Vec<Screen>,
+    /// All remaining workspaces that are currently hidden
     pub hidden:   Vec<Workspace>,
+    /// A list of all floating windows
     pub floating: TreeMap<Window, RationalRect>
 }
 
@@ -345,10 +355,14 @@ impl Workspaces {
         self.current.workspace.stack.clone().map(|s| s.focus)
     }
 
+    /// Retrieve the currently focused workspace's
+    /// focus element. If there is none, return None.
     pub fn peek(&self) -> Option<Window> {
         self.with(None, |s| Some(s.focus))
     }
 
+    /// Apply the given function to the currently focused stack
+    /// or return a default if the stack is empty
     pub fn with<T>(&self, default: T, f: |&Stack<Window>| -> T) -> T {
         match self.current.workspace.stack {
             Some(ref s) => f(s),
@@ -356,6 +370,8 @@ impl Workspaces {
         }
     }
 
+    /// Return the number of windows
+    /// contained in all workspaces, including floating windows
     pub fn len(&self) -> uint {
         self.current.len() + 
         self.visible.iter().map(|x| x.len()).sum() + 
@@ -363,6 +379,8 @@ impl Workspaces {
         self.floating.len()
     }
 
+    /// Checks if any of the workspaces contains the
+    /// given window
     pub fn contains(&self, window: Window) -> bool {
         self.current.contains(window) ||
         self.visible.iter().any(|x| x.contains(window)) ||
@@ -370,12 +388,18 @@ impl Workspaces {
         self.floating.contains_key(&window)
     }
 
+    /// Get the number of managed workspaces.
+    /// This is mostly used for out-of-bounds checking.
     pub fn number_workspaces(&self) -> u32 {
         (1 + self.visible.len() + self.hidden.len()) as u32
     }
 
+    /// Shift the currently focused window to the given workspace
     pub fn shift(&self, index: u32) -> Workspaces {
-        self.peek().map_or(self.clone(), |w| self.shift_window(index, w))
+        // Get current window
+        self.peek()
+            // and move it
+            .map_or(self.clone(), |w| self.shift_window(index, w))
     }
 
     pub fn insert_up(&self, window: Window) -> Workspaces {
@@ -394,10 +418,14 @@ impl Workspaces {
         w
     }
 
+    /// Retrieve the currently focused workspace's id
     pub fn current_tag(&self) -> u32 {
         self.current.workspace.id as u32
     }
 
+    /// Retrieve the tag of the workspace the given window
+    /// is contained in. If it is not contained anywhere,
+    /// return None.
     pub fn find_tag(&self, window: Window) -> Option<u32> {
         self.workspaces().iter()
             .filter(|x| x.contains(window))
