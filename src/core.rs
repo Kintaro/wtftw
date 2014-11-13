@@ -344,7 +344,7 @@ impl Workspaces {
         w.current.workspace.stack = w.current.workspace.stack.map(|s| s.focus_down());
         w
     }
-    
+
     pub fn focus_up(&self) -> Workspaces {
         let mut w = self.clone();
         w.current.workspace.stack = w.current.workspace.stack.map(|s| s.focus_up());
@@ -373,8 +373,8 @@ impl Workspaces {
     /// Return the number of windows
     /// contained in all workspaces, including floating windows
     pub fn len(&self) -> uint {
-        self.current.len() + 
-        self.visible.iter().map(|x| x.len()).sum() + 
+        self.current.len() +
+        self.visible.iter().map(|x| x.len()).sum() +
         self.hidden.iter().map(|x| x.len()).sum() +
         self.floating.len()
     }
@@ -452,7 +452,7 @@ impl Workspaces {
         let second_closure = (box move |&: w: Workspaces| {
             w.insert_up(window)
         }) as Box<Fn<(Workspaces,), Workspaces> + 'static>;
-        
+
         match self.find_tag(window) {
             Some(from) => {
                 let a = self.on_workspace(from, first_closure);
@@ -466,7 +466,7 @@ impl Workspaces {
     }
 
     /// Apply the given function to the given workspace
-    pub fn on_workspace(&self, index: u32, f: Box<Fn<(Workspaces,), Workspaces> + 'static>) 
+    pub fn on_workspace(&self, index: u32, f: Box<Fn<(Workspaces,), Workspaces> + 'static>)
             -> Box<Fn<(Workspaces,), Workspaces> + 'static> {
         (box move |&: x: Workspaces| {
             let current_tag = x.current_tag();

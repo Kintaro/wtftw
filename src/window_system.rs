@@ -1,4 +1,3 @@
-#![allow(non_upper_case_globals)]
 pub type Window = u64;
 
 #[deriving(Show, Clone)]
@@ -8,7 +7,7 @@ impl Rectangle {
     pub fn is_inside(&self, x: u32, y: u32) -> bool {
         let &Rectangle(rx, ry, rw, rh) = self;
 
-        x >= rx && x <= rx + rw && y >= ry && y <= ry + rh 
+        x >= rx && x <= rx + rw && y >= ry && y <= ry + rh
     }
 }
 
@@ -41,15 +40,15 @@ impl KeyCommand {
 bitflags! {
     #[deriving(Show)]
     flags KeyModifiers : u32 {
-        const NoneMask    = (0 << 0),
-        const ShiftMask   = (1 << 0),
-        const LockMask    = (1 << 1),
-        const ControlMask = (1 << 2),
-        const Mod1Mask    = (1 << 3),
-        const Mod2Mask    = (1 << 4),
-        const Mod3Mask    = (1 << 5),
-        const Mod4Mask    = (1 << 6),
-        const Mod5Mask    = (1 << 7),
+        const NONEMASK    = (0 << 0),
+        const SHIFTMASK   = (1 << 0),
+        const LOCKMASK    = (1 << 1),
+        const CONTROLMASK = (1 << 2),
+        const MOD1MASK    = (1 << 3),
+        const MOD2MASK    = (1 << 4),
+        const MOD3MASK    = (1 << 5),
+        const MOD4MASK    = (1 << 6),
+        const MOD5MASK    = (1 << 7),
     }
 }
 
@@ -59,7 +58,7 @@ impl KeyModifiers {
     }
 }
 
-#[deriving(Clone)]
+//#[deriving(Clone)]
 pub enum WindowSystemEvent {
     ConfigurationNotification(Window),
     ConfigurationRequest(Window, WindowChanges, u64),
@@ -84,13 +83,13 @@ pub enum WindowSystemEvent {
 
 pub trait WindowSystem {
     fn get_string_from_keycode(&self, key: u32) -> String;
-    fn get_keycode_from_string(&self, key: &String) -> u32; 
+    fn get_keycode_from_string(&self, key: &String) -> u32;
     fn get_root(&self) -> Window;
     /// Retrieve geometry infos over all screens
     fn get_screen_infos(&self) -> Vec<Rectangle>;
     /// Get the number of physical displays
     fn get_number_of_screens(&self) -> uint;
-    /// Get the width of the given physical screen 
+    /// Get the width of the given physical screen
     fn get_display_width(&self, screen: uint) -> u32;
     /// Get the height of the given physical screen
     fn get_display_height(&self, screen: uint) -> u32;

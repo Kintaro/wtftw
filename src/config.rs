@@ -55,7 +55,7 @@ impl<'a> Config<'a> {
             save_config_key:     String::from_str("s"),
             exit_key:            String::from_str("q"),
             key_handlers:        TreeMap::new(),
-            mod_mask:            Mod1Mask
+            mod_mask:            MOD1MASK
         }
     }
 

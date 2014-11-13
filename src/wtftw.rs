@@ -1,7 +1,7 @@
 #![feature(unboxed_closures, unboxed_closure_sugar, overloaded_calls)]
 #![feature(phase)]
 #![feature(globs)]
-#[phase(plugin, link)] 
+#[phase(plugin, link)]
 extern crate log;
 extern crate serialize;
 
@@ -31,7 +31,7 @@ fn main() {
     let mut config = Config::initialize();
     // Create the actual window manager
     let mut window_manager = WindowManager::new(&window_system, &config);
-    // 
+    //
     let logger = FileLogger::new(&config.logfile); //Not hotswappable
     log::set_logger(box logger);
 
@@ -52,16 +52,16 @@ fn main() {
 
     // Enter the event loop and just listen for events
     loop {
-        let event = window_system.get_event().clone();
+        let event = window_system.get_event();
         match event {
             ClientMessageEvent(_) => {
             },
-            // The X11/Wayland configuration changed, so we need to readjust the 
+            // The X11/Wayland configuration changed, so we need to readjust the
             // screen configurations.
             ConfigurationNotification(window) => {
                 if window_system.get_root() == window {
                     debug!("X configuration changed. Rescreen");
-                    
+
                     // Output some initial information
                     info!("WTFTW - Window Tiling For The Win");
                     info!("Starting wtftw on {} screen(s)", window_system.get_number_of_screens());
@@ -120,9 +120,9 @@ fn main() {
                     }
                 }
 
-                if key.mask == Mod1Mask | ShiftMask && key.key == config.exit_key {
+                if key.mask == MOD1MASK | SHIFTMASK && key.key == config.exit_key {
                     break;
-                } 
+                }
             },
             _ => ()
         }

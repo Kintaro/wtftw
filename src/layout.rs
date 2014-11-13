@@ -45,16 +45,16 @@ pub struct LayoutManager;
 
 impl LayoutManager {
     pub fn get_layout(_: String) -> Box<Layout + 'static> {
-        box TallLayout { 
-            num_master: 1, 
-            increment_ratio: 0.03, 
-            ratio: 0.5 
+        box TallLayout {
+            num_master: 1,
+            increment_ratio: 0.03,
+            ratio: 0.5
         }
     }
 }
 
 pub trait Layout {
-    fn apply_layout(&self, screen: Rectangle, stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)>; 
+    fn apply_layout(&self, screen: Rectangle, stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)>;
     fn apply_message(&mut self, message: LayoutMessage);
 }
 

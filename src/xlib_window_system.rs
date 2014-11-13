@@ -1,5 +1,3 @@
-#![allow(non_upper_case_globals)]
-#![allow(dead_code)]
 extern crate libc;
 extern crate xlib;
 extern crate xinerama;
@@ -18,48 +16,23 @@ use std::slice::raw::buf_as_slice;
 
 use window_system::*;
 
-const KeyPress               : uint =  2;
-const KeyRelease             : uint =  3;
-const ButtonPress            : uint =  4;
-const ButtonRelease          : uint =  5;
-const MotionNotify           : uint =  6;
-const EnterNotify            : uint =  7;
-const LeaveNotify            : uint =  8;
-const FocusIn                : uint =  9;
-const FocusOut               : uint = 10;
-const KeymapNotify           : uint = 11;
-const Expose                 : uint = 12;
-const GraphicsExpose         : uint = 13;
-const NoExpose               : uint = 14;
-const VisibilityNotify       : uint = 15;
-const CreateNotify           : uint = 16;
-const DestroyNotify          : uint = 17;
-const UnmapNotify            : uint = 18;
-const MapNotify              : uint = 19;
-const MapRequest             : uint = 20;
-const ReparentNotify         : uint = 21;
-const ConfigureNotify        : uint = 22;
-const ConfigureRequest       : uint = 23;
-const GravityNotify          : uint = 24;
-const ResizeRequest          : uint = 25;
-const CirculateNotify        : uint = 26;
-const CirculateRequest       : uint = 27;
-const PropertyNotify         : uint = 28;
-const SelectionClear         : uint = 29;
-const SelectionRequest       : uint = 30;
-const SelectionNotify        : uint = 31;
-const ColormapNotify         : uint = 32;
-const ClientMessage          : uint = 33;
-const MappingNotify          : uint = 34;
+const KEYPRESS               : uint =  2;
+const BUTTONPRESS            : uint =  4;
+const ENTERNOTIFY            : uint =  7;
+const LEAVENOTIFY            : uint =  8;
+const DESTROYNOTIFY          : uint = 17;
+const UNMAPNOTIFY            : uint = 18;
+const MAPREQUEST             : uint = 20;
+const CONFIGURENOTIFY        : uint = 22;
+const CONFIGUREREQUEST       : uint = 23;
+const CLIENTMESSAGE          : uint = 33;
 
 extern fn error_handler(_: *mut Display, _: *mut XErrorEvent) -> c_int {
     return 0;
 }
 
-#[deriving(Clone)]
 pub struct XlibWindowSystem {
     display: *mut Display,
-    screen:  *mut Screen,
     root:    Window,
     event:   *mut c_void,
 }
@@ -88,7 +61,6 @@ impl XlibWindowSystem {
 
             XlibWindowSystem {
                 display: display,
-                screen:  screen,
                 root:    root,
                 event:   malloc(256),
             }
@@ -106,7 +78,7 @@ impl WindowSystem for XlibWindowSystem {
             let keysym = XKeycodeToKeysym(self.display, key as u8, 0);
             let keyname : *mut c_char = XKeysymToString(keysym);
             String::from_str(c_str_to_static_slice(transmute(keyname)))
-        } 
+        }
     }
 
     fn get_keycode_from_string(&self, key: &String) -> u32 {
@@ -128,11 +100,11 @@ impl WindowSystem for XlibWindowSystem {
             // If xinerama is not active, just return the default display
             // dimensions and "emulate" xinerama.
             if num == 0 {
-                return vec!(Rectangle(0, 0, 
-                                      self.get_display_width(0), 
+                return vec!(Rectangle(0, 0,
+                                      self.get_display_width(0),
                                       self.get_display_height(0)));
             }
-            
+
             buf_as_slice(screen_ptr, num as uint, |x| {
                 let mut result : Vec<Rectangle> = Vec::new();
                 for &screen_info in x.iter() {
@@ -182,7 +154,7 @@ impl WindowSystem for XlibWindowSystem {
             let mut num_children : c_uint = 0;
             XQueryTree(self.display, self.root, &mut unused, &mut unused, children_ptr, &mut num_children);
             let const_children : *const u64 = children as *const u64;
-            buf_as_slice(const_children, num_children as uint, |x| 
+            buf_as_slice(const_children, num_children as uint, |x|
                          x.to_vec().iter()
                             .filter(|&&c| c != self.root)
                             .map(|&c| c)
@@ -193,14 +165,14 @@ impl WindowSystem for XlibWindowSystem {
     fn set_window_border_width(&self, window: Window, border_width: u32) {
         if window == self.root { return; }
         unsafe {
-            XSetWindowBorderWidth(self.display, window, border_width); 
+            XSetWindowBorderWidth(self.display, window, border_width);
         }
     }
 
     fn set_window_border_color(&self, window: Window, border_color: u32) {
         if window == self.root { return; }
         unsafe {
-            XSetWindowBorder(self.display, window, border_color as u64);   
+            XSetWindowBorder(self.display, window, border_color as u64);
         }
     }
 
@@ -281,13 +253,13 @@ impl WindowSystem for XlibWindowSystem {
         let event_type : c_int = unsafe { *self.get_event_as() };
 
         match event_type as uint {
-            ClientMessage => {
+            CLIENTMESSAGE => {
                 unsafe {
                     let event : &XClientMessageEvent = self.get_event_as();
                     ClientMessageEvent(event.window)
                 }
             },
-            ConfigureRequest => {
+            CONFIGUREREQUEST => {
                 let event : &XConfigureRequestEvent = unsafe { self.get_event_as() };
                 let window_changes = WindowChanges {
                     x: event.x as u32,
@@ -301,13 +273,13 @@ impl WindowSystem for XlibWindowSystem {
 
                 ConfigurationRequest(event.window, window_changes, event.value_mask)
             },
-            ConfigureNotify => {
+            CONFIGURENOTIFY => {
                 unsafe {
                     let event : &XConfigureEvent = self.get_event_as();
                     ConfigurationNotification(event.window)
                 }
             },
-            MapRequest => {
+            MAPREQUEST => {
                 unsafe {
                     let event : &XMapRequestEvent = self.get_event_as();
                     XSelectInput(self.display, event.window, 0x420030);
@@ -315,49 +287,49 @@ impl WindowSystem for XlibWindowSystem {
                     WindowCreated(event.window)
                 }
             },
-            UnmapNotify => {
+            UNMAPNOTIFY => {
                 unsafe {
                     let event : &XUnmapEvent = self.get_event_as();
                     WindowUnmapped(event.window, event.send_event > 0)
                 }
             },
-            DestroyNotify => {
+            DESTROYNOTIFY => {
                 unsafe {
                     let event : &XDestroyWindowEvent = self.get_event_as();
                     WindowDestroyed(event.window)
                 }
             },
-            EnterNotify => {
+            ENTERNOTIFY => {
                 unsafe {
                     let event : &XEnterWindowEvent = self.get_event_as();
                     if event.detail != 2 {
-                        Enter(event.window) 
+                        Enter(event.window)
                     } else {
                         UnknownEvent
                     }
                 }
             },
-            LeaveNotify => {
+            LEAVENOTIFY => {
                 unsafe {
                     let event : &XLeaveWindowEvent = self.get_event_as();
                     if event.detail != 2 {
-                        Leave(event.window) 
+                        Leave(event.window)
                     } else {
                         UnknownEvent
                     }
                 }
             },
-            ButtonPress => {
+            BUTTONPRESS => {
                 unsafe {
                     let event : &XButtonEvent = self.get_event_as();
-                    ButtonPressed(event.window, event.state, event.button, 
+                    ButtonPressed(event.window, event.state, event.button,
                                   event.x_root as u32, event.y_root as u32)
                 }
             },
-            KeyPress => {
+            KEYPRESS => {
                 unsafe {
                     let event : XKeyEvent = *self.get_event_as();
-                    let key = KeyCommand { 
+                    let key = KeyCommand {
                         key: self.get_string_from_keycode(event.keycode),
                         mask: KeyModifiers::from_bits(0xEF & event.state as u32).unwrap()
                     };
@@ -375,10 +347,10 @@ impl WindowSystem for XlibWindowSystem {
         for key in keys.iter() {
             unsafe {
                 debug!("grabbing key {}", key);
-                XGrabKey(self.display, self.get_keycode_from_string(&key.key) as i32, 
-                         key.mask.get_mask(), self.root, 1, 1, 1); 
-                XGrabKey(self.display, self.get_keycode_from_string(&key.key) as i32, 
-                         key.mask.get_mask() | 0x10, self.root, 1, 1, 1); 
+                XGrabKey(self.display, self.get_keycode_from_string(&key.key) as i32,
+                         key.mask.get_mask(), self.root, 1, 1, 1);
+                XGrabKey(self.display, self.get_keycode_from_string(&key.key) as i32,
+                         key.mask.get_mask() | 0x10, self.root, 1, 1, 1);
             }
         }
     }

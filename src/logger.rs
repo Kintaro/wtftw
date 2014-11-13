@@ -16,9 +16,10 @@ impl Logger for FileLogger {
     fn log(&mut self, record: &LogRecord) {
         println!("{}:{}: {}",
             record.level, record.module_path, record.args);
-        writeln!(self.file, "{}:{}: {}",
-            record.level, record.module_path, record.args);
-
+        match writeln!(self.file, "{}:{}: {}",
+            record.level, record.module_path, record.args) {
+            _ => ()
+        }
     }
 }
 
