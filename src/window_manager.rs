@@ -113,6 +113,12 @@ impl WindowManager {
         self.clone()
     }
 
+    pub fn unfocus_windows(&self, window_system: &WindowSystem, config: &Config) {
+        for &win in self.workspaces.visible_windows().iter() {
+            window_system.set_window_border_color(win, config.border_color);
+        }
+    }
+
     /// Manage a new window that was either created just now or already present
     /// when the WM started.
     pub fn manage(&mut self, window_system: &WindowSystem, window: Window, config: &Config) {

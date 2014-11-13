@@ -32,7 +32,7 @@ fn main() {
     // Create the actual window manager
     let mut window_manager = WindowManager::new(&window_system, &config);
     //
-    let logger = FileLogger::new(&config.logfile); //Not hotswappable
+    let logger = FileLogger::new(&config.logfile);
     log::set_logger(box logger);
 
     // Output some initial information
@@ -99,6 +99,7 @@ fn main() {
             Enter(window) => {
                 if config.focus_follows_mouse && window_manager.is_window_managed(window) {
                     let color = config.focus_border_color;
+                    window_manager.unfocus_windows(&window_system, &config);
                     window_system.set_window_border_color(window, color);
                     window_system.focus_window(window);
                 }

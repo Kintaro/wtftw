@@ -70,7 +70,11 @@ impl<T: Clone + Eq> Stack<T> {
         if lrs.len() > 0 {
             let first : T         = lrs.head().unwrap().clone();
             let rest : Vec<T>     = lrs.iter().skip(1).map(|x| x.clone()).collect();
-            let filtered : Vec<T> = self.up.iter().map(|x| x.clone()).filter(f).map(|x| x.clone()).collect();
+            let filtered : Vec<T> = self.up.iter()
+                .map(|x| x.clone())
+                .filter(f)
+                .map(|x| x.clone())
+                .collect();
             let stack : Stack<T>  = Stack::<T>::new(first, filtered, rest);
 
             Some(stack)
@@ -178,6 +182,10 @@ impl Workspace {
     pub fn contains(&self, window: Window) -> bool {
         self.stack.clone().map_or(false, |x| x.contains(window))
     }
+
+    pub fn windows(&self) -> Vec<Window> {
+        self.stack.clone().map_or(Vec::new(), |s| s.integrate())
+    }
 }
 
 #[deriving(Clone)]
@@ -208,6 +216,10 @@ impl Screen {
     /// screen's workspace
     pub fn len(&self) -> uint {
         self.workspace.len()
+    }
+
+    pub fn windows(&self) -> Vec<Window> {
+        self.workspace.windows()
     }
 }
 
@@ -472,5 +484,16 @@ impl Workspaces {
             let current_tag = x.current_tag();
             (*f).call((x.view(index),)).view(current_tag)
         }) as Box<Fn<(Workspaces,), Workspaces> + 'static>
+    }
+
+    pub fn visible_windows(&self) -> Vec<Window> {
+        let visible : Vec<Window> = self.visible.iter()
+            .map(|x| x.windows())
+            .flat_map(|x| x.into_iter())
+            .collect();
+        self.current.windows().iter()
+            .chain(visible.iter())
+            .map(|x| x.clone())
+            .collect()
     }
 }
