@@ -107,6 +107,11 @@ impl WindowManager {
             window_system.set_window_border_width(win, config.border_width);
         }
 
+        match self.workspaces.peek() {
+            Some(focused_window) => window_system.set_window_border_color(focused_window, config.border_color),
+            _                    => ()
+        }
+
         // Force a redraw on all windows.
         window_system.flush();
 

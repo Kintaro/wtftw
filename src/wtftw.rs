@@ -60,16 +60,7 @@ fn main() {
             // screen configurations.
             ConfigurationNotification(window) => {
                 if window_system.get_root() == window {
-                    debug!("X configuration changed. Rescreen");
-
-                    // Output some initial information
-                    info!("WTFTW - Window Tiling For The Win");
-                    info!("Starting wtftw on {} screen(s)", window_system.get_number_of_screens());
-
-                    for (i, &Rectangle(x, y, w, h)) in window_system.get_screen_infos().iter().enumerate() {
-                        debug!("Display {}: {}x{} ({}, {})", i, w, h, x, y);
-                    }
-
+                    debug!("screen configuration changed. Rescreen");
                     window_manager.rescreen(&window_system);
                 }
             },

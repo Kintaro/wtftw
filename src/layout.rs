@@ -1,3 +1,4 @@
+use std::num::Float;
 use core::Stack;
 use window_system::Window;
 use window_system::Rectangle;
