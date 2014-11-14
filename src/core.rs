@@ -11,7 +11,7 @@ pub struct RationalRect(f32, f32, f32, f32);
 /// `focus` keeps track of the focused window's id
 /// and `up` and `down` are the windows above or
 /// below the focus stack respectively.
-#[deriving(Clone)]
+#[deriving(Clone, PartialEq, Eq)]
 pub struct Stack<T> {
     pub focus: T,
     pub up:    Vec<T>,

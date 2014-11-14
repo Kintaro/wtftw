@@ -10,6 +10,8 @@ git = "https://github.com/servo/rust-xlib.git"
 [dependencies.xinerama]
 git = "https://github.com/Kintaro/rust-xinerama.git"
 
+[lib]
+name = "wtftw"
+
 [[bin]]
 name = "wtftw"
-plugin = true
