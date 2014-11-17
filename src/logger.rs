@@ -22,8 +22,3 @@ impl Logger for FileLogger {
         }
     }
 }
-
-impl Drop for FileLogger {
-    fn drop(&mut self) {
-    }
-}

@@ -19,5 +19,4 @@ pub mod window_manager;
 pub mod window_system;
 pub mod xlib_window_system;
 
-
 include!("local_config.rs")

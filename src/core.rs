@@ -415,9 +415,11 @@ impl Workspaces {
     }
 
     pub fn insert_up(&self, window: Window) -> Workspaces {
+        debug!("insert_up");
         if self.contains(window) {
             return self.clone();
         }
+        debug!("yep");
 
         let mut w = self.clone();
         match w.current.workspace.stack {
@@ -493,6 +495,18 @@ impl Workspaces {
             .collect();
         self.current.windows().iter()
             .chain(visible.iter())
+            .map(|x| x.clone())
+            .collect()
+    }
+
+    pub fn all_windows(&self) -> Vec<Window> {
+        let hidden : Vec<Window> = self.hidden.iter()
+            .map(|x| x.windows())
+            .flat_map(|x| x.into_iter())
+            .collect();
+
+        self.visible_windows().iter()
+            .chain(hidden.iter())
             .map(|x| x.clone())
             .collect()
     }

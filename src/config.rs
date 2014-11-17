@@ -2,8 +2,10 @@ extern crate serialize;
 
 use std::os::homedir;
 use std::collections::TreeMap;
+use core::Workspaces;
 use window_system::*;
 use handlers::KeyHandler;
+use handlers::ManageHook;
 
 /// Common configuration options for the window manager.
 pub struct Config<'a> {
@@ -31,7 +33,8 @@ pub struct Config<'a> {
     pub save_config_key: String,
     pub exit_key: String,
     pub key_handlers: TreeMap<KeyCommand, KeyHandler<'a>>,
-    pub mod_mask: KeyModifiers
+    pub mod_mask: KeyModifiers,
+    pub manage_hook: ManageHook
 }
 
 impl<'a> Config<'a> {
@@ -55,7 +58,8 @@ impl<'a> Config<'a> {
             save_config_key:     String::from_str("s"),
             exit_key:            String::from_str("q"),
             key_handlers:        TreeMap::new(),
-            mod_mask:            MOD1MASK
+            mod_mask:            MOD1MASK,
+            manage_hook:         box move |&: w: Workspaces, _: Window| -> Workspaces { w.clone() }
         }
     }
 

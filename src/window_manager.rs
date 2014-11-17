@@ -11,7 +11,7 @@ pub type ScreenDetail = Rectangle;
 
 #[deriving(Clone)]
 pub struct WindowManager {
-    workspaces: Workspaces
+    pub workspaces: Workspaces
 }
 
 impl WindowManager {
@@ -49,7 +49,7 @@ impl WindowManager {
 
     /// Rearrange the workspaces across the given screens.
     /// Needs to be called when the screen arrangement changes.
-    pub fn rescreen(&mut self, window_system: &WindowSystem) {
+    pub fn rescreen(&self, window_system: &WindowSystem) -> WindowManager {
         let screens = window_system.get_screen_infos();
         let visible : Vec<Workspace> = (vec!(self.workspaces.current.clone())).iter()
             .chain(self.workspaces.visible.iter())
@@ -68,8 +68,12 @@ impl WindowManager {
             .map(|((a, b), &c)| Screen::new(b.clone(), a as u32, c))
             .collect();
 
-        self.workspaces.current = sc.head().unwrap().clone();
-        self.workspaces.visible = sc.iter().skip(1).map(|x| x.clone()).collect();
+        self.modify_workspaces(|w: &Workspaces| {
+            let mut r = w.clone();
+            r.current = sc.head().unwrap().clone();
+            r.visible = sc.iter().skip(1).map(|x| x.clone()).collect();
+            r
+        })
     }
 
     /// Reapply the layout to the whole workspace.
@@ -126,20 +130,20 @@ impl WindowManager {
 
     /// Manage a new window that was either created just now or already present
     /// when the WM started.
-    pub fn manage(&mut self, window_system: &WindowSystem, window: Window, config: &Config) {
-        self.workspaces.current.workspace = self.workspaces.current.workspace.add(window);
-        self.reapply_layout(window_system, config);
-        self.windows(window_system, config, |x| x.clone());
+    pub fn manage(&self, window_system: &WindowSystem, window: Window, config: &Config) -> WindowManager {
         debug!("managing window \"{}\" ({})", window_system.get_window_name(window), window);
+        // TODO: manage floating windows
+        // and ensure that they stay within screen boundaries
+        self.windows(window_system, config, |x| config.manage_hook.call((x.insert_up(window), window)))
     }
 
     /// Unmanage a window. This happens when a window is closed.
-    pub fn unmanage(&mut self, window_system: &WindowSystem, window: Window, config: &Config) {
+    pub fn unmanage(&self, window_system: &WindowSystem, window: Window, config: &Config) -> WindowManager {
         if self.workspaces.contains(window) {
             debug!("unmanaging window {}", window);
-            self.workspaces = self.workspaces.delete(window);
-            self.windows(window_system, config, |x| x.clone());
-            self.reapply_layout(window_system, config);
+            self.windows(window_system, config, |x| x.delete(window)).reapply_layout(window_system, config)
+        } else {
+            self.clone()
         }
     }
 
@@ -173,7 +177,7 @@ impl WindowManager {
             .map(|x| x.clone())
             .collect();
 
-        let result = self.modify_workspaces(f);
+        let result = self.modify_workspaces(f).reapply_layout(window_system, config);
 
         old_visible.iter().fold((),
             |_, &x| window_system.set_window_border_color(x, config.border_color.clone()));

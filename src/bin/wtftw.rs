@@ -2,10 +2,14 @@
 #![feature(phase)]
 #[phase(plugin, link)]
 extern crate log;
+extern crate getopts;
 extern crate serialize;
 extern crate wtftw;
 
 use std::ops::Fn;
+use std::os;
+use getopts::{ optopt, getopts };
+use serialize::json;
 use wtftw::config::Config;
 use wtftw::logger::FileLogger;
 use wtftw::window_manager::WindowManager;
@@ -13,7 +17,23 @@ use wtftw::window_system::*;
 use wtftw::xlib_window_system::XlibWindowSystem;
 use wtftw::configure;
 
+pub fn parse_window_ids(ids: &str) -> Vec<Window> {
+    json::decode(ids).unwrap()
+}
+
 fn main() {
+    // Parse command line arguments
+    let args : Vec<String> = os::args();
+
+    let opts = [
+        optopt("r", "resume", "list of window IDs to capture in resume", "WINDOW")
+    ];
+
+    let matches = match getopts(args.tail(), opts) {
+        Ok(m)  => m,
+        Err(f) => panic!(f.to_string())
+    };
+
     // Initialize window system. Use xlib here for now
     let window_system = XlibWindowSystem::new();
     // Create a default configuration
@@ -39,6 +59,19 @@ fn main() {
         window_system.grab_keys(vec!(command.clone()));
     }
 
+    window_system.grab_keys(vec!(KeyCommand::new(config.exit_key.clone(), config.get_mod_mask() | SHIFTMASK)));
+
+    let window_ids = if matches.opt_present("r") {
+        debug!("found {}", matches.opt_str("r").unwrap());
+        parse_window_ids(matches.opt_str("r").unwrap().as_slice())
+    } else {
+        Vec::new()
+    };
+
+    for &window in window_ids.iter() {
+        window_manager = window_manager.manage(&window_system, window, &config);
+    }
+
     // Enter the event loop and just listen for events
     loop {
         let event = window_system.get_event();
@@ -50,7 +83,7 @@ fn main() {
             ConfigurationNotification(window) => {
                 if window_system.get_root() == window {
                     debug!("screen configuration changed. Rescreen");
-                    window_manager.rescreen(&window_system);
+                    window_manager = window_manager.rescreen(&window_system);
                 }
             },
             // A window asked to be reconfigured (i.e. resized, border change, etc.)
@@ -61,17 +94,18 @@ fn main() {
             // it unless it is already managed by us.
             WindowCreated(window) => {
                 if !window_manager.is_window_managed(window) {
-                    window_manager.manage(&window_system, window, &config);
+                    window_manager = window_manager.manage(&window_system, window, &config);
                 }
             },
             WindowUnmapped(window, synthetic) => {
                 if synthetic && window_manager.is_window_managed(window) {
                     window_manager.unmanage(&window_system, window, &config);
+                    // TODO: remove from mapped stack and from waitingUnmap stack
                 }
             },
             WindowDestroyed(window) => {
                 if window_manager.is_window_managed(window) {
-                    window_manager.unmanage(&window_system, window, &config);
+                    window_manager = window_manager.unmanage(&window_system, window, &config);
                 }
             },
             // The mouse pointer entered a window's region. If focus following
@@ -92,18 +126,14 @@ fn main() {
                 }
             },
             KeyPressed(_, key) => {
-                for (command, handler) in config.key_handlers.iter() {
+                for (command, ref handler) in config.key_handlers.iter() {
                     if command == &key {
-                        let h = handler.clone();
                         let local_window_manager = window_manager.clone();
-                        window_manager = (**h).call((local_window_manager, &window_system, &config));
+                        window_manager = handler.call((local_window_manager, &window_system, &config));
                         continue;
                     }
                 }
 
-                if key.mask == MOD1MASK | SHIFTMASK && key.key == config.exit_key {
-                    break;
-                }
             },
             _ => ()
         }
