@@ -279,15 +279,18 @@ impl Workspaces {
     /// current.
     pub fn view(&self, index: u32) -> Workspaces {
         debug!("setting focus to {}", index);
+
+        // We are already on the desired workspace. Do nothing
         if self.current.workspace.id == index {
             return self.clone();
         }
 
-        let mut w = self.clone();
-
-        match w.visible.iter().position(|s| s.workspace.id == index) {
+        // Desired workspace is visible, switch to it by raising
+        // it to current and pushing the current one to visible
+        match self.visible.iter().position(|s| s.workspace.id == index) {
             Some(screen_pos) => {
                 let screen = self.visible[screen_pos].clone();
+                let mut w = self.clone();
                 w.visible.remove(screen_pos);
                 w.visible.insert(0, self.current.clone());
                 w.current = screen;
@@ -296,15 +299,17 @@ impl Workspaces {
             _ => ()
         }
 
+        // Desired workspace is hidden. Switch it with the current workspace
         match self.hidden.iter().position(|w| w.id == index) {
             Some(workspace_pos) => {
                 let current_workspace = self.current.workspace.clone();
+                let mut w = self.clone();
                 w.current.workspace = self.hidden[workspace_pos].clone();
                 w.hidden.remove(workspace_pos);
-                w.hidden.insert(0, current_workspace);
-                w
+                w.hidden.insert(0, self.current.workspace.clone());
+                return w;
             },
-            _ => w
+            _ => self.clone()
         }
     }
 
@@ -415,11 +420,9 @@ impl Workspaces {
     }
 
     pub fn insert_up(&self, window: Window) -> Workspaces {
-        debug!("insert_up");
         if self.contains(window) {
             return self.clone();
         }
-        debug!("yep");
 
         let mut w = self.clone();
         match w.current.workspace.stack {
@@ -507,6 +510,13 @@ impl Workspaces {
 
         self.visible_windows().iter()
             .chain(hidden.iter())
+            .map(|x| x.clone())
+            .collect()
+    }
+
+    pub fn screens(&self) -> Vec<Screen> {
+        (vec!(self.current.clone())).iter()
+            .chain(self.visible.iter())
             .map(|x| x.clone())
             .collect()
     }

@@ -59,8 +59,6 @@ fn main() {
         window_system.grab_keys(vec!(command.clone()));
     }
 
-    window_system.grab_keys(vec!(KeyCommand::new(config.exit_key.clone(), config.get_mod_mask() | SHIFTMASK)));
-
     let window_ids = if matches.opt_present("r") {
         debug!("found {}", matches.opt_str("r").unwrap());
         parse_window_ids(matches.opt_str("r").unwrap().as_slice())
@@ -69,6 +67,7 @@ fn main() {
     };
 
     for &window in window_ids.iter() {
+        debug!("re-inserting window {}", window);
         window_manager = window_manager.manage(&window_system, window, &config);
     }
 
@@ -133,7 +132,6 @@ fn main() {
                         continue;
                     }
                 }
-
             },
             _ => ()
         }

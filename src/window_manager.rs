@@ -35,7 +35,7 @@ impl WindowManager {
     pub fn view(&self, window_system: &WindowSystem, index: u32, config: &Config) -> WindowManager {
         if index < self.workspaces.number_workspaces() {
             debug!("switching to workspace {}", config.tags[index as uint].clone());
-            self.windows(window_system, config, |w| w.view(index)).reapply_layout(window_system, config)
+            self.windows(window_system, config, |w| w.view(index))
         } else {
             self.clone()
         }
@@ -44,7 +44,6 @@ impl WindowManager {
     pub fn move_window_to_workspace(&self, window_system: &WindowSystem,
                                     config: &Config, index: u32) -> WindowManager {
         self.windows(window_system, config, |w| w.shift(index))
-            .reapply_layout(window_system, config)
     }
 
     /// Rearrange the workspaces across the given screens.
@@ -78,41 +77,43 @@ impl WindowManager {
 
     /// Reapply the layout to the whole workspace.
     pub fn reapply_layout(&self, window_system: &WindowSystem, config: &Config) -> WindowManager {
-        let screen = &self.workspaces.current;
-        let workspace = &screen.workspace;
-        let layout = LayoutManager::get_layout(workspace.layout.clone());
+        for screen in self.workspaces.screens().iter() {
+            let workspace = &screen.workspace;
+            let layout = LayoutManager::get_layout(workspace.layout.clone());
 
-        let Rectangle(x, y, w, h) = screen.screen_detail;
-        let screen_space = Rectangle(x, y + 20, w, h - 20);
+            let Rectangle(x, y, w, h) = screen.screen_detail;
+            let screen_space = Rectangle(x, y + 20, w, h - 20);
 
-        let window_layout = layout.apply_layout(screen_space, &workspace.stack);
+            let window_layout = layout.apply_layout(screen_space, &workspace.stack);
 
-        debug!("reapplying layout to {} screen", screen.screen_detail);
+            debug!("reapplying layout to {} screen", screen.screen_detail);
 
-        // First, hide all the windows that are marked as hidden now,
-        // by unmapping them from the server.
-        for workspace in self.workspaces.hidden.iter() {
-            match workspace.stack {
-                Some(ref s) => {
-                    for &win in s.integrate().iter() {
-                        window_system.hide_window(win);
+            // First, hide all the windows that are marked as hidden now,
+            // by unmapping them from the server.
+            for workspace in self.workspaces.hidden.iter() {
+                match workspace.stack {
+                    Some(ref s) => {
+                        for &win in s.integrate().iter() {
+                            window_system.hide_window(win);
+                        }
                     }
+                    _ => ()
                 }
-                _ => ()
+            }
+
+            // Then, show, place and resize all now visible windows.
+            for &(win, Rectangle(x, y, w, h)) in window_layout.iter() {
+                debug!("Show window {} ({})", win, window_system.get_window_name(win));
+                window_system.show_window(win);
+                window_system.resize_window(win, w - config.border_width * 2, h - config.border_width * 2);
+                window_system.move_window(win, x, y);
+                window_system.set_window_border_width(win, config.border_width);
+                window_system.set_window_border_color(win, config.border_color);
             }
         }
 
-        // Then, show, place and resize all now visible windows.
-        for &(win, Rectangle(x, y, w, h)) in window_layout.iter() {
-            debug!("Show window {} ({})", win, window_system.get_window_name(win));
-            window_system.show_window(win);
-            window_system.resize_window(win, w - config.border_width * 2, h - config.border_width * 2);
-            window_system.move_window(win, x, y);
-            window_system.set_window_border_width(win, config.border_width);
-        }
-
         match self.workspaces.peek() {
-            Some(focused_window) => window_system.set_window_border_color(focused_window, config.border_color),
+            Some(focused_window) => window_system.set_window_border_color(focused_window, config.focus_border_color),
             _                    => ()
         }
 
@@ -165,17 +166,35 @@ impl WindowManager {
         w
     }
 
+    pub fn reveal(&self, window_system: &WindowSystem, window: Window) -> WindowManager {
+        window_system.show_window(window);
+        self.clone()
+    }
+
     pub fn windows(&self, window_system: &WindowSystem, config: &Config,
                    f: |&Workspaces| -> Workspaces) -> WindowManager {
+        let ws = f(&self.workspaces);
+
         let old_visible_vecs : Vec<Vec<Window>> = (vec!(self.workspaces.current.clone())).iter()
             .chain(self.workspaces.visible.iter())
             .filter_map(|x| x.workspace.stack.clone())
             .map(|x| x.integrate())
             .collect();
+
+        let new_windows : Vec<Window> = ws.all_windows().iter()
+            .filter(|&x| !self.workspaces.all_windows().contains(x))
+            .map(|x| x.clone())
+            .collect();
+
         let old_visible : Vec<Window> = old_visible_vecs.iter()
             .flat_map(|x| x.iter())
             .map(|x| x.clone())
             .collect();
+
+        match self.workspaces.peek() {
+            Some(win) => window_system.set_window_border_color(win, config.border_color.clone()),
+            _         => ()
+        }
 
         let result = self.modify_workspaces(f).reapply_layout(window_system, config);
 

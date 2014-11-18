@@ -1,9 +1,10 @@
 pub fn configure(_: &mut WindowManager, _: &WindowSystem, config: &mut Config) {
-    let modm = MOD4MASK;
+    let modm = MOD1MASK;
 
     config.border_color = 0x7e9014;
-    //config.focus_border_color = 0xafc81c;
-    config.focus_border_color = 0xaf0000;
+    config.focus_border_color = 0xafc81c;
+    //config.focus_border_color = 0xaf0000;
+    config.terminal = (String::from_str("xfce4-terminal"), String::from_str(""));
 
     // Register key handlers
     config.add_key_handler(String::from_str("q"), modm | SHIFTMASK,

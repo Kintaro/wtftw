@@ -25,10 +25,20 @@ pub mod default {
     pub fn start_terminal(window_manager: WindowManager, _: &WindowSystem,
                           config: &Config) -> WindowManager {
         let (terminal, args) = config.terminal.clone();
-        let arguments : Vec<String> = args.split(' ').map(String::from_str).collect();
+        let arguments : Vec<String> = if args.is_empty() {
+            Vec::new()
+        } else {
+            args.split(' ').map(String::from_str).collect()
+        };
+
         spawn(proc() {
             debug!("spawning terminal");
-            match Command::new(terminal).args(arguments.as_slice()).detached().spawn() {
+            let command = if arguments.is_empty() {
+                Command::new(terminal).detached().spawn()
+            } else {
+                Command::new(terminal).args(arguments.as_slice()).detached().spawn()
+            };
+            match command {
                 Ok(_) => (),
                 _     => panic!("unable to start terminal")
             }
@@ -70,7 +80,7 @@ pub mod default {
         let windows = window_ids.to_c_str();
 
         let result = unsafe {
-            
+
             let mut slice : &mut [*const i8] = [
                 program_name.as_ptr(),
                 resume.as_ptr(),
