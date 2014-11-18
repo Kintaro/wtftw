@@ -93,7 +93,7 @@ impl<T: Clone + Eq> Stack<T> {
     }
 
     /// Move the focus to the next element in the `down` list
-    pub fn focus_down(&self) -> Stack<T> {
+    pub fn focus_up(&self) -> Stack<T> {
         let mut s = self.clone();
         if self.up.is_empty() {
             let tmp : Vec<T> = (vec!(s.focus.clone())).iter()
@@ -120,8 +120,48 @@ impl<T: Clone + Eq> Stack<T> {
     }
 
     /// Move the focus up
-    pub fn focus_up(&self) -> Stack<T> {
-        self.reverse().focus_down().reverse()
+    pub fn focus_down(&self) -> Stack<T> {
+        self.reverse().focus_up().reverse()
+    }
+
+    pub fn swap_up(&self) -> Stack<T> {
+        if self.up.is_empty() {
+            Stack::<T>::new(self.focus.clone(), self.down.iter().rev().map(|x| x.clone()).collect(), Vec::new())
+        } else {
+            let x = self.up.head().unwrap().clone();
+            let xs = self.up.iter().skip(1).map(|x| x.clone()).collect();
+            let rs = (vec!(x)).iter()
+                .chain(self.down.iter())
+                .map(|x| x.clone())
+                .collect();
+            Stack::<T>::new(self.focus.clone(), xs, rs)
+        }
+    }
+
+    pub fn swap_down(&self) -> Stack<T> {
+        self.reverse().swap_up().reverse()
+    }
+    
+    pub fn swap_master(&self) -> Stack<T> {
+        if self.up.is_empty() {
+            self.clone()
+        } else {
+            let r : Vec<T>  = self.up.iter()
+                .rev().map(|x| x.clone())
+                .collect();
+            let x : T       = r.head().unwrap().clone();
+            let xs : Vec<T> = r.iter()
+                .skip(1)
+                .map(|x| x.clone())
+                .collect();
+            let rs : Vec<T> = xs.iter()
+                .chain((vec!(x)).iter())
+                .chain(self.down.iter())
+                .map(|x| x.clone())
+                .collect();
+
+            Stack::<T>::new(self.focus.clone(), Vec::new(), rs)
+        }
     }
 
     /// Reverse the stack by exchanging
@@ -390,6 +430,24 @@ impl Workspaces {
     pub fn focus_up(&self) -> Workspaces {
         let mut w = self.clone();
         w.current.workspace.stack = w.current.workspace.stack.map(|s| s.focus_up());
+        w
+    }
+
+    pub fn swap_down(&self) -> Workspaces {
+        let mut w = self.clone();
+        w.current.workspace.stack = w.current.workspace.stack.map(|s| s.swap_down());
+        w
+    }
+    
+    pub fn swap_up(&self) -> Workspaces {
+        let mut w = self.clone();
+        w.current.workspace.stack = w.current.workspace.stack.map(|s| s.swap_up());
+        w
+    }
+
+    pub fn swap_master(&self) -> Workspaces {
+        let mut w = self.clone();
+        w.current.workspace.stack = w.current.workspace.stack.map(|s| s.swap_master());
         w
     }
 

@@ -14,14 +14,24 @@ pub fn configure(_: &mut WindowManager, _: &WindowSystem, config: &mut Config) {
     config.add_key_handler(String::from_str("p"), modm,
             box |&: m, w, c| start_launcher(m, w, c));
 
-    config.add_key_handler(String::from_str("k"), modm,
+    config.add_key_handler(String::from_str("j"), modm,
             box |&: m: WindowManager, w: &WindowSystem, c: &Config| {
                 m.windows(w, c, |x| x.focus_down())
             });
 
-    config.add_key_handler(String::from_str("j"), modm,
+    config.add_key_handler(String::from_str("k"), modm,
             box |&: m: WindowManager, w: &WindowSystem, c: &Config| {
                 m.windows(w, c, |x| x.focus_up())
+            });
+
+    config.add_key_handler(String::from_str("j"), modm | SHIFTMASK,
+            box |&: m: WindowManager, w: &WindowSystem, c: &Config| {
+                m.windows(w, c, |x| x.swap_down())
+            });
+
+    config.add_key_handler(String::from_str("k"), modm | SHIFTMASK,
+            box |&: m: WindowManager, w: &WindowSystem, c: &Config| {
+                m.windows(w, c, |x| x.swap_up())
             });
 
 
