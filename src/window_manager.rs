@@ -11,6 +11,7 @@ pub type ScreenDetail = Rectangle;
 
 #[deriving(Clone)]
 pub struct WindowManager {
+    pub running: bool,
     pub workspaces: Workspaces
 }
 
@@ -18,6 +19,7 @@ impl WindowManager {
     /// Create a new window manager for the given window system and configuration
     pub fn new(window_system: &WindowSystem, config: &Config) -> WindowManager {
         WindowManager {
+            running: true,
             workspaces: Workspaces::new(String::from_str("Tall"),
                                         config.tags.clone(),
                                         window_system.get_screen_infos())
@@ -162,21 +164,15 @@ impl WindowManager {
     }
 
     pub fn focus_down(&self) -> WindowManager {
-        let mut w = self.clone();
-        w.workspaces = self.workspaces.focus_down();
-        w
+        self.modify_workspaces(|x| x.focus_down())
     }
 
     pub fn focus_up(&self) -> WindowManager {
-        let mut w = self.clone();
-        w.workspaces = self.workspaces.focus_up();
-        w
+        self.modify_workspaces(|x| x.focus_up())
     }
 
     pub fn modify_workspaces(&self, f: |&Workspaces| -> Workspaces) -> WindowManager {
-        let mut w = self.clone();
-        w.workspaces = f(&self.workspaces);
-        w
+        WindowManager { running: self.running, workspaces: f(&self.workspaces) }
     }
 
     pub fn reveal(&self, window_system: &WindowSystem, window: Window) -> WindowManager {

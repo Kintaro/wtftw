@@ -8,6 +8,8 @@ pub fn configure(_: &mut WindowManager, _: &WindowSystem, config: &mut Config) {
 
     // Register key handlers
     config.add_key_handler(String::from_str("q"), modm | SHIFTMASK,
+            box |&: m, w, c| exit(m, w, c));
+    config.add_key_handler(String::from_str("q"), modm,
             box |&: m, w, c| restart(m, w, c));
     config.add_key_handler(String::from_str("Return"), modm | SHIFTMASK,
             box |&: m, w, c| start_terminal(m, w, c));

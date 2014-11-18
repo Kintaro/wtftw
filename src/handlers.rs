@@ -9,6 +9,7 @@ use config::Config;
 #[deriving(Clone)]
 pub type KeyHandler<'a> = Box<Fn<(WindowManager, &'a WindowSystem + 'a, &'a Config<'a>), WindowManager> + 'static>;
 pub type ManageHook = Box<Fn<(Workspaces, Window), Workspaces> + 'static>;
+pub type StartupHook<'a> = Box<Fn<(WindowManager, &'a WindowSystem + 'a, &'a Config<'a>), WindowManager> + 'static>;
 
 /// Some default handlers for easier config scripts
 pub mod default {
@@ -16,8 +17,10 @@ pub mod default {
     use std::ptr::null;
     use std::io::process::Command;
     use serialize::json;
+    use core::Workspaces;
     use window_manager::WindowManager;
     use window_system::WindowSystem;
+    use window_system::Window;
     use config::Config;
     use handlers::libc::funcs::posix88::unistd::execvp;
 
@@ -90,5 +93,13 @@ pub mod default {
         };
 
         window_manager.clone()
+    }
+
+    pub fn exit(w: WindowManager, _: &WindowSystem, _: &Config) -> WindowManager {
+        WindowManager { running: false, workspaces: w.workspaces }
+    }
+
+    pub fn shift(index: u32, workspace: Workspaces, window: Window) -> Workspaces {
+        workspace.shift_window(index, window)
     }
 }

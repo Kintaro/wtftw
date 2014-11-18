@@ -72,7 +72,7 @@ fn main() {
     }
 
     // Enter the event loop and just listen for events
-    loop {
+    while window_manager.running {
         let event = window_system.get_event();
         match event {
             ClientMessageEvent(_) => {
@@ -126,7 +126,7 @@ fn main() {
                     if command == &key {
                         let local_window_manager = window_manager.clone();
                         window_manager = handler.call((local_window_manager, &window_system, &config));
-                        continue;
+                        break;
                     }
                 }
             },
