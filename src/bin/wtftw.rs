@@ -29,7 +29,7 @@ fn main() {
         optopt("r", "resume", "list of window IDs to capture in resume", "WINDOW")
     ];
 
-    let matches = match getopts(args.tail(), opts) {
+    let matches = match getopts(args.tail(), &opts) {
         Ok(m)  => m,
         Err(f) => panic!(f.to_string())
     };

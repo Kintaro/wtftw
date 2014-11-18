@@ -136,6 +136,7 @@ impl WindowManager {
         // TODO: manage floating windows
         // and ensure that they stay within screen boundaries
         self.windows(window_system, config, |x| config.manage_hook.call((x.insert_up(window), window)))
+            .focus(window, window_system, config)
     }
 
     /// Unmanage a window. This happens when a window is closed.

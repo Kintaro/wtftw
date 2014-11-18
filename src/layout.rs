@@ -82,8 +82,8 @@ impl Layout for TallLayout {
 
     fn apply_message(&mut self, message: LayoutMessage) {
         match message {
-            Increase => self.ratio += 0.05,
-            Decrease => self.ratio -= 0.05
+            LayoutMessage::Increase => self.ratio += 0.05,
+            LayoutMessage::Decrease => self.ratio -= 0.05
         }
     }
 }

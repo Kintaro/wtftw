@@ -256,7 +256,7 @@ impl WindowSystem for XlibWindowSystem {
             CLIENTMESSAGE => {
                 unsafe {
                     let event : &XClientMessageEvent = self.get_event_as();
-                    ClientMessageEvent(event.window)
+                    WindowSystemEvent::ClientMessageEvent(event.window)
                 }
             },
             CONFIGUREREQUEST => {
@@ -271,12 +271,12 @@ impl WindowSystem for XlibWindowSystem {
                     stack_mode: event.detail as u32
                 };
 
-                ConfigurationRequest(event.window, window_changes, event.value_mask)
+                WindowSystemEvent::ConfigurationRequest(event.window, window_changes, event.value_mask)
             },
             CONFIGURENOTIFY => {
                 unsafe {
                     let event : &XConfigureEvent = self.get_event_as();
-                    ConfigurationNotification(event.window)
+                    WindowSystemEvent::ConfigurationNotification(event.window)
                 }
             },
             MAPREQUEST => {
@@ -284,28 +284,28 @@ impl WindowSystem for XlibWindowSystem {
                     let event : &XMapRequestEvent = self.get_event_as();
                     XSelectInput(self.display, event.window, 0x420030);
                     debug!("map request {}", self.get_window_name(event.window));
-                    WindowCreated(event.window)
+                    WindowSystemEvent::WindowCreated(event.window)
                 }
             },
             UNMAPNOTIFY => {
                 unsafe {
                     let event : &XUnmapEvent = self.get_event_as();
-                    WindowUnmapped(event.window, event.send_event > 0)
+                    WindowSystemEvent::WindowUnmapped(event.window, event.send_event > 0)
                 }
             },
             DESTROYNOTIFY => {
                 unsafe {
                     let event : &XDestroyWindowEvent = self.get_event_as();
-                    WindowDestroyed(event.window)
+                    WindowSystemEvent::WindowDestroyed(event.window)
                 }
             },
             ENTERNOTIFY => {
                 unsafe {
                     let event : &XEnterWindowEvent = self.get_event_as();
                     if event.detail != 2 {
-                        Enter(event.window)
+                        WindowSystemEvent::Enter(event.window)
                     } else {
-                        UnknownEvent
+                        WindowSystemEvent::UnknownEvent
                     }
                 }
             },
@@ -313,16 +313,16 @@ impl WindowSystem for XlibWindowSystem {
                 unsafe {
                     let event : &XLeaveWindowEvent = self.get_event_as();
                     if event.detail != 2 {
-                        Leave(event.window)
+                        WindowSystemEvent::Leave(event.window)
                     } else {
-                        UnknownEvent
+                        WindowSystemEvent::UnknownEvent
                     }
                 }
             },
             BUTTONPRESS => {
                 unsafe {
                     let event : &XButtonEvent = self.get_event_as();
-                    ButtonPressed(event.window, event.state, event.button,
+                    WindowSystemEvent::ButtonPressed(event.window, event.state, event.button,
                                   event.x_root as u32, event.y_root as u32)
                 }
             },
@@ -334,11 +334,11 @@ impl WindowSystem for XlibWindowSystem {
                         mask: KeyModifiers::from_bits(0xEF & event.state as u32).unwrap()
                     };
                     debug!("key pressed: {} with mask {}", key.key, key.mask);
-                    KeyPressed(event.window, key)
+                    WindowSystemEvent::KeyPressed(event.window, key)
                 }
             },
             _  => {
-                UnknownEvent
+                WindowSystemEvent::UnknownEvent
             }
         }
     }
