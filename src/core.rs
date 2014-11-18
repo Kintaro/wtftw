@@ -81,7 +81,7 @@ impl<T: Clone + Eq> Stack<T> {
             if filtered.len() > 0 {
                 let first : T        = filtered[0].clone();
                 let rest : Vec<T>    = filtered.iter().skip(1).map(|x| x.clone()).collect();
-                
+
                 Some(Stack::<T>::new(first, rest, Vec::new()))
             } else {
                 None
@@ -128,11 +128,11 @@ impl<T: Clone + Eq> Stack<T> {
     pub fn swap_down(&self) -> Stack<T> {
         self.reverse().swap_up().reverse()
     }
-    
+
     pub fn swap_master(&self) -> Stack<T> {
         if self.up.is_empty() {
             return self.clone();
-        } 
+        }
 
         let r : Vec<T>  = self.up.iter()
             .rev()
@@ -214,6 +214,21 @@ impl Workspace {
     pub fn peek(&self) -> Option<Window> {
         self.stack.clone().map(|s| s.focus)
     }
+
+    pub fn map(&self, f: |Stack<Window>| -> Stack<Window>) -> Workspace {
+        Workspace::new(self.id, self.tag.clone(), self.layout.clone(),
+        self.stack.clone().map(f))
+    }
+
+    pub fn map_option(&self, f: |Stack<Window>| -> Option<Stack<Window>>) -> Workspace {
+        Workspace::new(self.id, self.tag.clone(), self.layout.clone(),
+        self.stack.clone().map_or(None, f))
+    }
+
+    pub fn map_or(&self, default: Stack<Window>, f: |Stack<Window>| -> Stack<Window>) -> Workspace {
+        Workspace::new(self.id, self.tag.clone(), self.layout.clone(),
+        Some(self.stack.clone().map_or(default, f)))
+    }
 }
 
 #[deriving(Clone, PartialEq, Eq)]
@@ -248,6 +263,18 @@ impl Screen {
 
     pub fn windows(&self) -> Vec<Window> {
         self.workspace.windows()
+    }
+
+    pub fn map(&self, f: |Stack<Window>| -> Stack<Window>) -> Screen {
+        Screen::new(self.workspace.map(f), self.screen_id, self.screen_detail)
+    }
+
+    pub fn map_option(&self, f: |Stack<Window>| -> Option<Stack<Window>>) -> Screen {
+        Screen::new(self.workspace.map_option(f), self.screen_id, self.screen_detail)
+    }
+
+    pub fn map_or(&self, default: Stack<Window>, f: |Stack<Window>| -> Stack<Window>) -> Screen {
+        Screen::new(self.workspace.map_or(default, f), self.screen_id, self.screen_detail)
     }
 }
 
@@ -296,6 +323,33 @@ impl Workspaces {
             visible: current.iter().skip(1).map(|x| x.clone()).collect(),
             hidden: unseen,
             floating: TreeMap::new()
+        }
+    }
+
+    pub fn from_current(&self, current: Screen) -> Workspaces {
+        Workspaces {
+            current: current,
+            visible: self.visible.clone(),
+            hidden: self.hidden.clone(),
+            floating: self.floating.clone()
+        }
+    }
+    
+    pub fn from_visible(&self, visible: Vec<Screen>) -> Workspaces {
+        Workspaces {
+            current: self.current.clone(),
+            visible: visible,
+            hidden: self.hidden.clone(),
+            floating: self.floating.clone()
+        }
+    }
+    
+    pub fn from_hidden(&self, hidden: Vec<Workspace>) -> Workspaces {
+        Workspaces {
+            current: self.current.clone(),
+            visible: self.visible.clone(),
+            hidden: hidden,
+            floating: self.floating.clone()
         }
     }
 
@@ -362,42 +416,29 @@ impl Workspaces {
     }
 
     pub fn delete_p(&self, window: Window) -> Workspaces {
-        let mut w = self.clone();
-
-        let remove_from_workspace = |workspace: &mut Workspace| {
-            if workspace.stack.is_some() {
-                workspace.stack = workspace.clone().stack.unwrap().filter(|&x| x != window);
-            }
+        let remove_from_workspace = |stack: Stack<Window>| -> Option<Stack<Window>> {
+            stack.filter(|&x| x != window)
         };
 
-        remove_from_workspace(&mut w.current.workspace);
-
-        w.hidden.iter_mut().fold((), |_, workspace| {
-            remove_from_workspace(workspace)
-        });
-
-        w.visible.iter_mut().fold((), |_, screen| {
-            remove_from_workspace(&mut screen.workspace)
-        });
-
-        w
+        self.modify_stack_option(|x| remove_from_workspace(x))
+            .modify_hidden_option(|x| remove_from_workspace(x))
+            .modify_visible_option(|x| remove_from_workspace(x))
     }
 
     pub fn focus_window(&self, window: Window) -> Workspaces {
         if self.peek() == Some(window) {
-            self.clone()
-        } else {
-            let n = self.find_tag(window);
-            match n {
-                Some(tag) => {
-                    let mut s = self.view(tag);
-                    while s.peek() != Some(window) {
-                        s = s.focus_up();
-                    }
-                    s
-                },
-                _ => self.clone()
-            }
+            return self.clone();
+        }
+
+        match self.find_tag(window) {
+            Some(tag) => {
+                let mut s = self.view(tag);
+                while s.peek() != Some(window) {
+                    s = s.focus_up();
+                }
+                s
+            },
+            _ => self.clone()
         }
     }
 
@@ -413,7 +454,7 @@ impl Workspaces {
     pub fn swap_down(&self) -> Workspaces {
         self.modify_stack(|x| x.swap_down())
     }
-    
+
     pub fn swap_up(&self) -> Workspaces {
         self.modify_stack(|x| x.swap_up())
     }
@@ -423,10 +464,30 @@ impl Workspaces {
     }
 
     pub fn modify_stack(&self, f: |Stack<Window>| -> Stack<Window>) -> Workspaces {
-        let mut w = self.clone();
-        w.current.workspace.stack = w.current.workspace.stack.map(|s| f(s));
-        w
+        self.from_current(self.current.map(|s| f(s)))
     }
+
+    pub fn modify_stack_option(&self, f: |Stack<Window>| -> Option<Stack<Window>>) -> Workspaces {
+        self.from_current(self.current.map_option(|s| f(s)))
+    }
+
+    pub fn modify_hidden(&self, f: |Stack<Window>| -> Stack<Window>) -> Workspaces {
+        self.from_hidden(self.hidden.iter().map(|x| x.map(|s| f(s))).collect())
+    }
+
+    pub fn modify_hidden_option(&self, f: |Stack<Window>| -> Option<Stack<Window>>) -> Workspaces {
+        self.from_hidden(self.hidden.iter().map(|x| x.map_option(|s| f(s))).collect())
+    }
+
+
+    pub fn modify_visible(&self, f: |Stack<Window>| -> Stack<Window>) -> Workspaces {
+        self.from_visible(self.visible.iter().map(|x| x.map(|s| f(s))).collect())
+    }
+
+    pub fn modify_visible_option(&self, f: |Stack<Window>| -> Option<Stack<Window>>) -> Workspaces {
+        self.from_visible(self.visible.iter().map(|x| x.map_option(|s| f(s))).collect())
+    }
+
 
     pub fn get_focus_window(&self) -> Option<Window> {
         self.current.workspace.stack.clone().map(|s| s.focus)
@@ -451,18 +512,18 @@ impl Workspaces {
     /// contained in all workspaces, including floating windows
     pub fn len(&self) -> uint {
         self.current.len() +
-        self.visible.iter().map(|x| x.len()).sum() +
-        self.hidden.iter().map(|x| x.len()).sum() +
-        self.floating.len()
+            self.visible.iter().map(|x| x.len()).sum() +
+            self.hidden.iter().map(|x| x.len()).sum() +
+            self.floating.len()
     }
 
     /// Checks if any of the workspaces contains the
     /// given window
     pub fn contains(&self, window: Window) -> bool {
         self.current.contains(window) ||
-        self.visible.iter().any(|x| x.contains(window)) ||
-        self.hidden.iter().any(|x| x.contains(window)) ||
-        self.floating.contains_key(&window)
+            self.visible.iter().any(|x| x.contains(window)) ||
+            self.hidden.iter().any(|x| x.contains(window)) ||
+            self.floating.contains_key(&window)
     }
 
     /// Get the number of managed workspaces.
@@ -484,15 +545,14 @@ impl Workspaces {
             return self.clone();
         }
 
-        let mut w = self.clone();
-        match w.current.workspace.stack {
-            Some(ref mut s) => {
-                s.down.insert(0, s.focus.clone());
-                s.focus = window;
-            },
-            None => w.current.workspace.stack = Some(Stack::from_element(window))
+        Workspaces {
+            current: self.current.map_or(Stack::from_element(window), |s| 
+                                            Stack::<Window>::new(window,
+                                                s.up, (vec!(s.focus.clone())) + s.down)),
+            visible: self.visible.clone(),
+            hidden:  self.hidden.clone(),
+            floating: self.floating.clone()
         }
-        w
     }
 
     /// Retrieve the currently focused workspace's id
@@ -550,12 +610,12 @@ impl Workspaces {
 
     /// Apply the given function to the given workspace
     pub fn on_workspace(&self, index: u32, f: Box<Fn<(Workspaces,), Workspaces> + 'static>)
-            -> Box<Fn<(Workspaces,), Workspaces> + 'static> {
-        (box move |&: x: Workspaces| {
-            let current_tag = x.current_tag();
-            (*f).call((x.view(index),)).view(current_tag)
-        }) as Box<Fn<(Workspaces,), Workspaces> + 'static>
-    }
+        -> Box<Fn<(Workspaces,), Workspaces> + 'static> {
+            (box move |&: x: Workspaces| {
+                let current_tag = x.current_tag();
+                (*f).call((x.view(index),)).view(current_tag)
+            }) as Box<Fn<(Workspaces,), Workspaces> + 'static>
+        }
 
     /// Return a list of all visible windows.
     /// This is just a convenience function.
