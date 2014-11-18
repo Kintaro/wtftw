@@ -149,10 +149,15 @@ impl WindowManager {
     }
 
     pub fn focus(&self, window: Window, window_system: &WindowSystem, config: &Config) -> WindowManager {
-        // TODO
-        self.modify_workspaces(|w| {
-            w.clone()
-        })
+        let screen = self.workspaces.find_screen(window);
+
+        if screen == self.workspaces.current && screen.workspace.peek() != Some(window) {
+            self.windows(window_system, config, |w| w.focus_window(window))
+        } else if window == window_system.get_root() {
+            self.windows(window_system, config, |w| w.view(screen.workspace.id))
+        } else {
+            self.clone()
+        }
     }
 
     pub fn focus_down(&self) -> WindowManager {

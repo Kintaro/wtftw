@@ -1,6 +1,6 @@
 pub type Window = u64;
 
-#[deriving(Show, Clone)]
+#[deriving(Show, Clone, PartialEq, Eq)]
 pub struct Rectangle(pub u32, pub u32, pub u32, pub u32);
 
 impl Rectangle {

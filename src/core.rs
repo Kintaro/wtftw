@@ -145,7 +145,7 @@ impl<T: Clone + Eq> Stack<T> {
 
 /// Represents a single workspace with a `tag` (name),
 /// `id`, a `layout` and a `stack` for all windows
-#[deriving(Clone)]
+#[deriving(Clone, PartialEq, Eq)]
 pub struct Workspace {
     pub id:     u32,
     pub tag:    String,
@@ -186,9 +186,16 @@ impl Workspace {
     pub fn windows(&self) -> Vec<Window> {
         self.stack.clone().map_or(Vec::new(), |s| s.integrate())
     }
+
+    pub fn peek(&self) -> Option<Window> {
+        match self.stack {
+            Some(ref s) => Some(s.focus),
+            None        => None
+        }
+    }
 }
 
-#[deriving(Clone)]
+#[deriving(Clone, PartialEq, Eq)]
 pub struct Screen {
     pub workspace:     Workspace,
     pub screen_id:     u32,
@@ -356,7 +363,21 @@ impl Workspaces {
     }
 
     pub fn focus_window(&self, window: Window) -> Workspaces {
-        self.clone()
+        if self.peek() == Some(window) {
+            self.clone()
+        } else {
+            let n = self.find_tag(window);
+            match n {
+                Some(tag) => {
+                    let mut s = self.view(tag);
+                    while s.peek() != Some(window) {
+                        s = s.focus_up();
+                    }
+                    s
+                },
+                _ => self.clone()
+            }
+        }
     }
 
     /// Move the focus of the currently focused workspace down
@@ -452,6 +473,16 @@ impl Workspaces {
             .filter(|x| x.contains(window))
             .map(|x| x.id as u32)
             .nth(0)
+    }
+
+    pub fn find_screen(&self, window: Window) -> Screen {
+        if self.current.contains(window) {
+            self.current.clone()
+        } else {
+            self.visible.iter()
+                .filter(|x| x.contains(window))
+                .nth(0).unwrap().clone()
+        }
     }
 
     /// Flatten all workspaces into a list
