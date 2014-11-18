@@ -61,18 +61,16 @@ impl<T: Clone + Eq> Stack<T> {
     /// Filter the stack to retain only windows
     /// that yield true in the given filter function
     pub fn filter<'r>(&self, f: |&T| : 'r -> bool) -> Option<Stack<T>> {
-        let lrs : Vec<T> = (vec!(self.focus.clone())).iter()
-            .chain(self.down.iter())
+        let lrs : Vec<T> = (vec!(self.focus.clone()) + self.down).iter()
+            .filter(|&x| f(x))
             .map(|x| x.clone())
-            .filter(|x| f(x))
             .collect();
 
         if lrs.len() > 0 {
-            let first : T         = lrs.head().unwrap().clone();
+            let first : T         = lrs[0].clone();
             let rest : Vec<T>     = lrs.iter().skip(1).map(|x| x.clone()).collect();
             let filtered : Vec<T> = self.up.iter()
-                .map(|x| x.clone())
-                .filter(f)
+                .filter(|&x| f(x))
                 .map(|x| x.clone())
                 .collect();
             let stack : Stack<T>  = Stack::<T>::new(first, filtered, rest);
@@ -81,7 +79,7 @@ impl<T: Clone + Eq> Stack<T> {
         } else {
             let filtered : Vec<T> = self.up.iter().map(|x| x.clone()).filter(f).collect();
             if filtered.len() > 0 {
-                let first : T        = filtered.head().unwrap().clone();
+                let first : T        = filtered[0].clone();
                 let rest : Vec<T>    = filtered.iter().skip(1).map(|x| x.clone()).collect();
                 let stack : Stack<T> = Stack::<T>::new(first, rest, Vec::new());
 
@@ -96,12 +94,11 @@ impl<T: Clone + Eq> Stack<T> {
     pub fn focus_up(&self) -> Stack<T> {
         let mut s = self.clone();
         if self.up.is_empty() {
-            let tmp : Vec<T> = (vec!(s.focus.clone())).iter()
-                .chain(s.down.iter())
+            let tmp : Vec<T> = (vec!(s.focus.clone()) + s.down).iter()
                 .rev()
                 .map(|x| x.clone())
                 .collect();
-            let x = tmp.head().unwrap();
+            let x = tmp[0].clone();
             let xs : Vec<T> = tmp.iter()
                 .skip(1)
                 .map(|x| x.clone())
@@ -112,7 +109,7 @@ impl<T: Clone + Eq> Stack<T> {
             s.down = Vec::new();
         } else {
             s.down.insert(0, s.focus.clone());
-            s.focus = s.up.head().unwrap().clone();
+            s.focus = s.up[0].clone();
             s.up.remove(0);
         }
 
@@ -128,12 +125,9 @@ impl<T: Clone + Eq> Stack<T> {
         if self.up.is_empty() {
             Stack::<T>::new(self.focus.clone(), self.down.iter().rev().map(|x| x.clone()).collect(), Vec::new())
         } else {
-            let x = self.up.head().unwrap().clone();
+            let x = self.up[0].clone();
             let xs = self.up.iter().skip(1).map(|x| x.clone()).collect();
-            let rs = (vec!(x)).iter()
-                .chain(self.down.iter())
-                .map(|x| x.clone())
-                .collect();
+            let rs = vec!(x) + self.down;
             Stack::<T>::new(self.focus.clone(), xs, rs)
         }
     }
@@ -147,18 +141,15 @@ impl<T: Clone + Eq> Stack<T> {
             self.clone()
         } else {
             let r : Vec<T>  = self.up.iter()
-                .rev().map(|x| x.clone())
+                .rev()
+                .map(|x| x.clone())
                 .collect();
-            let x : T       = r.head().unwrap().clone();
+            let x : T       = r[0].clone();
             let xs : Vec<T> = r.iter()
                 .skip(1)
                 .map(|x| x.clone())
                 .collect();
-            let rs : Vec<T> = xs.iter()
-                .chain((vec!(x)).iter())
-                .chain(self.down.iter())
-                .map(|x| x.clone())
-                .collect();
+            let rs : Vec<T> = xs + vec!(x) + self.down;
 
             Stack::<T>::new(self.focus.clone(), Vec::new(), rs)
         }
@@ -311,7 +302,7 @@ impl Workspaces {
             .collect();
 
         Workspaces {
-            current: current.head().unwrap().clone(),
+            current: current[0].clone(),
             visible: current.iter().skip(1).map(|x| x.clone()).collect(),
             hidden: unseen,
             floating: TreeMap::new()
@@ -422,32 +413,28 @@ impl Workspaces {
 
     /// Move the focus of the currently focused workspace down
     pub fn focus_down(&self) -> Workspaces {
-        let mut w = self.clone();
-        w.current.workspace.stack = w.current.workspace.stack.map(|s| s.focus_down());
-        w
+        self.modify_stack(|x| x.focus_down())
     }
 
     pub fn focus_up(&self) -> Workspaces {
-        let mut w = self.clone();
-        w.current.workspace.stack = w.current.workspace.stack.map(|s| s.focus_up());
-        w
+        self.modify_stack(|x| x.focus_up())
     }
 
     pub fn swap_down(&self) -> Workspaces {
-        let mut w = self.clone();
-        w.current.workspace.stack = w.current.workspace.stack.map(|s| s.swap_down());
-        w
+        self.modify_stack(|x| x.swap_down())
     }
     
     pub fn swap_up(&self) -> Workspaces {
-        let mut w = self.clone();
-        w.current.workspace.stack = w.current.workspace.stack.map(|s| s.swap_up());
-        w
+        self.modify_stack(|x| x.swap_up())
     }
 
     pub fn swap_master(&self) -> Workspaces {
+        self.modify_stack(|x| x.swap_master())
+    }
+
+    pub fn modify_stack(&self, f: |Stack<Window>| -> Stack<Window>) -> Workspaces {
         let mut w = self.clone();
-        w.current.workspace.stack = w.current.workspace.stack.map(|s| s.swap_master());
+        w.current.workspace.stack = w.current.workspace.stack.map(|s| f(s));
         w
     }
 
@@ -546,11 +533,7 @@ impl Workspaces {
     /// Flatten all workspaces into a list
     pub fn workspaces(&self) -> Vec<Workspace> {
         let v : Vec<Workspace> = self.visible.iter().map(|x| x.workspace.clone()).collect();
-        (vec!(self.current.workspace.clone())).iter()
-            .chain(v.iter())
-            .chain(self.hidden.iter())
-            .map(|x| x.clone())
-            .collect()
+        (vec!(self.current.workspace.clone())) + v + self.hidden
     }
 
     /// Shift the given window to the given workspace
@@ -569,7 +552,7 @@ impl Workspaces {
                 let b = self.on_workspace(index, second_closure);
 
                 debug!("shifting window from {} to {}", from, index);
-                (*b).call(((*a).call((self.clone(),)),))
+                b.call((a.call((self.clone(),)),))
             },
             None => self.clone()
         }
@@ -591,10 +574,8 @@ impl Workspaces {
             .map(|x| x.windows())
             .flat_map(|x| x.into_iter())
             .collect();
-        self.current.windows().iter()
-            .chain(visible.iter())
-            .map(|x| x.clone())
-            .collect()
+
+        self.current.windows() + visible
     }
 
     /// Return a list of all windows, hidden, visible and floating.
@@ -604,18 +585,12 @@ impl Workspaces {
             .flat_map(|x| x.into_iter())
             .collect();
 
-        self.visible_windows().iter()
-            .chain(hidden.iter())
-            .map(|x| x.clone())
-            .collect()
+        self.visible_windows() + hidden
     }
 
     /// Return a list of all screens and their workspaces.
     /// Mostly used by layout.
     pub fn screens(&self) -> Vec<Screen> {
-        (vec!(self.current.clone())).iter()
-            .chain(self.visible.iter())
-            .map(|x| x.clone())
-            .collect()
+        (vec!(self.current.clone())) + self.visible
     }
 }

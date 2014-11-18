@@ -12,7 +12,6 @@ pub type ManageHook = Box<Fn<(Workspaces, Window), Workspaces> + 'static>;
 
 /// Some default handlers for easier config scripts
 pub mod default {
-    use std::mem;
     use std::os;
     use std::ptr::null;
     use std::io::process::Command;
@@ -79,7 +78,7 @@ pub mod default {
         let resume = String::from_str("--resume").to_c_str();
         let windows = window_ids.to_c_str();
 
-        let result = unsafe {
+        unsafe {
 
             let mut slice : &mut [*const i8, ..4] = &mut [
                 program_name.as_ptr(),

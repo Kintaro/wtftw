@@ -34,6 +34,11 @@ pub fn configure(_: &mut WindowManager, _: &WindowSystem, config: &mut Config) {
                 m.windows(w, c, |x| x.swap_up())
             });
 
+    config.add_key_handler(String::from_str("Return"), modm,
+            box |&: m: WindowManager, w: &WindowSystem, c: &Config| {
+                m.windows(w, c, |x| x.swap_master())
+            });
+
 
     for i in range(1u, 10) {
         config.add_key_handler(i.to_string(), modm,
