@@ -111,10 +111,7 @@ fn main() {
             // is enabled, we need to set focus to it.
             Enter(window) => {
                 if config.focus_follows_mouse && window_manager.is_window_managed(window) {
-                    let color = config.focus_border_color;
-                    window_manager.unfocus_windows(&window_system, &config);
-                    window_system.set_window_border_color(window, color);
-                    window_system.focus_window(window);
+                    window_manager = window_manager.focus(window, &window_system, &config);
                 }
             },
             // The mouse pointer left a window's reagion. If focus following is enabled,

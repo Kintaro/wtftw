@@ -148,6 +148,13 @@ impl WindowManager {
         }
     }
 
+    pub fn focus(&self, window: Window, window_system: &WindowSystem, config: &Config) -> WindowManager {
+        // TODO
+        self.modify_workspaces(|w| {
+            w.clone()
+        })
+    }
+
     pub fn focus_down(&self) -> WindowManager {
         let mut w = self.clone();
         w.workspaces = self.workspaces.focus_down();

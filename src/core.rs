@@ -355,6 +355,10 @@ impl Workspaces {
         w
     }
 
+    pub fn focus_window(&self, window: Window) -> Workspaces {
+        self.clone()
+    }
+
     /// Move the focus of the currently focused workspace down
     pub fn focus_down(&self) -> Workspaces {
         let mut w = self.clone();
@@ -491,6 +495,8 @@ impl Workspaces {
         }) as Box<Fn<(Workspaces,), Workspaces> + 'static>
     }
 
+    /// Return a list of all visible windows.
+    /// This is just a convenience function.
     pub fn visible_windows(&self) -> Vec<Window> {
         let visible : Vec<Window> = self.visible.iter()
             .map(|x| x.windows())
@@ -502,6 +508,7 @@ impl Workspaces {
             .collect()
     }
 
+    /// Return a list of all windows, hidden, visible and floating.
     pub fn all_windows(&self) -> Vec<Window> {
         let hidden : Vec<Window> = self.hidden.iter()
             .map(|x| x.windows())
@@ -514,6 +521,8 @@ impl Workspaces {
             .collect()
     }
 
+    /// Return a list of all screens and their workspaces.
+    /// Mostly used by layout.
     pub fn screens(&self) -> Vec<Screen> {
         (vec!(self.current.clone())).iter()
             .chain(self.visible.iter())
