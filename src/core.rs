@@ -81,9 +81,8 @@ impl<T: Clone + Eq> Stack<T> {
             if filtered.len() > 0 {
                 let first : T        = filtered[0].clone();
                 let rest : Vec<T>    = filtered.iter().skip(1).map(|x| x.clone()).collect();
-                let stack : Stack<T> = Stack::<T>::new(first, rest, Vec::new());
-
-                Some(stack)
+                
+                Some(Stack::<T>::new(first, rest, Vec::new()))
             } else {
                 None
             }
@@ -92,28 +91,22 @@ impl<T: Clone + Eq> Stack<T> {
 
     /// Move the focus to the next element in the `down` list
     pub fn focus_up(&self) -> Stack<T> {
-        let mut s = self.clone();
         if self.up.is_empty() {
-            let tmp : Vec<T> = (vec!(s.focus.clone()) + s.down).iter()
+            let tmp : Vec<T> = (vec!(self.focus.clone()) + self.down).iter()
                 .rev()
                 .map(|x| x.clone())
                 .collect();
-            let x = tmp[0].clone();
             let xs : Vec<T> = tmp.iter()
                 .skip(1)
                 .map(|x| x.clone())
                 .collect();
 
-            s.focus = x.clone();
-            s.up = xs;
-            s.down = Vec::new();
+            Stack::<T>::new(tmp[0].clone(), xs, Vec::new())
         } else {
-            s.down.insert(0, s.focus.clone());
-            s.focus = s.up[0].clone();
-            s.up.remove(0);
+            let down = (vec!(self.focus.clone())) + self.down;
+            let up   = self.up.iter().skip(1).map(|x| x.clone()).collect();
+            Stack::<T>::new(self.up[0].clone(), up, down)
         }
-
-        s
     }
 
     /// Move the focus up
@@ -138,21 +131,21 @@ impl<T: Clone + Eq> Stack<T> {
     
     pub fn swap_master(&self) -> Stack<T> {
         if self.up.is_empty() {
-            self.clone()
-        } else {
-            let r : Vec<T>  = self.up.iter()
-                .rev()
-                .map(|x| x.clone())
-                .collect();
-            let x : T       = r[0].clone();
-            let xs : Vec<T> = r.iter()
-                .skip(1)
-                .map(|x| x.clone())
-                .collect();
-            let rs : Vec<T> = xs + vec!(x) + self.down;
+            return self.clone();
+        } 
 
-            Stack::<T>::new(self.focus.clone(), Vec::new(), rs)
-        }
+        let r : Vec<T>  = self.up.iter()
+            .rev()
+            .map(|x| x.clone())
+            .collect();
+        let x : T       = r[0].clone();
+        let xs : Vec<T> = r.iter()
+            .skip(1)
+            .map(|x| x.clone())
+            .collect();
+        let rs : Vec<T> = xs + vec!(x) + self.down;
+
+        Stack::<T>::new(self.focus.clone(), Vec::new(), rs)
     }
 
     /// Reverse the stack by exchanging
@@ -219,10 +212,7 @@ impl Workspace {
     }
 
     pub fn peek(&self) -> Option<Window> {
-        match self.stack {
-            Some(ref s) => Some(s.focus),
-            None        => None
-        }
+        self.stack.clone().map(|s| s.focus)
     }
 }
 
