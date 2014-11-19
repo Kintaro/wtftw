@@ -113,16 +113,17 @@ fn main() {
             // is enabled, we need to set focus to it.
             Enter(window) => {
                 if config.focus_follows_mouse && window_manager.is_window_managed(window) {
+                    debug!("enter event on {}", window_system.get_window_name(window));
                     window_manager = window_manager.focus(window, &window_system, &config);
                 }
             },
             // The mouse pointer left a window's reagion. If focus following is enabled,
             // we need to reset the border color
-            Leave(window) => {
-                if config.focus_follows_mouse && window_manager.is_window_managed(window) {
-                    window_system.set_window_border_color(window, config.border_color);
-                }
-            },
+            //Leave(window) => {
+            //    if config.focus_follows_mouse && window_manager.is_window_managed(window) {
+            //        window_system.set_window_border_color(window, config.border_color);
+            //    }
+            //},
             KeyPressed(_, key) => {
                 for (command, ref handler) in config.key_handlers.iter() {
                     if command == &key {

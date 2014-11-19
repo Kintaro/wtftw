@@ -363,7 +363,8 @@ impl WindowSystem for XlibWindowSystem {
     fn remove_enter_events(&self) {
         unsafe {
             let event : *mut c_void = malloc(256);
-            while XCheckMaskEvent(self.display, 16, event) != 0 {}
+            XSync(self.display, 0);
+            while XCheckMaskEvent(self.display, 16, event) != 0 { }
         }
     }
 }
