@@ -17,7 +17,7 @@ use wtftw::window_system::*;
 use wtftw::xlib_window_system::XlibWindowSystem;
 use wtftw::configure;
 
-pub fn parse_window_ids(ids: &str) -> Vec<Window> {
+pub fn parse_window_ids(ids: &str) -> Vec<(Window, u32)> {
     json::decode(ids).unwrap()
 }
 
@@ -66,9 +66,10 @@ fn main() {
         Vec::new()
     };
 
-    for &window in window_ids.iter() {
+    for &(window, workspace) in window_ids.iter() {
         debug!("re-inserting window {}", window);
-        window_manager = window_manager.manage(&window_system, window, &config);
+        window_manager = window_manager.view(&window_system, workspace, &config)
+            .manage(&window_system, window, &config);
     }
 
     // Enter the event loop and just listen for events
@@ -94,6 +95,7 @@ fn main() {
             WindowCreated(window) => {
                 if !window_manager.is_window_managed(window) {
                     window_manager = window_manager.manage(&window_system, window, &config);
+                    window_manager.workspaces = config.manage_hook.call((window_manager.workspaces, window));
                 }
             },
             WindowUnmapped(window, synthetic) => {
@@ -126,7 +128,7 @@ fn main() {
                     if command == &key {
                         let local_window_manager = window_manager.clone();
                         window_manager = handler.call((local_window_manager, &window_system, &config));
-                        break;
+                        continue;
                     }
                 }
             },

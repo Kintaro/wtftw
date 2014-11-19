@@ -642,6 +642,30 @@ impl Workspaces {
         self.visible_windows() + hidden
     }
 
+    pub fn all_windows_with_workspaces(&self) -> Vec<(Window, u32)> {
+        let visible : Vec<(Window, u32)> = self.visible.iter()
+            .map(|x| {
+                let t : Vec<(Window, u32)> = x.windows().iter()
+                    .map(|&w| (w, x.workspace.id))
+                    .collect(); t
+            })
+            .flat_map(|x| x.into_iter())
+            .collect();
+        let hidden : Vec<(Window, u32)> = self.hidden.iter()
+            .map(|x| {
+                let t : Vec<(Window, u32)> = x.windows().iter()
+                    .map(|&w| (w, x.id))
+                    .collect(); t
+            })
+            .flat_map(|x| x.into_iter())
+            .collect();
+        let current : Vec<(Window, u32)> = self.current.windows().iter()
+            .map(|&x| (x, self.current.workspace.id))
+            .collect();
+
+        current + visible + hidden
+    }
+
     /// Return a list of all screens and their workspaces.
     /// Mostly used by layout.
     pub fn screens(&self) -> Vec<Screen> {

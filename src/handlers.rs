@@ -73,28 +73,37 @@ pub mod default {
         window_manager.move_window_to_workspace(window_system, config, index as u32)
     }
 
+    /// Restart the window manager by calling execvp and replacing the current binary
+    /// with the new one in memory.
+    /// Pass a list of all windows to it via command line arguments
+    /// so it may resume work as usual.
     pub fn restart(window_manager: WindowManager, _: &WindowSystem, _: &Config) -> WindowManager {
+        // Get absolute path to binary
         let filename = os::make_absolute(&Path::new(os::args()[0].clone())).to_c_str();
-        let window_ids : String = json::encode(&window_manager.workspaces.all_windows());
+        // Collect all managed windows
+        let window_ids : String = json::encode(&window_manager.workspaces.all_windows_with_workspaces());
 
+        // Create arguments
         let program_name = os::args()[0].clone().to_c_str();
         let resume = String::from_str("--resume").to_c_str();
         let windows = window_ids.to_c_str();
 
-        unsafe {
-
+        let result = unsafe {
             let mut slice : &mut [*const i8, ..4] = &mut [
                 program_name.as_ptr(),
                 resume.as_ptr(),
                 windows.as_ptr(),
                 null()
             ];
+            debug!("restarting window manager, alas it works");
             execvp(filename.as_ptr(), slice.as_mut_ptr())
         };
+        debug!("restart result is {}", result);
 
         window_manager.clone()
     }
 
+    /// Stop the window manager
     pub fn exit(w: WindowManager, _: &WindowSystem, _: &Config) -> WindowManager {
         WindowManager { running: false, workspaces: w.workspaces }
     }
