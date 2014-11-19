@@ -54,7 +54,6 @@ impl<T: Clone + Eq> Stack<T> {
             .chain((vec!(self.focus.clone())).iter())
             .chain(self.down.iter())
             .map(|x| x.clone())
-            //.rev()
             .collect()
     }
 

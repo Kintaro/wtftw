@@ -79,7 +79,7 @@ pub mod default {
     /// so it may resume work as usual.
     pub fn restart(window_manager: WindowManager, _: &WindowSystem, _: &Config) -> WindowManager {
         // Get absolute path to binary
-        let filename = os::make_absolute(&Path::new(os::args()[0].clone())).to_c_str();
+        let filename = os::make_absolute(&Path::new(os::args()[0].clone())).unwrap().to_c_str();
         // Collect all managed windows
         let window_ids : String = json::encode(&window_manager.workspaces.all_windows_with_workspaces());
 

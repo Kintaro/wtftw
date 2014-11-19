@@ -1,4 +1,4 @@
-#![feature(unboxed_closures, unboxed_closure_sugar, overloaded_calls)]
+#![feature(unboxed_closures)]
 #![feature(phase)]
 #![feature(globs)]
 #[phase(plugin, link)]
