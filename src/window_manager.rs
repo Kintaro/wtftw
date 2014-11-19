@@ -105,7 +105,6 @@ impl WindowManager {
 
             // Then, show, place and resize all now visible windows.
             for &(win, Rectangle(x, y, w, h)) in window_layout.iter() {
-                debug!("Show window {} ({})", win, window_system.get_window_name(win));
                 window_system.show_window(win);
                 window_system.resize_window(win, w - config.border_width * 2, h - config.border_width * 2);
                 window_system.move_window(win, x, y);
@@ -134,9 +133,9 @@ impl WindowManager {
     /// Manage a new window that was either created just now or already present
     /// when the WM started.
     pub fn manage(&self, window_system: &WindowSystem, window: Window, config: &Config) -> WindowManager {
-        debug!("managing window \"{}\" ({})", window_system.get_window_name(window), window);
         // TODO: manage floating windows
         // and ensure that they stay within screen boundaries
+        debug!("managing window {}", window_system.get_window_name(window));
         self.windows(window_system, config, |x| config.manage_hook.call((x.insert_up(window), window)))
             .focus(window, window_system, config)
     }
@@ -216,6 +215,10 @@ impl WindowManager {
                 window_system.focus_window(focused_window);
             },
             None => ()
+        }
+
+        if config.focus_follows_mouse {
+            window_system.remove_enter_events();
         }
 
         result

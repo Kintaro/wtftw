@@ -117,6 +117,7 @@ pub trait WindowSystem {
     fn get_event(&self) -> WindowSystemEvent;
     fn flush(&self);
     fn grab_keys(&self, keys: Vec<KeyCommand>);
+    fn remove_enter_events(&self);
 }
 
 

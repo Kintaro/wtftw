@@ -89,7 +89,7 @@ impl<T: Clone + Eq> Stack<T> {
         }
     }
 
-    /// Move the focus to the next element in the `down` list
+    /// Move the focus to the next element in the `up` list
     pub fn focus_up(&self) -> Stack<T> {
         if self.up.is_empty() {
             let tmp : Vec<T> = (vec!(self.focus.clone()) + self.down).iter()
@@ -109,7 +109,7 @@ impl<T: Clone + Eq> Stack<T> {
         }
     }
 
-    /// Move the focus up
+    /// Move the focus down
     pub fn focus_down(&self) -> Stack<T> {
         self.reverse().focus_up().reverse()
     }

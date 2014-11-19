@@ -13,6 +13,7 @@ use std::mem::transmute;
 use std::mem::uninitialized;
 use std::str::raw::c_str_to_static_slice;
 use std::slice::raw::buf_as_slice;
+use std::c_str::CString;
 
 use window_system::*;
 
@@ -26,6 +27,7 @@ const MAPREQUEST             : uint = 20;
 const CONFIGURENOTIFY        : uint = 22;
 const CONFIGUREREQUEST       : uint = 23;
 const CLIENTMESSAGE          : uint = 33;
+const BADWINDOW              :  i32 =  3;
 
 extern fn error_handler(_: *mut Display, _: *mut XErrorEvent) -> c_int {
     return 0;
@@ -141,8 +143,12 @@ impl WindowSystem for XlibWindowSystem {
         if window == self.root { return String::from_str("root"); }
         unsafe {
             let mut name : *mut c_char = uninitialized();
-            XFetchName(self.display, window, &mut name);
-            String::from_str(c_str_to_static_slice(transmute(name)))
+            if XFetchName(self.display, window, &mut name) == BADWINDOW || name.is_null() {
+                String::from_str("Unknown")
+            } else {
+                let string = CString::new(name as *const c_char, true);
+                format!("{}", string)
+            }
         }
     }
 
@@ -283,7 +289,6 @@ impl WindowSystem for XlibWindowSystem {
                 unsafe {
                     let event : &XMapRequestEvent = self.get_event_as();
                     XSelectInput(self.display, event.window, 0x420030);
-                    debug!("map request {}", self.get_window_name(event.window));
                     WindowSystemEvent::WindowCreated(event.window)
                 }
             },
@@ -352,6 +357,13 @@ impl WindowSystem for XlibWindowSystem {
                 XGrabKey(self.display, self.get_keycode_from_string(&key.key) as i32,
                          key.mask.get_mask() | 0x10, self.root, 1, 1, 1);
             }
+        }
+    }
+
+    fn remove_enter_events(&self) {
+        unsafe {
+            let event : *mut c_void = malloc(256);
+            while XCheckMaskEvent(self.display, 16, event) != 0 {}
         }
     }
 }
