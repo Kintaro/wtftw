@@ -29,10 +29,15 @@ const CONFIGUREREQUEST       : uint = 23;
 const CLIENTMESSAGE          : uint = 33;
 const BADWINDOW              :  i32 =  3;
 
+/// A custom error handler to prevent xlib from crashing the whole WM.
+/// Necessary because a few events may call the error routine.
 extern fn error_handler(_: *mut Display, _: *mut XErrorEvent) -> c_int {
     return 0;
 }
 
+/// The xlib interface. Holds a pointer to the display,
+/// the root window's id and a generic event so
+/// we don't have to allocate it every time.
 pub struct XlibWindowSystem {
     display: *mut Display,
     root:    Window,
@@ -40,6 +45,8 @@ pub struct XlibWindowSystem {
 }
 
 impl XlibWindowSystem {
+    /// Creates a new xlib interface on the default display (i.e. ${DISPLAY})
+    /// and creates a root window spanning all screens (including Xinerama).
     pub fn new() -> XlibWindowSystem {
         unsafe {
             let display = XOpenDisplay(null_mut());
@@ -59,7 +66,7 @@ impl XlibWindowSystem {
             XSetErrorHandler(error_handler as *mut u8);
 
             XSelectInput(display, root, 0x1A0035);
-            XSync(display, 0);
+            XSync(display, 1);
 
             XlibWindowSystem {
                 display: display,
@@ -69,6 +76,7 @@ impl XlibWindowSystem {
         }
     }
 
+    /// Cast our generic event to the desired type
     unsafe fn get_event_as<T>(&self) -> &T {
         &*(self.event as *const T)
     }
@@ -108,15 +116,12 @@ impl WindowSystem for XlibWindowSystem {
             }
 
             buf_as_slice(screen_ptr, num as uint, |x| {
-                let mut result : Vec<Rectangle> = Vec::new();
-                for &screen_info in x.iter() {
-                    result.push(Rectangle(
-                            screen_info.x_org as u32,
-                            screen_info.y_org as u32,
-                            screen_info.width as u32,
-                            screen_info.height as u32));
-                }
-                result
+                x.iter().map(|&screen_info| 
+                    Rectangle(
+                        screen_info.x_org as u32,
+                        screen_info.y_org as u32,
+                        screen_info.width as u32,
+                        screen_info.height as u32)).collect()
             })
         }
     }

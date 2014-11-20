@@ -22,7 +22,14 @@ mod stack {
     #[test]
     fn integrate() {
         let stack = Stack::<u32>::from_element(42);
-        assert!(stack.integrate() == vec!(42))
+        assert!(stack.integrate() == vec!(42));
+
+        let stack2 : Stack<u32> = Stack {
+            focus: 1,
+            up: vec!(2, 3),
+            down: vec!(4, 5)
+        };
+        assert!(stack2.integrate() == vec!(3, 2, 1, 4, 5));
     }
 
     #[test]

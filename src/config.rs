@@ -8,6 +8,7 @@ use window_manager::WindowManager;
 use handlers::KeyHandler;
 use handlers::ManageHook;
 use handlers::StartupHook;
+use handlers::LogHook;
 
 /// Common configuration options for the window manager.
 pub struct Config<'a> {
@@ -38,6 +39,7 @@ pub struct Config<'a> {
     pub mod_mask: KeyModifiers,
     pub manage_hook: ManageHook,
     pub startup_hook: StartupHook<'a>,
+    pub loghook: Option<LogHook>
 }
 
 impl<'a> Config<'a> {
@@ -65,7 +67,8 @@ impl<'a> Config<'a> {
             manage_hook:         box move |&: w: Workspaces, _: Window| -> Workspaces { w.clone() },
             startup_hook:        box move |&: m: WindowManager, _: &WindowSystem, _: &Config| -> WindowManager {
                 m.clone()
-            }
+            },
+            loghook:             None
         }
     }
 

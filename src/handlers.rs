@@ -5,11 +5,13 @@ use window_manager::WindowManager;
 use window_system::WindowSystem;
 use window_system::Window;
 use config::Config;
+use std::io::process::Process;
 
 #[deriving(Clone)]
 pub type KeyHandler<'a> = Box<Fn<(WindowManager, &'a WindowSystem + 'a, &'a Config<'a>), WindowManager> + 'static>;
 pub type ManageHook = Box<Fn<(Workspaces, Window), Workspaces> + 'static>;
 pub type StartupHook<'a> = Box<Fn<(WindowManager, &'a WindowSystem + 'a, &'a Config<'a>), WindowManager> + 'static>;
+pub type LogHook = Process;
 
 /// Some default handlers for easier config scripts
 pub mod default {
