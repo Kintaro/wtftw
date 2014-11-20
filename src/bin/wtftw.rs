@@ -135,10 +135,5 @@ fn main() {
             },
             _ => ()
         }
-
-        match config.loghook {
-            Some(ref mut l) => { l.stdin.as_mut().unwrap().write_line("foo"); }
-            None        => ()
-        }
     }
 }
