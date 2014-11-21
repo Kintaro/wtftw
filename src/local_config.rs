@@ -49,4 +49,16 @@ pub fn configure(_: &mut WindowManager, _: &WindowSystem, config: &mut Config) {
         config.add_key_handler(i.to_string(), modm | SHIFTMASK,
             box move |&: m, w, c| move_window_to_workspace(m, w, c, i - 1));
     }
+
+    config.add_key_handler(String::from_str("j"), modm | CONTROLMASK,
+            box |&: w: WindowManager, _: &WindowSystem, _: &Config| {
+                std::io::process::Command::new("amixer").arg("-q").arg("set").arg("Master").arg("5%-").spawn();
+                w
+            });
+
+    config.add_key_handler(String::from_str("k"), modm | CONTROLMASK,
+            box |&: w: WindowManager, _: &WindowSystem, _: &Config| {
+                std::io::process::Command::new("amixer").arg("-q").arg("set").arg("Master").arg("5%+").spawn();
+                w
+            });
 }

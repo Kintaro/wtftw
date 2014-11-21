@@ -174,7 +174,6 @@ pub struct Workspace {
     pub stack:  Option<Stack<Window>>
 }
 
-#[deriving(Clone)]
 impl Workspace {
     /// Create a new workspace
     pub fn new(id: u32, tag: String, layout: String, stack: Option<Stack<Window>>) -> Workspace {

@@ -7,7 +7,6 @@ use window_system::Window;
 use config::Config;
 use std::io::process::Process;
 
-#[deriving(Clone)]
 pub type KeyHandler<'a> = Box<Fn<(WindowManager, &'a WindowSystem + 'a, &'a Config<'a>), WindowManager> + 'static>;
 pub type ManageHook = Box<Fn<(Workspaces, Window), Workspaces> + 'static>;
 pub type StartupHook<'a> = Box<Fn<(WindowManager, &'a WindowSystem + 'a, &'a Config<'a>), WindowManager> + 'static>;
