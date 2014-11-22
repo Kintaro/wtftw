@@ -7,10 +7,12 @@ use config::Config;
 use window_system::Window;
 
 pub fn run(program: String, args: Option<String>) {
-    match match args {
-        Some(a) => Command::new(program).arg(a).detached().spawn(),
-        None    => Command::new(program).detached().spawn()
-    } {
+    let arguments : Vec<String> = match args {
+        None => Vec::new(),
+        Some(ref a) => a.split(' ').map(String::from_str).collect()
+    };
+
+    match Command::new(program).args(arguments.as_slice()).detached().spawn() {
         _ => ()
     }
 }
