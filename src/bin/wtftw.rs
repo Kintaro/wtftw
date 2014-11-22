@@ -37,7 +37,7 @@ fn main() {
     // Initialize window system. Use xlib here for now
     let window_system = XlibWindowSystem::new();
     // Create a default configuration
-    let mut config = Config::initialize();
+    let mut config = Config::initialize(&window_system);
     // Create the actual window manager
     let mut window_manager = WindowManager::new(&window_system, &config);
     //

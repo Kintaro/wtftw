@@ -91,10 +91,9 @@ impl WindowSystem for XlibWindowSystem {
         }
     }
 
-    fn get_keycode_from_string(&self, key: &String) -> u32 {
+    fn get_keycode_from_string(&self, key: &str) -> u64 {
         unsafe {
-            let keysym = XStringToKeysym(key.to_c_str().as_mut_ptr());
-            XKeysymToKeycode(self.display, keysym) as u32
+            XStringToKeysym(key.to_c_str().as_mut_ptr())
         }
     }
 
@@ -116,7 +115,7 @@ impl WindowSystem for XlibWindowSystem {
             }
 
             buf_as_slice(screen_ptr, num as uint, |x| {
-                x.iter().map(|&screen_info| 
+                x.iter().map(|&screen_info|
                     Rectangle(
                         screen_info.x_org as u32,
                         screen_info.y_org as u32,
@@ -340,7 +339,7 @@ impl WindowSystem for XlibWindowSystem {
                 unsafe {
                     let event : XKeyEvent = *self.get_event_as();
                     let key = KeyCommand {
-                        key: self.get_string_from_keycode(event.keycode),
+                        key: XKeycodeToKeysym(self.display, event.keycode as u8, 0),
                         mask: KeyModifiers::from_bits(0xEF & event.state as u32).unwrap()
                     };
                     debug!("key pressed: {} with mask {}", key.key, key.mask);
@@ -357,9 +356,9 @@ impl WindowSystem for XlibWindowSystem {
         for key in keys.iter() {
             unsafe {
                 debug!("grabbing key {}", key);
-                XGrabKey(self.display, self.get_keycode_from_string(&key.key) as i32,
+                XGrabKey(self.display, XKeysymToKeycode(self.display, key.key) as i32,
                          key.mask.get_mask(), self.root, 1, 1, 1);
-                XGrabKey(self.display, self.get_keycode_from_string(&key.key) as i32,
+                XGrabKey(self.display, XKeysymToKeycode(self.display, key.key) as i32,
                          key.mask.get_mask() | 0x10, self.root, 1, 1, 1);
             }
         }

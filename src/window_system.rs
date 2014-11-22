@@ -28,11 +28,11 @@ pub struct WindowChanges {
 #[deriving(Show, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct KeyCommand {
     pub mask: KeyModifiers,
-    pub key: String
+    pub key: u64
 }
 
 impl KeyCommand {
-    pub fn new(key: String, mask: KeyModifiers) -> KeyCommand {
+    pub fn new(key: u64, mask: KeyModifiers) -> KeyCommand {
         KeyCommand { key: key, mask: mask }
     }
 }
@@ -83,7 +83,7 @@ pub enum WindowSystemEvent {
 
 pub trait WindowSystem {
     fn get_string_from_keycode(&self, key: u32) -> String;
-    fn get_keycode_from_string(&self, key: &String) -> u32;
+    fn get_keycode_from_string(&self, key: &str) -> u64;
     fn get_root(&self) -> Window;
     /// Retrieve geometry infos over all screens
     fn get_screen_infos(&self) -> Vec<Rectangle>;

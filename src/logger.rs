@@ -17,9 +17,9 @@ impl Logger for FileLogger {
     fn log(&mut self, record: &LogRecord) {
         println!("{}:{}: {}",
             record.level, record.module_path, record.args);
-        self.file.write_line(format!("{}:{}: {}", 
-                                     record.level, 
-                                     record.module_path, 
+        self.file.write_line(format!("{}:{}: {}",
+                                     record.level,
+                                     record.module_path,
                                      record.args)
             .container_as_str().unwrap());
     }

@@ -33,8 +33,8 @@ pub struct Config<'a> {
     /// Default launcher application
     pub launcher: String,
     /// Keybind for the launcher and configuration reloading
-    pub save_config_key: String,
-    pub exit_key: String,
+    pub save_config_key: u64,
+    pub exit_key: u64,
     pub key_handlers: TreeMap<KeyCommand, KeyHandler<'a>>,
     pub mod_mask: KeyModifiers,
     pub manage_hook: ManageHook,
@@ -44,7 +44,7 @@ pub struct Config<'a> {
 
 impl<'a> Config<'a> {
     /// Create the Config from a json file
-    pub fn initialize() -> Config<'a> {
+    pub fn initialize(window_system: &WindowSystem) -> Config<'a> {
         // Default version of the config, for fallback
         Config {
             focus_follows_mouse: true,
@@ -60,8 +60,8 @@ impl<'a> Config<'a> {
                 String::from_str("3: code"),
                 String::from_str("4: media")),
             launcher:            String::from_str("dmenu_run"),
-            save_config_key:     String::from_str("s"),
-            exit_key:            String::from_str("q"),
+            save_config_key:     window_system.get_keycode_from_string("s"),
+            exit_key:            window_system.get_keycode_from_string("q"),
             key_handlers:        TreeMap::new(),
             mod_mask:            MOD1MASK,
             manage_hook:         box move |&: w: Workspaces, _: Window| -> Workspaces { w.clone() },
@@ -76,7 +76,7 @@ impl<'a> Config<'a> {
         self.mod_mask
     }
 
-    pub fn add_key_handler(&mut self, key: String, mask: KeyModifiers, keyhandler: KeyHandler<'a>) {
+    pub fn add_key_handler(&mut self, key: u64, mask: KeyModifiers, keyhandler: KeyHandler<'a>) {
         self.key_handlers.insert(KeyCommand::new(key, mask), keyhandler);
     }
 }
