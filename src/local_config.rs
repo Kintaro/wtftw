@@ -64,7 +64,6 @@ pub fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Config) {
 
     config.add_key_handler(0x1008ff11, NONEMASK,
             box |&: w: WindowManager, _: &WindowSystem, _: &Config| {
-                debug!("decreasing volume");
                 std::io::process::Command::new("amixer").arg("-q").arg("set").arg("Master").arg("5%-").spawn();
                 w
             });
