@@ -156,6 +156,15 @@ impl WindowSystem for XlibWindowSystem {
         }
     }
 
+    fn get_class_name(&self, window: Window) -> String {
+        unsafe {
+            let mut class_hint : XClassHint = uninitialized();
+            XGetClassHint(self.display, window, &mut class_hint);
+            let string = CString::new(class_hint.res_class as *const c_char, true);
+            format!("{}", string)
+        }
+    }
+
     fn get_windows(&self) -> Vec<Window> {
         unsafe {
             let mut unused = 0u64;

@@ -52,24 +52,31 @@ pub fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Config) {
 
     config.add_key_handler(w.get_keycode_from_string("j"), modm | CONTROLMASK,
             box |&: w: WindowManager, _: &WindowSystem, _: &Config| {
-                std::io::process::Command::new("amixer").arg("-q").arg("set").arg("Master").arg("5%-").spawn();
+                run(String::from_str("amixer"), Some(String::from_str("-q set Master 5%-")));
                 w
             });
 
     config.add_key_handler(w.get_keycode_from_string("k"), modm | CONTROLMASK,
             box |&: w: WindowManager, _: &WindowSystem, _: &Config| {
-                std::io::process::Command::new("amixer").arg("-q").arg("set").arg("Master").arg("5%+").spawn();
+                run(String::from_str("amixer"), Some(String::from_str("-q set Master 5%+")));
                 w
             });
 
     config.add_key_handler(0x1008ff11, NONEMASK,
             box |&: w: WindowManager, _: &WindowSystem, _: &Config| {
-                std::io::process::Command::new("amixer").arg("-q").arg("set").arg("Master").arg("5%-").spawn();
+                run(String::from_str("amixer"), Some(String::from_str("-q set Master 5%-")));
                 w
             });
     config.add_key_handler(0x1008ff13, NONEMASK,
             box |&: w: WindowManager, _: &WindowSystem, _: &Config| {
-                std::io::process::Command::new("amixer").arg("-q").arg("set").arg("Master").arg("5%+").spawn();
+                run(String::from_str("amixer"), Some(String::from_str("-q set Master 5%+")));
                 w
+            });
+
+    config.set_manage_hook(box |&: workspaces: Workspaces, window_system: &WindowSystem, window: Window| {
+                match window_system.get_class_name(window).as_slice() {
+                    "MPlayer" => spawn_on(workspaces, window_system, window, 3),
+                    _         => workspaces.clone()
+                }
             });
 }

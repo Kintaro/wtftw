@@ -95,6 +95,7 @@ pub trait WindowSystem {
     fn get_display_height(&self, screen: uint) -> u32;
     /// Get the given window's name
     fn get_window_name(&self, window: Window) -> String;
+    fn get_class_name(&self, window: Window) -> String;
     /// Get a list of all windows
     fn get_windows(&self) -> Vec<Window>;
     /// Set the given window's border width

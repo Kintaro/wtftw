@@ -37,7 +37,7 @@ pub struct Config<'a> {
     pub exit_key: u64,
     pub key_handlers: TreeMap<KeyCommand, KeyHandler<'a>>,
     pub mod_mask: KeyModifiers,
-    pub manage_hook: ManageHook,
+    pub manage_hook: ManageHook<'a>,
     pub startup_hook: StartupHook<'a>,
     pub loghook: Option<LogHook>
 }
@@ -64,7 +64,7 @@ impl<'a> Config<'a> {
             exit_key:            window_system.get_keycode_from_string("q"),
             key_handlers:        TreeMap::new(),
             mod_mask:            MOD1MASK,
-            manage_hook:         box move |&: w: Workspaces, _: Window| -> Workspaces { w.clone() },
+            manage_hook:         box move |&: m: Workspaces, _: &WindowSystem, _: Window| -> Workspaces { m.clone() },
             startup_hook:        box move |&: m: WindowManager, _: &WindowSystem, _: &Config| -> WindowManager {
                 m.clone()
             },
@@ -78,5 +78,9 @@ impl<'a> Config<'a> {
 
     pub fn add_key_handler(&mut self, key: u64, mask: KeyModifiers, keyhandler: KeyHandler<'a>) {
         self.key_handlers.insert(KeyCommand::new(key, mask), keyhandler);
+    }
+
+    pub fn set_manage_hook(&mut self, hook: ManageHook<'a>) {
+        self.manage_hook = hook;
     }
 }

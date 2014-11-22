@@ -95,7 +95,8 @@ fn main() {
             WindowCreated(window) => {
                 if !window_manager.is_window_managed(window) {
                     window_manager = window_manager.manage(&window_system, window, &config);
-                    window_manager.workspaces = config.manage_hook.call((window_manager.workspaces, window));
+                    window_manager.workspaces = config.manage_hook.call((window_manager.workspaces,
+                                                                         &window_system, window));
                 }
             },
             WindowUnmapped(window, synthetic) => {

@@ -136,7 +136,7 @@ impl WindowManager {
         // TODO: manage floating windows
         // and ensure that they stay within screen boundaries
         debug!("managing window {}", window_system.get_window_name(window));
-        self.windows(window_system, config, |x| config.manage_hook.call((x.insert_up(window), window)))
+        self.windows(window_system, config, |x| x.insert_up(window))
             .focus(window, window_system, config)
     }
 
