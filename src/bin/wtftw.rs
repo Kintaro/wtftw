@@ -89,14 +89,16 @@ fn main() {
             // A window asked to be reconfigured (i.e. resized, border change, etc.)
             ConfigurationRequest(window, window_changes, mask) => {
                 window_system.configure_window(window, window_changes, mask);
+                window_manager = window_manager.windows(&window_system, &config, |x| x.clone());
             },
             // A new window was created, so we need to manage
             // it unless it is already managed by us.
             WindowCreated(window) => {
                 if !window_manager.is_window_managed(window) {
                     window_manager = window_manager.manage(&window_system, window, &config);
-                    window_manager.workspaces = config.manage_hook.call((window_manager.workspaces,
-                                                                         &window_system, window));
+                    window_manager = window_manager.windows(&window_system, &config,
+                                                            |x| config.manage_hook.call((x.clone(),
+                                                                         &window_system, window)));
                 }
             },
             WindowUnmapped(window, synthetic) => {
