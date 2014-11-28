@@ -84,9 +84,9 @@ impl WindowManager {
             let layout = LayoutManager::get_layout(workspace.layout.clone());
 
             let Rectangle(x, y, w, h) = screen.screen_detail;
-            let screen_space = Rectangle(x, y + 20, w, h - 20);
+            let screen_space = Rectangle(x, y, w, h);
 
-            let window_layout = layout.apply_layout(screen_space, &workspace.stack);
+            let window_layout = layout.apply_layout(window_system, screen_space, &workspace.stack);
 
             debug!("reapplying layout to {} screen", screen.screen_detail);
 

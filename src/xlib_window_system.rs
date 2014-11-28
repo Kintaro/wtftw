@@ -2,7 +2,7 @@ extern crate libc;
 extern crate xlib;
 extern crate xinerama;
 
-use self::libc::{ c_char, c_int, c_uint, c_void };
+use self::libc::{ c_char, c_uchar, c_int, c_uint, c_void, c_ulong };
 use self::libc::funcs::c95::stdlib::malloc;
 use self::xlib::*;
 use self::xinerama::XineramaQueryScreens;
@@ -11,8 +11,8 @@ use std::os::env;
 use std::ptr::null_mut;
 use std::mem::transmute;
 use std::mem::uninitialized;
-use std::str::raw::c_str_to_static_slice;
-use std::slice::raw::buf_as_slice;
+use std::str::from_c_str;
+use std::slice::from_raw_buf;
 use std::c_str::CString;
 
 use window_system::*;
@@ -80,14 +80,58 @@ impl XlibWindowSystem {
     unsafe fn get_event_as<T>(&self) -> &T {
         &*(self.event as *const T)
     }
+
+    fn get_property(&self, atom: Window, window: Window) -> Option<Vec<c_ulong>> {
+        unsafe {
+            let mut actual_type_return : Window = 0;
+            let mut actual_format_return : c_int = 0;
+            let mut nitems_return : c_ulong = 0;
+            let mut bytes_after_return : c_ulong = 0;
+            let mut prop_return : *mut c_uchar = uninitialized();
+
+            let r = XGetWindowProperty(self.display, window, atom, 0, 0xFFFFFFFF, 0, 0,
+                               &mut actual_type_return,
+                               &mut actual_format_return,
+                               &mut nitems_return,
+                               &mut bytes_after_return,
+                               &mut prop_return);
+
+            if r != 0 {
+                None
+            } else {
+                if actual_format_return == 0 {
+                    None
+                } else {
+                    Some(from_raw_buf(&(prop_return as *const c_ulong), nitems_return as uint).iter()
+                                .map(|&c| c)
+                                .collect())
+                }
+            }
+        }
+    }
+
+    fn get_property_from_string(&self, s: &str, window: Window) -> Option<Vec<c_ulong>> {
+        unsafe { 
+            let atom = XInternAtom(self.display, s.to_c_str().as_mut_ptr(), 0);
+            self.get_property(atom, window)
+        }
+    }
 }
 
 impl WindowSystem for XlibWindowSystem {
+    fn get_partial_strut(&self, window: Window) -> Option<Vec<c_ulong>> {
+        self.get_property_from_string("_NET_WM_STRUT_PARTIAL", window)
+    }
+
+    fn get_strut(&self, window: Window) -> Option<Vec<c_ulong>> {
+        self.get_property_from_string("_NET_WM_STRUT", window)
+    }
+
     fn get_string_from_keycode(&self, key: u32) -> String {
         unsafe {
             let keysym = XKeycodeToKeysym(self.display, key as u8, 0);
             let keyname : *mut c_char = XKeysymToString(keysym);
-            String::from_str(c_str_to_static_slice(transmute(keyname)))
+            String::from_str(from_c_str(transmute(keyname)))
         }
     }
 
@@ -114,14 +158,13 @@ impl WindowSystem for XlibWindowSystem {
                                       self.get_display_height(0)));
             }
 
-            buf_as_slice(screen_ptr, num as uint, |x| {
-                x.iter().map(|&screen_info|
+            from_raw_buf(&screen_ptr, num as uint).iter().map(
+                |&screen_info|
                     Rectangle(
                         screen_info.x_org as u32,
                         screen_info.y_org as u32,
                         screen_info.width as u32,
                         screen_info.height as u32)).collect()
-            })
         }
     }
 
@@ -173,11 +216,10 @@ impl WindowSystem for XlibWindowSystem {
             let mut num_children : c_uint = 0;
             XQueryTree(self.display, self.root, &mut unused, &mut unused, children_ptr, &mut num_children);
             let const_children : *const u64 = children as *const u64;
-            buf_as_slice(const_children, num_children as uint, |x|
-                         x.to_vec().iter()
+            from_raw_buf(&const_children, num_children as uint).iter()
                             .filter(|&&c| c != self.root)
                             .map(|&c| c)
-                            .collect())
+                            .collect()
         }
     }
 

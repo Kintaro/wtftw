@@ -1,3 +1,8 @@
+extern crate libc;
+
+use std::fmt::{ Error, Formatter, Show };
+use self::libc::c_ulong;
+
 pub type Window = u64;
 
 #[deriving(Show, Clone, PartialEq, Eq)]
@@ -38,7 +43,7 @@ impl KeyCommand {
 }
 
 bitflags! {
-    #[deriving(Show)]
+ //   #[deriving(Show)]
     flags KeyModifiers : u32 {
         const NONEMASK    = (0 << 0),
         const SHIFTMASK   = (1 << 0),
@@ -49,6 +54,13 @@ bitflags! {
         const MOD3MASK    = (1 << 5),
         const MOD4MASK    = (1 << 6),
         const MOD5MASK    = (1 << 7),
+    }
+}
+
+impl Show for KeyModifiers {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        f.write_str(format!("{:X}", self.get_mask()).as_slice());
+        Ok(())
     }
 }
 
@@ -119,6 +131,8 @@ pub trait WindowSystem {
     fn flush(&self);
     fn grab_keys(&self, keys: Vec<KeyCommand>);
     fn remove_enter_events(&self);
+    fn get_partial_strut(&self, window: Window) -> Option<Vec<c_ulong>>;
+    fn get_strut(&self, window: Window) -> Option<Vec<c_ulong>>;
 }
 
 

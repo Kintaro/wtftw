@@ -44,7 +44,7 @@ pub struct Config<'a> {
 
 impl<'a> Config<'a> {
     /// Create the Config from a json file
-    pub fn initialize(window_system: &WindowSystem) -> Config<'a> {
+    pub fn initialize(window_system: &WindowSystem) -> Config {
         // Default version of the config, for fallback
         Config {
             focus_follows_mouse: true,

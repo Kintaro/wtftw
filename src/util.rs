@@ -1,9 +1,7 @@
 use std::io::process::Command;
 use std::io::process::Process;
 use core::Workspaces;
-use window_manager::WindowManager;
 use window_system::WindowSystem;
-use config::Config;
 use window_system::Window;
 
 pub fn run(program: String, args: Option<String>) {
