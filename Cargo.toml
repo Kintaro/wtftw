@@ -1,7 +1,7 @@
 [project]
 
 name = "wtftw"
-version = "0.0.2"
+version = "0.1.0"
 authors = ["Simon Wollwage"]
 
 [dependencies.wtftw_core]
