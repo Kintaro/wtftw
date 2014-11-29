@@ -1,4 +1,20 @@
-pub fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Config) {
+#![feature(unboxed_closures)]
+#![feature(globs)]
+#![feature(phase)]
+#[phase(plugin, link)]
+
+extern crate log;
+extern crate wtftw_core;
+
+use wtftw_core::core::*;
+use wtftw_core::window_system::*;
+use wtftw_core::window_manager::*;
+use wtftw_core::handlers::default::*;
+use wtftw_core::config::*;
+use wtftw_core::util::*;
+
+#[no_mangle]
+pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Config) {
     let modm = MOD1MASK;
 
     config.border_color = 0x7e9014;
@@ -12,7 +28,7 @@ pub fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Config) {
     config.add_key_handler(w.get_keycode_from_string("q"), modm,
             box |&: m, w, c| restart(m, w, c));
     config.add_key_handler(w.get_keycode_from_string("Return"), modm | SHIFTMASK,
-            box |&: m, w, c| start_terminal(m, w, c));
+            box |&: m, w, c| { debug!("trying to"); start_terminal(m, w, c) });
     config.add_key_handler(w.get_keycode_from_string("p"), modm,
             box |&: m, w, c| start_launcher(m, w, c));
 
@@ -73,10 +89,12 @@ pub fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Config) {
                 w
             });
 
-    config.set_manage_hook(box |&: workspaces: Workspaces, window_system: &WindowSystem, window: Window| {
+    config.set_manage_hook(box |&: workspaces: Workspaces, window_system: &WindowSystem,
+                           window: Window| {
                 match window_system.get_class_name(window).as_slice() {
                     "MPlayer" => spawn_on(workspaces, window_system, window, 3),
                     _         => workspaces.clone()
                 }
             });
 }
+

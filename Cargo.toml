@@ -4,15 +4,15 @@ name = "wtftw"
 version = "0.0.2"
 authors = ["Simon Wollwage"]
 
-[dependencies.xlib]
-git = "https://github.com/Kintaro/rust-xlib.git"
-branch = "class_hint"
+[dependencies.wtftw_core]
+git = "https://github.com/Kintaro/wtftw-core.git"
 
-[dependencies.xinerama]
-git = "https://github.com/Kintaro/rust-xinerama.git"
+[dependencies.wtftw_xlib]
+git = "https://github.com/Kintaro/wtftw-xlib.git"
 
-[lib]
-name = "wtftw"
+[target.x86_64-unknown-linux-gnu.wtftw]
+rustc-flags = "-C prefer-dynamic"
 
 [[bin]]
 name = "wtftw"
+path = "src/wtftw.rs"

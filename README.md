@@ -18,6 +18,10 @@ cargo build
 
 ## Testing
 
+First, export the ./target/deps path to your LD_LIBRARY_PATH, **this is important!**.
+Then, if you want to have your own custom config, create one in *~/.wtftw/config.rs*.
+You can find an example config in *config/config.rs* in this repository.
+
 For testing, install either **Xnest** or **Xephyr** on your system and run
 
 ```
@@ -49,6 +53,7 @@ ALT+SHIFT+Enter
 ```
 
 ### Run program
+
 ```
 ALT+SHIFT+p
 ```
