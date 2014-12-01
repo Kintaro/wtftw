@@ -34,25 +34,29 @@ fn main() {
         Err(f) => panic!(f.to_string())
     };
 
+    // Create a default configuration
+    let mut config = Config::initialize();
+    log::set_logger(box FileLogger::new(&config.logfile, false));
     // Initialize window system. Use xlib here for now
     let window_system = XlibWindowSystem::new();
-    // Create a default configuration
-    let mut config = Config::initialize(&window_system);
     // Create the actual window manager
     let mut window_manager = WindowManager::new(&window_system, &config);
-    //
-    let logger = FileLogger::new(&config.logfile);
-    log::set_logger(box logger);
+
+    // If available, compile the config file at ~/.wtftw/config.rs
+    // and call the configure method
+    let old = log::set_logger(box FileLogger::new(&config.logfile, true));
+    config.compile_and_call(&mut window_manager, &window_system);
+    config.call(&mut window_manager, &window_system);
+    log::set_logger(old.unwrap());
 
     // Output some initial information
     info!("WTFTW - Window Tiling For The Win");
     info!("Starting wtftw on {} screen(s)", window_system.get_screen_infos().len());
 
+    // Output information about displays
     for (i, &Rectangle(x, y, w, h)) in window_system.get_screen_infos().iter().enumerate() {
         debug!("Display {}: {}x{} ({}, {})", i, w, h, x, y);
     }
-
-    config.compile_and_call(&mut window_manager, &window_system);
 
     debug!("Size of keyhandlers after configuration: {}", config.key_handlers.len());
 
