@@ -9,12 +9,12 @@ dependencies = [
 [[package]]
 name = "wtftw_core"
 version = "0.1.0"
-source = "git+https://github.com/Kintaro/wtftw-core.git#d2175b117a8b535249512c99b6b90ae5ccdde68d"
+source = "git+https://github.com/Kintaro/wtftw-core.git#3c5a1a3588177b8f7eadc401c466c832fa4fa5e6"
 
 [[package]]
 name = "wtftw_xlib"
 version = "0.0.1"
-source = "git+https://github.com/Kintaro/wtftw-xlib.git#acd009d5a206b03e0dc64f01ab3c2b8eff3ee8e6"
+source = "git+https://github.com/Kintaro/wtftw-xlib.git#69403bb1929e10f09b5b63b8252c787ada4b72e5"
 dependencies = [
  "wtftw_core 0.1.0 (git+https://github.com/Kintaro/wtftw-core.git)",
  "xinerama 0.0.1 (git+https://github.com/Kintaro/rust-xinerama.git)",
@@ -24,7 +24,7 @@ dependencies = [
 [[package]]
 name = "xinerama"
 version = "0.0.1"
-source = "git+https://github.com/Kintaro/rust-xinerama.git#4c8e569cc51923e7bb5f0e87be5efa5378f7d832"
+source = "git+https://github.com/Kintaro/rust-xinerama.git#660f3a0919480d0801db51dc21c831e0cfef74fb"
 dependencies = [
  "xlib 0.1.0 (git+https://github.com/Kintaro/rust-xlib.git)",
 ]
@@ -32,5 +32,5 @@ dependencies = [
 [[package]]
 name = "xlib"
 version = "0.1.0"
-source = "git+https://github.com/Kintaro/rust-xlib.git#1bf3e424f96b6b9eb25e98411a23d05613899761"
+source = "git+https://github.com/Kintaro/rust-xlib.git#20b26c8caaca23dc4e662b13655b6c0709ecd24c"
 
