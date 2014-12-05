@@ -81,24 +81,24 @@ fn main() {
     while window_manager.running {
         let event = window_system.get_event();
         match event {
-            ClientMessageEvent(_) => {
+            WindowSystemEvent::ClientMessageEvent(_) => {
             },
             // The X11/Wayland config.generaluration changed, so we need to readjust the
             // screen config.generalurations.
-            ConfigurationNotification(window) => {
+            WindowSystemEvent::ConfigurationNotification(window) => {
                 if window_system.get_root() == window {
                     debug!("screen config.generaluration changed. Rescreen");
                     window_manager = window_manager.rescreen(&window_system);
                 }
             },
             // A window asked to be reconfig.generalured (i.e. resized, border change, etc.)
-            ConfigurationRequest(window, window_changes, mask) => {
+            WindowSystemEvent::ConfigurationRequest(window, window_changes, mask) => {
                 window_system.configure_window(window, window_changes, mask);
                 window_manager = window_manager.windows(&window_system, &config.general, |x| x.clone());
             },
             // A new window was created, so we need to manage
             // it unless it is already managed by us.
-            WindowCreated(window) => {
+            WindowSystemEvent::WindowCreated(window) => {
                 if !window_manager.is_window_managed(window) {
                     window_manager = window_manager.manage(&window_system, window, &config.general);
                     window_manager = window_manager.windows(&window_system, &config.general,
@@ -106,20 +106,20 @@ fn main() {
                                                                          &window_system, window)));
                 }
             },
-            WindowUnmapped(window, synthetic) => {
+            WindowSystemEvent::WindowUnmapped(window, synthetic) => {
                 if synthetic && window_manager.is_window_managed(window) {
                     window_manager.unmanage(&window_system, window, &config.general);
                     // TODO: remove from mapped stack and from waitingUnmap stack
                 }
             },
-            WindowDestroyed(window) => {
+            WindowSystemEvent::WindowDestroyed(window) => {
                 if window_manager.is_window_managed(window) {
                     window_manager = window_manager.unmanage(&window_system, window, &config.general);
                 }
             },
             // The mouse pointer entered a window's region. If focus following
             // is enabled, we need to set focus to it.
-            Enter(window) => {
+            WindowSystemEvent::Enter(window) => {
                 if config.general.focus_follows_mouse && window_manager.is_window_managed(window) {
                     debug!("enter event on {}", window_system.get_window_name(window));
                     window_manager = window_manager.focus(window, &window_system, &config.general);
@@ -132,7 +132,7 @@ fn main() {
             //        window_system.set_window_border_color(window, config.general.border_color);
             //    }
             //},
-            KeyPressed(_, key) => {
+            WindowSystemEvent::KeyPressed(_, key) => {
                 for (command, ref handler) in config.internal.key_handlers.iter() {
                     if command == &key {
                         let local_window_manager = window_manager.clone();
