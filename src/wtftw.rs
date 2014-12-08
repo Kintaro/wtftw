@@ -1,6 +1,5 @@
 #![feature(globs)]
 #![feature(phase)]
-#![feature(if_let)]
 #[phase(plugin, link)]
 extern crate log;
 extern crate getopts;
@@ -83,8 +82,8 @@ fn main() {
         match event {
             WindowSystemEvent::ClientMessageEvent(_) => {
             },
-            // The X11/Wayland config.generaluration changed, so we need to readjust the
-            // screen config.generalurations.
+            // The X11/Wayland configuration changed, so we need to readjust the
+            // screen configurations.
             WindowSystemEvent::ConfigurationNotification(window) => {
                 if window_system.get_root() == window {
                     debug!("screen config.generaluration changed. Rescreen");
@@ -99,12 +98,14 @@ fn main() {
             // A new window was created, so we need to manage
             // it unless it is already managed by us.
             WindowSystemEvent::WindowCreated(window) => {
-                if !window_manager.is_window_managed(window) {
-                    window_manager = window_manager.manage(&window_system, window, &config.general);
-                    window_manager = window_manager.windows(&window_system, &config.general,
-                                                            |x| config.internal.manage_hook.call((x.clone(),
-                                                                         &window_system, window)));
+                if window_manager.is_window_managed(window) {
+                    continue;
                 }
+
+                window_manager = window_manager.manage(&window_system, window, &config.general);
+                window_manager = window_manager.windows(&window_system, &config.general,
+                                                        |x| config.internal.manage_hook.call((x.clone(),
+                                                        &window_system, window)));
             },
             WindowSystemEvent::WindowUnmapped(window, synthetic) => {
                 if synthetic && window_manager.is_window_managed(window) {
