@@ -126,6 +126,12 @@ fn main() {
                     window_manager = window_manager.focus(window, &window_system, &config.general);
                 }
             },
+            WindowSystemEvent::ButtonPressed(window, _, _, _, _) => {
+                println!("HAHA!");
+                if window_system.get_root() != window {
+                    window_manager = window_manager.focus(window, &window_system, &config.general);
+                }
+            },
             // The mouse pointer left a window's reagion. If focus following is enabled,
             // we need to reset the border color
             //Leave(window) => {
@@ -138,7 +144,8 @@ fn main() {
                     if command == &key {
                         let local_window_manager = window_manager.clone();
                         debug!("calling handler");
-                        window_manager = handler.call((local_window_manager, &window_system, &config.general));
+                        window_manager = handler.call((local_window_manager,
+                                                       &window_system, &config.general));
                         continue;
                     }
                 }
