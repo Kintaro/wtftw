@@ -1,5 +1,6 @@
 #![feature(globs)]
 #![feature(phase)]
+#![feature(unboxed_closures)]
 #[phase(plugin, link)]
 extern crate log;
 extern crate getopts;
@@ -127,7 +128,6 @@ fn main() {
                 }
             },
             WindowSystemEvent::ButtonPressed(window, _, _, _, _) => {
-                println!("HAHA!");
                 if window_system.get_root() != window {
                     window_manager = window_manager.focus(window, &window_system, &config.general);
                 }
