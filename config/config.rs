@@ -46,7 +46,7 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
     add_key_handler_str!(config, w, "p",      modm,             start_launcher);
 
     // Focus and window movement
-    add_key_handler_str!(config, w, "j", modm, |&: m, w, c| m.windows(w, c, |x| x.clone()));
+    add_key_handler_str!(config, w, "j", modm, |&: m, w, c| m.windows(w, c, |x| x.focus_down()));
     add_key_handler_str!(config, w, "k", modm, |&: m, w, c| m.windows(w, c, |x| x.focus_up()));
     add_key_handler_str!(config, w, "j", modm | SHIFTMASK, |&: m, w, c| m.windows(w, c, |x| x.swap_down()));
     add_key_handler_str!(config, w, "k", modm | SHIFTMASK, |&: m, w, c| m.windows(w, c, |x| x.swap_up()));
