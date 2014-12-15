@@ -54,20 +54,11 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
 
     // Layout messages
     add_key_handler_str!(config, w, "h", modm,
-            |&: m, w, c| {
-                m.send_layout_message(LayoutMessage::Decrease).reapply_layout(w, c)
-            });
-
+            |&: m, w, c| { m.send_layout_message(LayoutMessage::Decrease).reapply_layout(w, c) });
     add_key_handler_str!(config, w, "l", modm,
-            |&: m, w, c| {
-                m.send_layout_message(LayoutMessage::Increase).reapply_layout(w, c)
-            });
-
+            |&: m, w, c| { m.send_layout_message(LayoutMessage::Increase).reapply_layout(w, c) });
     add_key_handler_str!(config, w, "comma", modm,
-            |&: m, w, c| {
-                m.send_layout_message(LayoutMessage::IncreaseMaster).reapply_layout(w, c)
-            });
-
+            |&: m, w, c| { m.send_layout_message(LayoutMessage::IncreaseMaster).reapply_layout(w, c) });
     add_key_handler_str!(config, w, "period", modm,
             |&: m, w, c| m.send_layout_message(LayoutMessage::DecreaseMaster).reapply_layout(w, c));
     add_key_handler_str!(config, w, "space", modm,
@@ -85,7 +76,6 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
     // Media keys
     add_key_handler_str!(config, w, "j", modm | CONTROLMASK,
             |&: w, _, _| { run("amixer", Some("-q set Master 5%-")); w });
-
     add_key_handler_str!(config, w, "k", modm | CONTROLMASK,
             |&: w, _, _| { run("amixer", Some("-q set Master 5%+")); w });
 
@@ -96,7 +86,6 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
 
     add_key_handler_code!(config, 0x1008ff02, NONEMASK,
             |&: w, _, _| { run("xbacklight", Some("+10")); w });
-
     add_key_handler_code!(config, 0x1008ff03, NONEMASK,
             |&: w, _, _| { run("xbacklight", Some("-10")); w });
 
