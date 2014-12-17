@@ -80,6 +80,7 @@ fn main() {
     // Enter the event loop and just listen for events
     while window_manager.running {
         let event = window_system.get_event();
+        debug!("processing event {}", event);
         match event {
             WindowSystemEvent::ClientMessageEvent(_) => {
             },
@@ -132,18 +133,11 @@ fn main() {
                     window_manager = window_manager.focus(window, &window_system, &config.general);
                 }
             },
-            // The mouse pointer left a window's reagion. If focus following is enabled,
-            // we need to reset the border color
-            //Leave(window) => {
-            //    if config.general.focus_follows_mouse && window_manager.is_window_managed(window) {
-            //        window_system.set_window_border_color(window, config.general.border_color);
-            //    }
-            //},
             WindowSystemEvent::KeyPressed(_, key) => {
                 for (command, ref handler) in config.internal.key_handlers.iter() {
                     if command == &key {
                         let local_window_manager = window_manager.clone();
-                        debug!("calling handler");
+                        debug!("calling handler for {}", key);
                         window_manager = handler.call((local_window_manager,
                                                        &window_system, &config.general));
                         continue;
