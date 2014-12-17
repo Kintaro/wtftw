@@ -38,6 +38,14 @@ DISPLAY=:1 ./target/wtftw &
 DISPLAY=:1 thunar &
 ```
 
+## Installation
+
+Compile it normally with ```cargo build```, and then either use it with your .xinitrc
+or your favorite display manager. If you want to configure it, take a look at the example config in
+```config/```.
+
+After the first start, the config needs to be placed in ```~/.wtftw/src/config.rs```. Voila.
+
 ## Commands
 
 So far, the commands are hardcoded.
