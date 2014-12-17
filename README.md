@@ -61,13 +61,6 @@ ALT+num
 ALT+SHIFT+Enter
 ```
 
-### Run program
-
-```
-ALT+SHIFT+p
-```
-You'll need to install gmrun for this
-
 ## Tutorial
 
 I will be making a tutorial series on how to write a window manager. A bit busy with my thesis
