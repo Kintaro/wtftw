@@ -10,6 +10,8 @@ Window Tiling For The Win. A tiling window manager written in Rust
 
 ## Build
 
+**Notice:** Wtftw is compiled against the latest nightlies, so make sure to have your *rustc* up to date.
+
 To build it, just run
 
 ```
@@ -66,3 +68,8 @@ ALT+SHIFT+Enter
 ALT+SHIFT+p
 ```
 You'll need to install gmrun for this
+
+## Tutorial
+
+I will be making a tutorial series on how to write a window manager. A bit busy with my thesis
+at the moment, but the first part is [here](https://kintaro.github.io/rust/window-manager-in-rust-01/)
