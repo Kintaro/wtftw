@@ -48,7 +48,7 @@ After the first start, the config needs to be placed in *~/.wtftw/src/config.rs*
 
 ## Commands
 
-So far, the commands are hardcoded.
+In a default setting, the commands are hardcoded, but can be changed in your own config.
 
 ### Switch workspace
 ```
