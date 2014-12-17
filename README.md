@@ -20,7 +20,7 @@ cargo build
 
 ## Testing
 
-First, export the ./target/deps path to your LD_LIBRARY_PATH, **this is important!**.
+First, export the ./target/release/deps path to your LD_LIBRARY_PATH, **this is important!**.
 Then, if you want to have your own custom config, create one in *~/.wtftw/config.rs*.
 You can find an example config in *config/config.rs* in this repository.
 
@@ -28,7 +28,7 @@ For testing, install either **Xnest** or **Xephyr** on your system and run
 
 ```
 Xephyr -screen 800x600 :1 &
-DISPLAY=:1 ./target/wtftw &
+DISPLAY=:1 ./target/release/wtftw &
 DISPLAY=:1 thunar & (or whatever application you want to run)
 ```
 
@@ -36,13 +36,13 @@ or respectively
 
 ```
 Xnest -geometry 800x600+0+0 :1 &
-DISPLAY=:1 ./target/wtftw &
+DISPLAY=:1 ./target/release/wtftw &
 DISPLAY=:1 thunar &
 ```
 
 ## Installation
 
-Compile it normally with **cargo build**, and then either use it with your .xinitrc
+Compile it normally with **cargo build --release**, and then either use it with your .xinitrc
 or your favorite display manager. If you want to configure it, take a look at the example config in
 *config/*.
 
