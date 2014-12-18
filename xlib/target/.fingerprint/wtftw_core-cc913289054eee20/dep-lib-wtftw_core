@@ -1,0 +1,2 @@
+/data/code/rust/wtftw-xlib/target/deps/libwtftw_core-cc913289054eee20.rlib: src/wtftw.rs src/config.rs src/core.rs src/handlers.rs src/layout.rs src/logger.rs src/util.rs src/window_manager.rs src/window_system.rs
+

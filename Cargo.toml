@@ -1,14 +1,14 @@
 [project]
 
 name = "wtftw"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Simon Wollwage"]
 
 [dependencies.wtftw_core]
-git = "https://github.com/Kintaro/wtftw-core.git"
+path = "core"
 
 [dependencies.wtftw_xlib]
-git = "https://github.com/Kintaro/wtftw-xlib.git"
+path = "xlib"
 
 [target.x86_64-unknown-linux-gnu.wtftw]
 rustc-flags = "-C prefer-dynamic"
