@@ -121,7 +121,7 @@ x.swap_down()));
             });
 
         let content = format!("{} {}", workspaces, m.workspaces.current.workspace.layout.description());
-        match p.stdin.as_mut() {
+        match p.deref().write().deref_mut().stdin.as_mut() {
             Some(pin) => match pin.write_line(content.as_slice()) {
                 _ => ()
             },
