@@ -13,6 +13,10 @@ path = "xlib"
 [target.x86_64-unknown-linux-gnu.wtftw]
 rustc-flags = "-C prefer-dynamic"
 
+[lib]
+name = "wtftw"
+path = "src/wtftw.rs"
+
 [[bin]]
 name = "wtftw"
 path = "src/wtftw.rs"

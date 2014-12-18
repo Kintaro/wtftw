@@ -17,8 +17,10 @@ use std::mem;
 use std::io::{USER_DIR, File, Open, Read};
 use std::io::fs;
 use std::io::fs::PathExtensions;
-use std::io::process::{ Command, ExitStatus };
+use std::io::process::{ Command, Process, ExitStatus };
 use std::dynamic_lib::DynamicLibrary;
+use std::rc::Rc;
+use std::sync::RWLock;
 
 pub struct GeneralConfig<'a> {
     /// Whether focus follows mouse movements or
@@ -42,7 +44,7 @@ pub struct GeneralConfig<'a> {
     /// Default launcher application
     pub launcher: String,
     pub mod_mask: KeyModifiers,
-    pub pipes: Vec<i32>,
+    pub pipes: Vec<Rc<RWLock<Process>>>,
     pub layout: Box<Layout + 'a>
 }
 
@@ -153,7 +155,7 @@ impl<'a> Config<'a> {
                                      version = \"0.0.0\"\n\
                                      authors = [\"wtftw\"]\n\n\
                                      [dependencies.wtftw_core]\n\
-                                     git = \"https://github.com/Kintaro/wtftw-core.git\"\n\n\
+                                     git = \"https://github.com/Kintaro/wtftw.git\"\n\n\
                                      [lib]\n\
                                      name = \"config\"\n\
                                      crate-type = [\"dylib\"]").unwrap();

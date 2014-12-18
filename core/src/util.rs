@@ -1,5 +1,7 @@
 use std::io::process::Command;
 use std::io::process::Process;
+use std::rc::Rc;
+use std::sync::RWLock;
 use core::Workspaces;
 use config::Config;
 use window_system::WindowSystem;
@@ -33,13 +35,15 @@ pub fn run(program: &str, args: Option<&str>) {
     }
 }
 
-pub fn spawn_pipe(config: &mut Config, program: String, args: Option<String>) -> Process {
+pub fn spawn_pipe(config: &mut Config, program: String, args: Option<String>) -> Rc<RWLock<Process>> {
     let result = match args {
         Some(a) => Command::new(program).arg(a).detached().spawn().unwrap(),
         None    => Command::new(program).detached().spawn().unwrap()
     };
-    config.general.pipes.push(result.id());
-    result
+    debug!("Created pipe with id {}", result.id());
+    let rc = Rc::new(RWLock::new(result));
+    config.general.pipes.push(rc.clone());
+    rc
 }
 
 pub fn spawn_on<'a>(workspaces: Workspaces<'a>, _: &WindowSystem,

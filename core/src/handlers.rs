@@ -11,6 +11,10 @@ pub type ManageHook<'a> = Box<Fn<(Workspaces<'a>, &'a (WindowSystem + 'a), Windo
 pub type StartupHook<'a> = Box<Fn<(WindowManager<'a>, &'a (WindowSystem + 'a), &'a Config<'a>), WindowManager<'a>> + 'a>;
 pub type LogHook<'a> = Box<FnMut<(WindowManager<'a>, &'a (WindowSystem + 'a)), ()> + 'a>;
 
+extern {
+    pub fn waitpid(fd: libc::pid_t, status: *mut libc::c_int, options: libc::c_int) -> libc::pid_t;
+}
+
 /// Some default handlers for easier config scripts
 pub mod default {
     use std::os;
@@ -90,8 +94,8 @@ pub mod default {
         let resume = String::from_str("--resume").to_c_str();
         let windows = window_ids.to_c_str();
 
-        for &pid in c.pipes.iter() {
-            unsafe { kill(pid, SIGKILL) };
+        for ref p in c.pipes.iter() {
+            p.deref().write().deref_mut().wait();
         }
 
         let result = unsafe {
@@ -101,10 +105,8 @@ pub mod default {
                 windows.as_ptr(),
                 null()
             ];
-            debug!("restarting window manager, alas it works");
             execvp(filename.as_ptr(), slice.as_mut_ptr())
         };
-        debug!("restart result is {}", result);
 
         window_manager.clone()
     }
