@@ -29,7 +29,8 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
     config.general.terminal = (String::from_str("urxvt"), String::from_str(""));
     config.general.layout = LayoutCollection::new(vec!(
         GapLayout::new(16, AvoidStrutsLayout::new(vec!(Direction::Up), ResizableTallLayout::new())),
-        GapLayout::new(16, AvoidStrutsLayout::new(vec!(Direction::Up), MirrorLayout::new(ResizableTallLayout::new()))), 
+        GapLayout::new(16, AvoidStrutsLayout::new(vec!(Direction::Up), 
+MirrorLayout::new(ResizableTallLayout::new()))), 
         box FullLayout));
 
     config.general.tags = (vec!("1: term", "2: web", "3: code",
@@ -48,7 +49,8 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
     // Focus and window movement
     add_key_handler_str!(config, w, "j", modm, |&: m, w, c| m.windows(w, c, |x| x.focus_down()));
     add_key_handler_str!(config, w, "k", modm, |&: m, w, c| m.windows(w, c, |x| x.focus_up()));
-    add_key_handler_str!(config, w, "j", modm | SHIFTMASK, |&: m, w, c| m.windows(w, c, |x| x.swap_down()));
+    add_key_handler_str!(config, w, "j", modm | SHIFTMASK, |&: m, w, c| m.windows(w, c, |x| 
+x.swap_down()));
     add_key_handler_str!(config, w, "k", modm | SHIFTMASK, |&: m, w, c| m.windows(w, c, |x| x.swap_up()));
     add_key_handler_str!(config, w, "Return", modm, |&: m, w, c| m.windows(w, c, |x| x.swap_master()));
 
@@ -119,7 +121,13 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
             });
 
         let content = format!("{} {}", workspaces, m.workspaces.current.workspace.layout.description());
-        p.stdin.as_mut().unwrap().write_line(content.as_slice()).unwrap();
+        match p.stdin.as_mut() {
+            Some(pin) => match pin.write_line(content.as_slice()) {
+                _ => ()
+            },
+            _ => ()
+        }
     });
 }
+
 
