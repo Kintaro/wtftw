@@ -1,6 +1,8 @@
 wtftw
 =====
 
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Kintaro/wtftw?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Window Tiling For The Win. A tiling window manager written in Rust
 
 ![Screenshot](https://i.imgur.com/Pq03fLx.jpg)
