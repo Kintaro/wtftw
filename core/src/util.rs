@@ -12,14 +12,14 @@ macro_rules! add_key_handler_str(
     ($config: expr, $w:expr, $key:expr, $modkey:expr, $inp:expr) => (
         $config.add_key_handler($w.get_keycode_from_string($key), $modkey, box $inp);
     )
-)
+);
 
 #[macro_export]
 macro_rules! add_key_handler_code(
     ($config: expr, $key:expr, $modkey:expr, $inp:expr) => (
         $config.add_key_handler($key, $modkey, box $inp);
     )
-)
+);
 
 
 pub fn run(program: &str, args: Option<&str>) {
