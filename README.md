@@ -9,6 +9,8 @@ Window Tiling For The Win. A tiling window manager written in Rust
 ## Status
 [![Build Status](https://travis-ci.org/Kintaro/wtftw.svg?branch=master)](https://travis-ci.org/Kintaro/wtftw)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Kintaro/wtftw?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Issue Stats](http://www.issuestats.com/github/Kintaro/wtftw/badge/pr?style=flat)](http://www.issuestats.com/github/Kintaro/wtftw)
+[![Issue Stats](http://www.issuestats.com/github/Kintaro/wtftw/badge/issue?style=flat)](http://www.issuestats.com/github/Kintaro/wtftw)
 
 ## Build
 
