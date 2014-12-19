@@ -94,6 +94,7 @@ impl XlibWindowSystem {
     }
 
     fn get_property(&self, atom: Window, window: Window) -> Option<Vec<c_ulong>> {
+        debug!("getting property {} for window {}", atom, window);
         unsafe {
             let mut actual_type_return : Window = 0;
             let mut actual_format_return : c_int = 0;
@@ -123,6 +124,7 @@ impl XlibWindowSystem {
     }
 
     fn get_property_from_string(&self, s: &str, window: Window) -> Option<Vec<c_ulong>> {
+        debug!("getting property {} for window {}", s, window);
         unsafe {
             let atom = XInternAtom(self.display, s.to_c_str().as_mut_ptr(), 0);
             self.get_property(atom, window)
@@ -144,15 +146,18 @@ impl XlibWindowSystem {
 
     fn set_button_grab(&self, grab: bool, window: Window) {
         if grab {
+            debug!("grabbing mouse buttons for {}", window);
             for &button in (vec!(1, 2, 3)).iter() {
                 unsafe { XGrabButton(self.display, button, 0x8000, window, 0, 4, 1, 0, 0, 0); }
             }
         } else {
+            debug!("ungrabbing mouse buttons for {}", window);
             unsafe { XUngrabButton(self.display, 0, 0x8000, window); }
         }
     }
 
     fn set_focus(&self, window: Window, window_manager: &WindowManager) {
+        debug!("setting focus to {}", window);
         for &other_window in window_manager.workspaces.visible_windows().iter() {
             self.set_button_grab(true, other_window);
         }

@@ -147,8 +147,12 @@ impl<'a> Config<'a> {
     pub fn compile_and_call(&mut self, m: &mut WindowManager, w: &WindowSystem) {
         let home = homedir().unwrap().to_c_str();
         let toml = format!("{}/.wtftw/Cargo.toml", home);
-        if !Path::new(toml.clone()).exists() {
+
+        if !Path::new(format!("{}/.wtftw", home)).exists() {
             fs::mkdir(&Path::new(format!("{}/.wtftw", home)), USER_DIR).unwrap();
+        }
+
+        if !Path::new(toml.clone()).exists() {
             let file = File::create(&Path::new(toml));
             file.unwrap().write_line("[project]\n\
                                      name = \"config\"\n\
