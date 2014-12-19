@@ -14,7 +14,7 @@ use handlers::default::{ exit, restart, start_terminal };
 use layout::{ Layout, TallLayout };
 
 use std::mem;
-use std::io::{USER_DIR, File, Open, Read};
+use std::io::{ USER_DIR, File };
 use std::io::fs;
 use std::io::fs::PathExtensions;
 use std::io::process::{ Command, Process, ExitStatus };
@@ -147,14 +147,14 @@ impl<'a> Config<'a> {
     pub fn compile_and_call(&mut self, m: &mut WindowManager, w: &WindowSystem) {
         let home = homedir().unwrap().to_c_str();
         let toml = format!("{}/.wtftw/Cargo.toml", home);
-        if let Err(_) = File::open_mode(&Path::new(toml.clone()), Open, Read) {
+        if !Path::new(toml.clone()).exists() {
             fs::mkdir(&Path::new(format!("{}/.wtftw", home)), USER_DIR).unwrap();
             let file = File::create(&Path::new(toml));
             file.unwrap().write_line("[project]\n\
                                      name = \"config\"\n\
                                      version = \"0.0.0\"\n\
                                      authors = [\"wtftw\"]\n\n\
-                                     [dependencies.wtftw_core]\n\
+                                     [dependencies.wtftw]\n\
                                      git = \"https://github.com/Kintaro/wtftw.git\"\n\n\
                                      [lib]\n\
                                      name = \"config\"\n\
@@ -162,7 +162,7 @@ impl<'a> Config<'a> {
         }
 
         let config_source = format!("{}/.wtftw/src/config.rs", home);
-        if let Ok(_) = File::open_mode(&Path::new(config_source), Open, Read) {
+        if Path::new(config_source).exists() {
             self.compile();
             self.call(m, w)
         } else {

@@ -27,8 +27,6 @@ pub mod default {
     use window_system::Window;
     use config::GeneralConfig;
     use handlers::libc::funcs::posix88::unistd::execvp;
-    use handlers::libc::funcs::posix88::signal::kill;
-    use handlers::libc::consts::os::posix88::SIGKILL;
 
     pub fn start_terminal<'a>(window_manager: WindowManager<'a>, _: &WindowSystem,
                           config: &GeneralConfig) -> WindowManager<'a> {
@@ -95,18 +93,20 @@ pub mod default {
         let windows = window_ids.to_c_str();
 
         for ref p in c.pipes.iter() {
-            p.deref().write().deref_mut().wait();
+            match p.deref().write().deref_mut().wait() {
+                _ => ()
+            }
         }
 
-        let result = unsafe {
+        unsafe {
             let mut slice : &mut [*const i8, ..4] = &mut [
                 program_name.as_ptr(),
                 resume.as_ptr(),
                 windows.as_ptr(),
                 null()
             ];
-            execvp(filename.as_ptr(), slice.as_mut_ptr())
-        };
+            execvp(filename.as_ptr(), slice.as_mut_ptr());
+        }
 
         window_manager.clone()
     }

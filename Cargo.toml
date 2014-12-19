@@ -15,7 +15,7 @@ rustc-flags = "-C prefer-dynamic"
 
 [lib]
 name = "wtftw"
-path = "src/wtftw.rs"
+path = "core/src/wtftw.rs"
 
 [[bin]]
 name = "wtftw"

@@ -39,8 +39,10 @@ fn main() {
     let mut config = Config::initialize();
     log::set_logger(box FileLogger::new(&config.general.logfile, false));
     // Initialize window system. Use xlib here for now
+    debug!("initialize window system");
     let window_system = XlibWindowSystem::new();
     // Create the actual window manager
+    debug!("create window manager");
     let mut window_manager = WindowManager::new(&window_system, &config.general);
 
     // If available, compile the config.general file at ~/.wtftw/config.general.rs
@@ -65,6 +67,7 @@ fn main() {
     }
 
     let window_ids = if matches.opt_present("r") {
+        debug!("trying to manage pre-existing windows");
         debug!("found {}", matches.opt_str("r").unwrap());
         parse_window_ids(matches.opt_str("r").unwrap().as_slice())
     } else {
@@ -105,6 +108,7 @@ fn main() {
                 }
 
                 window_manager = window_manager.manage(&window_system, window, &config.general);
+                debug!("calling manage hook for {}", window);
                 window_manager = window_manager.windows(&window_system, &config.general,
                                                         |x| config.internal.manage_hook.call((x.clone(),
                                                         &window_system, window)));

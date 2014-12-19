@@ -1,5 +1,4 @@
 use std::num::Float;
-use std::mem;
 use std::collections::EnumSet;
 use std::collections::enum_set::CLike;
 use core::Stack;
