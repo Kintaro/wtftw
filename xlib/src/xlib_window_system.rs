@@ -542,4 +542,10 @@ impl WindowSystem for XlibWindowSystem {
             XRestackWindows(self.display, windows.as_mut_slice().as_mut_ptr(), windows.len() as i32);
         }
     }
+
+    fn kill_client(&self, window: Window) {
+        unsafe {
+            XKillClient(self.display, window);
+        }
+    }
 }

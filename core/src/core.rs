@@ -708,4 +708,12 @@ impl<'a> Workspaces<'a> {
     pub fn send_layout_message(&self, message: LayoutMessage) -> Workspaces<'a> {
         self.from_current(self.current.send_layout_message(message))
     }
+
+    pub fn with_focused(&self, f: |Window|) -> Workspaces<'a> {
+        if let Some(window) = self.peek() {
+            f(window);
+        }
+
+        self.clone()
+    }
 }

@@ -5,11 +5,13 @@ version = "0.2.0"
 authors = ["Simon Wollwage"]
 
 [dependencies.xlib]
-git = "https://github.com/Kintaro/rust-xlib.git"
-branch = "sizehint"
+#git = "https://github.com/Kintaro/rust-xlib.git"
+path = "/home/wollwage/code/rust/rust-xlib"
+#branch = "sizehint"
 
 [dependencies.xinerama]
-git = "https://github.com/Kintaro/rust-xinerama.git"
+#git = "https://github.com/Kintaro/rust-xinerama.git"
+path = "/home/wollwage/code/rust/rust-xinerama"
 
 [dependencies.wtftw_core]
 path = "../core"

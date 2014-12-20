@@ -270,4 +270,9 @@ impl<'a> WindowManager<'a> {
     pub fn send_layout_message(&self, message: LayoutMessage) -> WindowManager<'a> {
         self.modify_workspaces(|w| w.send_layout_message(message))
     }
+
+    pub fn kill_window(&self, window_system: &WindowSystem) -> WindowManager<'a> {
+        self.workspaces.with_focused(|w| window_system.kill_client(w));
+        self.clone()
+    }
 }
