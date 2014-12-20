@@ -53,6 +53,7 @@ MirrorLayout::new(ResizableTallLayout::new()))),
 x.swap_down()));
     add_key_handler_str!(config, w, "k", modm | SHIFTMASK, |&: m, w, c| m.windows(w, c, |x| x.swap_up()));
     add_key_handler_str!(config, w, "Return", modm, |&: m, w, c| m.windows(w, c, |x| x.swap_master()));
+    add_key_handler_str!(config, w, "c", modm, |&: m, w, c| m.kill_window(w).windows(w, c, |x| x.clone()));
 
     // Layout messages
     add_key_handler_str!(config, w, "h", modm,
@@ -110,7 +111,7 @@ x.swap_down()));
         let workspaces = tags.clone().iter()
             .enumerate()
             .map(|(i, x)| if i as u32 == m.workspaces.current.workspace.id {
-                format!("[<fc=#3279a8>{}</fc>] ", x)
+                format!("[<fc=#196271>{}</fc>] ", x)
             } else {
                 format!("[{}] ", x)
             })
