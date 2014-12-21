@@ -1,6 +1,6 @@
 extern crate collections;
 
-use self::collections::TreeSet;
+use self::collections::BTreeSet;
 
 use core::RationalRect;
 use core::Screen;
@@ -98,7 +98,7 @@ impl<'a> WindowManager<'a> {
             let window_layout = workspace.layout.apply_layout(window_system,
                                                               screen_space,
                                                               &workspace.stack);
-            let windows_only : TreeSet<Window> = window_layout.iter().map(|&(w, _)| w).collect();
+            let windows_only : BTreeSet<Window> = window_layout.iter().map(|&(w, _)| w).collect();
 
             debug!("reapplying layout to {} screen", screen.screen_detail);
 
@@ -221,6 +221,7 @@ impl<'a> WindowManager<'a> {
                    f: |&Workspaces<'a>| -> Workspaces<'a>) -> WindowManager<'a> {
         let ws = f(&self.workspaces);
 
+        // Collect all visible and new windows
         let old_visible_vecs : Vec<Vec<Window>> = (vec!(self.workspaces.current.clone())).iter()
             .chain(self.workspaces.visible.iter())
             .filter_map(|x| x.workspace.stack.clone())
@@ -237,20 +238,24 @@ impl<'a> WindowManager<'a> {
             .map(|x| x.clone())
             .collect();
 
+        // Initialize all new windows
         for &window in new_windows.iter() {
             window_system.set_initial_properties(window);
         }
 
+        // If there is a currently focused window, set the border to focused color
         match self.workspaces.peek() {
             Some(win) => window_system.set_window_border_color(win, config.border_color.clone()),
             _         => ()
         }
 
+        // Apply the layout to the current workspace
         let result = self.modify_workspaces(f).reapply_layout(window_system, config);
 
         old_visible.iter().fold((),
             |_, &x| window_system.set_window_border_color(x, config.border_color.clone()));
 
+        // 
         match result.workspaces.peek() {
             Some(focused_window) => {
                 window_system.set_window_border_color(focused_window,
@@ -267,10 +272,12 @@ impl<'a> WindowManager<'a> {
         result
     }
 
+    /// Send the given message to the current layout
     pub fn send_layout_message(&self, message: LayoutMessage) -> WindowManager<'a> {
         self.modify_workspaces(|w| w.send_layout_message(message))
     }
 
+    /// Kill the currently focused window
     pub fn kill_window(&self, window_system: &WindowSystem) -> WindowManager<'a> {
         self.workspaces.with_focused(|w| window_system.kill_client(w));
         self.clone()

@@ -5,7 +5,7 @@ extern crate syntax;
 extern crate libc;
 
 use std::os::homedir;
-use std::collections::TreeMap;
+use std::collections::BTreeMap;
 use core::Workspaces;
 use window_system::*;
 use window_manager::WindowManager;
@@ -69,7 +69,7 @@ impl<'a> Clone for GeneralConfig<'a> {
 
 pub struct InternalConfig<'a> {
     pub library: Option<DynamicLibrary>,
-    pub key_handlers: TreeMap<KeyCommand, KeyHandler<'a>>,
+    pub key_handlers: BTreeMap<KeyCommand, KeyHandler<'a>>,
     pub manage_hook: ManageHook<'a>,
     pub startup_hook: StartupHook<'a>,
     pub loghook: Option<LogHook<'a>>,
@@ -105,15 +105,15 @@ impl<'a> Config<'a> {
                 layout:              box TallLayout { num_master: 1, increment_ratio: 0.3/100.0, ratio: 0.5 }
             },
             internal: InternalConfig {
-                library:             None,
-                key_handlers: TreeMap::new(),
+                library:      None,
+                key_handlers: BTreeMap::new(),
                 manage_hook:  box move |&: m: Workspaces<'b>, _: &WindowSystem, _: Window| -> Workspaces<'b> {
                     m.clone()
                 },
                 startup_hook: box move |&: m: WindowManager<'b>, _: &WindowSystem, _: &Config| -> WindowManager<'b> {
                     m.clone()
                 },
-                loghook:             None,
+                loghook:      None,
             }
         }
     }

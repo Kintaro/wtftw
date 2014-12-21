@@ -1,4 +1,4 @@
-use std::collections::TreeMap;
+use std::collections::BTreeMap;
 use std::iter::AdditiveIterator;
 use std::iter::repeat;
 use window_manager::ScreenDetail;
@@ -319,7 +319,7 @@ pub struct Workspaces<'a> {
     /// All remaining workspaces that are currently hidden
     pub hidden:   Vec<Workspace<'a>>,
     /// A list of all floating windows
-    pub floating: TreeMap<Window, RationalRect>
+    pub floating: BTreeMap<Window, RationalRect>
 }
 
 impl<'a> Clone for Workspaces<'a> {
@@ -365,7 +365,7 @@ impl<'a> Workspaces<'a> {
             current: current[0].clone(),
             visible: current.iter().skip(1).map(|x| x.clone()).collect(),
             hidden: unseen,
-            floating: TreeMap::new()
+            floating: BTreeMap::new()
         }
     }
 
@@ -459,7 +459,6 @@ impl<'a> Workspaces<'a> {
     }
 
     pub fn float(&self, window: Window, rect: RationalRect) -> Workspaces<'a> {
-        println!("float bitch!");
         let mut w = self.clone();
         w.floating.insert(window, rect);
         w
@@ -619,6 +618,7 @@ impl<'a> Workspaces<'a> {
     /// is contained in. If it is not contained anywhere,
     /// return None.
     pub fn find_tag(&self, window: Window) -> Option<u32> {
+        debug!("trying to find tag of workspace with window {}", window);
         self.workspaces().iter()
             .filter(|x| x.contains(window))
             .map(|x| x.id as u32)
@@ -675,6 +675,7 @@ impl<'a> Workspaces<'a> {
     /// Return a list of all visible windows.
     /// This is just a convenience function.
     pub fn visible_windows(&self) -> Vec<Window> {
+        debug!("retrieving visible windows");
         self.current.windows().into_iter().chain(self.visible.iter()
             .flat_map(|x| x.windows().into_iter()))
             .collect()
@@ -682,6 +683,7 @@ impl<'a> Workspaces<'a> {
 
     /// Return a list of all windows, hidden, visible and floating.
     pub fn all_windows(&self) -> Vec<Window> {
+        debug!("retrieving all windows");
         self.visible_windows().into_iter().chain(self.hidden.iter()
             .flat_map(|x| x.windows().into_iter()))
             .collect()
@@ -710,6 +712,7 @@ impl<'a> Workspaces<'a> {
     }
 
     pub fn with_focused(&self, f: |Window|) -> Workspaces<'a> {
+        debug!("applying closure to focused window");
         if let Some(window) = self.peek() {
             f(window);
         }

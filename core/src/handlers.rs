@@ -20,6 +20,7 @@ pub mod default {
     use std::os;
     use std::ptr::null;
     use std::io::process::Command;
+    use std::thread::Thread;
     use serialize::json;
     use core::Workspaces;
     use window_manager::WindowManager;
@@ -37,7 +38,7 @@ pub mod default {
             args.split(' ').map(String::from_str).collect()
         };
 
-        spawn(move || {
+        Thread::spawn(move || {
             debug!("spawning terminal");
             let command = if arguments.is_empty() {
                 Command::new(terminal).detached().spawn()
@@ -48,7 +49,7 @@ pub mod default {
             if let Err(_) = command {
                 panic!("unable to start terminal")
             }
-        });
+        }).detach();
 
         window_manager.clone()
     }
@@ -56,13 +57,13 @@ pub mod default {
     pub fn start_launcher<'a>(window_manager: WindowManager<'a>, _: &WindowSystem,
                           config: &GeneralConfig) -> WindowManager<'a> {
         let launcher = config.launcher.clone();
-        spawn(move || {
+        Thread::spawn(move || {
             debug!("spawning launcher");
             match Command::new(launcher).detached().spawn() {
                 Ok(_) => (),
                 _     => panic!("unable to start launcher")
             }
-        });
+        }).detach();
 
         window_manager.clone()
     }

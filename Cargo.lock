@@ -22,15 +22,10 @@ dependencies = [
 [[package]]
 name = "xinerama"
 version = "0.0.1"
-source = "git+https://github.com/Kintaro/rust-xinerama.git#660f3a0919480d0801db51dc21c831e0cfef74fb"
+source = "git+https://github.com/Kintaro/rust-xinerama.git#945efacbb4f4e747dbb38d645e39aaef7422484d"
 dependencies = [
- "xlib 0.1.0 (git+https://github.com/Kintaro/rust-xlib.git)",
+ "xlib 0.1.0 (git+https://github.com/Kintaro/rust-xlib.git?ref=sizehint)",
 ]
-
-[[package]]
-name = "xlib"
-version = "0.1.0"
-source = "git+https://github.com/Kintaro/rust-xlib.git#e81fd3f7c903cf3b2245a9aff659603700312208"
 
 [[package]]
 name = "xlib"
