@@ -17,6 +17,7 @@ use wtftw_core::util::*;
 use wtftw_core::layout::*;
 use wtftw_core::layout::Direction::*;
 use wtftw_core::layout::LayoutMessage::*;
+use wtftw_core::core::*;
 
 #[no_mangle]
 pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Config) {
@@ -29,8 +30,8 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
     config.general.terminal = (String::from_str("urxvt"), String::from_str(""));
     config.general.layout = LayoutCollection::new(vec!(
         GapLayout::new(16, AvoidStrutsLayout::new(vec!(Direction::Up), ResizableTallLayout::new())),
-        GapLayout::new(16, AvoidStrutsLayout::new(vec!(Direction::Up), 
-MirrorLayout::new(ResizableTallLayout::new()))), 
+        GapLayout::new(16, AvoidStrutsLayout::new(vec!(Direction::Up),
+MirrorLayout::new(ResizableTallLayout::new()))),
         box FullLayout));
 
     config.general.tags = (vec!("1: term", "2: web", "3: code",
@@ -49,23 +50,25 @@ MirrorLayout::new(ResizableTallLayout::new()))),
     // Focus and window movement
     add_key_handler_str!(config, w, "j", modm, |&: m, w, c| m.windows(w, c, |x| x.focus_down()));
     add_key_handler_str!(config, w, "k", modm, |&: m, w, c| m.windows(w, c, |x| x.focus_up()));
-    add_key_handler_str!(config, w, "j", modm | SHIFTMASK, |&: m, w, c| m.windows(w, c, |x| 
+    add_key_handler_str!(config, w, "j", modm | SHIFTMASK, |&: m, w, c| m.windows(w, c, |x|
 x.swap_down()));
     add_key_handler_str!(config, w, "k", modm | SHIFTMASK, |&: m, w, c| m.windows(w, c, |x| x.swap_up()));
     add_key_handler_str!(config, w, "Return", modm, |&: m, w, c| m.windows(w, c, |x| x.swap_master()));
     add_key_handler_str!(config, w, "c", modm, |&: m, w, c| m.kill_window(w).windows(w, c, |x| x.clone()));
 
+    add_key_handler_str!(config, w, "t", modm, |&: m, w, c| m.float(w, c, m.workspaces.peek().unwrap()));
+
     // Layout messages
     add_key_handler_str!(config, w, "h", modm,
-            |&: m, w, c| { m.send_layout_message(LayoutMessage::Decrease).reapply_layout(w, c) });
+            |&: m, w, c| { m.send_layout_message(LayoutMessage::Decrease).windows(w, c, |x| x.clone()) });
     add_key_handler_str!(config, w, "l", modm,
-            |&: m, w, c| { m.send_layout_message(LayoutMessage::Increase).reapply_layout(w, c) });
+            |&: m, w, c| { m.send_layout_message(LayoutMessage::Increase).windows(w, c, |x| x.clone()) });
     add_key_handler_str!(config, w, "comma", modm,
-            |&: m, w, c| { m.send_layout_message(LayoutMessage::IncreaseMaster).reapply_layout(w, c) });
+            |&: m, w, c| { m.send_layout_message(LayoutMessage::IncreaseMaster).windows(w, c, |x| x.clone()) });
     add_key_handler_str!(config, w, "period", modm,
-            |&: m, w, c| m.send_layout_message(LayoutMessage::DecreaseMaster).reapply_layout(w, c));
+            |&: m, w, c| m.send_layout_message(LayoutMessage::DecreaseMaster).windows(w, c, |x| x.clone()));
     add_key_handler_str!(config, w, "space", modm,
-            |&: m, w, c| m.send_layout_message(LayoutMessage::Next).reapply_layout(w, c));
+            |&: m, w, c| m.send_layout_message(LayoutMessage::Next).windows(w, c, |x| x.clone()));
 
     // Workspace switching and moving
     for i in range(1u, 10) {
@@ -91,6 +94,15 @@ x.swap_down()));
             |&: w, _, _| { run("xbacklight", Some("+10")); w });
     add_key_handler_code!(config, 0x1008ff03, NONEMASK,
             |&: w, _, _| { run("xbacklight", Some("-10")); w });
+
+    add_mouse_handler!(config, BUTTON1, modm,
+            |&: m, w, c, s| {
+                m.focus(s, w, c).mouse_move_window(w, c, s).windows(w, c, |x| x.shift_master())
+            });
+    add_mouse_handler!(config, BUTTON3, modm,
+            |&: m, w, c, s| {
+                m.focus(s, w, c).mouse_resize_window(w, c, s).windows(w, c, |x| x.shift_master())
+            });
 
     // Place specific applications on specific workspaces
     config.set_manage_hook(box |&: workspaces, window_system, window| {

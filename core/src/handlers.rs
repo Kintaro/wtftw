@@ -7,6 +7,7 @@ use window_system::Window;
 use config::{ GeneralConfig, Config };
 
 pub type KeyHandler<'a> = Box<Fn<(WindowManager<'a>, &'a (WindowSystem + 'a), &'a GeneralConfig<'a>), WindowManager<'a>> + 'a>;
+pub type MouseHandler<'a> = Box<Fn<(WindowManager<'a>, &'a (WindowSystem + 'a), &'a GeneralConfig<'a>, Window), WindowManager<'a>> + 'a>;
 pub type ManageHook<'a> = Box<Fn<(Workspaces<'a>, &'a (WindowSystem + 'a), Window), Workspaces<'a>> + 'a>;
 pub type StartupHook<'a> = Box<Fn<(WindowManager<'a>, &'a (WindowSystem + 'a), &'a Config<'a>), WindowManager<'a>> + 'a>;
 pub type LogHook<'a> = Box<FnMut<(WindowManager<'a>, &'a (WindowSystem + 'a)), ()> + 'a>;
@@ -114,7 +115,7 @@ pub mod default {
 
     /// Stop the window manager
     pub fn exit<'a>(w: WindowManager<'a>, _: &WindowSystem, _: &GeneralConfig<'a>) -> WindowManager<'a> {
-        WindowManager { running: false, workspaces: w.workspaces }
+        WindowManager { running: false, dragging: None, workspaces: w.workspaces }
     }
 
     pub fn shift<'a>(index: u32, workspace: Workspaces<'a>, window: Window) -> Workspaces<'a> {

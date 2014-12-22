@@ -4,8 +4,7 @@ use std::rc::Rc;
 use std::sync::RWLock;
 use core::Workspaces;
 use config::Config;
-use window_system::WindowSystem;
-use window_system::Window;
+use window_system::*;
 
 #[macro_export]
 macro_rules! add_key_handler_str(
@@ -18,6 +17,13 @@ macro_rules! add_key_handler_str(
 macro_rules! add_key_handler_code(
     ($config: expr, $key:expr, $modkey:expr, $inp:expr) => (
         $config.add_key_handler($key, $modkey, box $inp);
+    )
+);
+
+#[macro_export]
+macro_rules! add_mouse_handler(
+    ($config: expr, $button:expr, $modkey:expr, $inp:expr) => (
+        $config.add_mouse_handler($button, $modkey, box $inp);
     )
 );
 

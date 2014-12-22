@@ -26,6 +26,8 @@ use wtftw_core::window_manager::*;
 
 const KEYPRESS               : uint =  2;
 const BUTTONPRESS            : uint =  4;
+const BUTTONRELEASE          : uint =  5;
+const MOTIONOTIFY            : uint =  6;
 const ENTERNOTIFY            : uint =  7;
 const LEAVENOTIFY            : uint =  8;
 const DESTROYNOTIFY          : uint = 17;
@@ -76,7 +78,7 @@ impl XlibWindowSystem {
             XSelectInput(display, root, 0x1A0034);
             XSync(display, 0);
 
-            XUngrabButton(display, 0, 0, root);
+            XUngrabButton(display, 0, 0x8000, root);
 
             //XGrabButton(display, 0, 0, root, 0, 4, 1, 1, 0, 0);
 
@@ -459,9 +461,16 @@ impl WindowSystem for XlibWindowSystem {
             BUTTONPRESS => {
                 unsafe {
                     let event : &XButtonEvent = self.get_event_as();
-                    WindowSystemEvent::ButtonPressed(event.window, event.state, event.button,
+                    let button = MouseCommand {
+                        button: event.button,
+                        mask: KeyModifiers::from_bits(0xEF & event.state as u32).unwrap()
+                    };
+                    WindowSystemEvent::ButtonPressed(event.window, event.subwindow, button,
                                   event.x_root as u32, event.y_root as u32)
                 }
+            },
+            BUTTONRELEASE => {
+                WindowSystemEvent::ButtonReleased
             },
             KEYPRESS => {
                 unsafe {
@@ -474,6 +483,12 @@ impl WindowSystem for XlibWindowSystem {
                     WindowSystemEvent::KeyPressed(event.window, key)
                 }
             },
+            MOTIONOTIFY => {
+                unsafe {
+                    let event : &XMotionEvent = self.get_event_as();
+                    WindowSystemEvent::MouseMotion(event.x_root as u32, event.y_root as u32)
+                }
+            },
             _  => {
                 WindowSystemEvent::UnknownEvent
             }
@@ -481,7 +496,7 @@ impl WindowSystem for XlibWindowSystem {
     }
 
     fn grab_keys(&self, keys: Vec<KeyCommand>) {
-        for key in keys.iter() {
+        for &key in keys.iter() {
             unsafe {
                 debug!("grabbing key {}", key);
                 XGrabKey(self.display, XKeysymToKeycode(self.display, key.key) as i32,
@@ -492,11 +507,38 @@ impl WindowSystem for XlibWindowSystem {
         }
     }
 
+    fn grab_button(&self, button: MouseCommand) {
+        unsafe {
+            XGrabButton(self.display, button.button, button.mask.get_mask(), 
+                        self.root, 0, 4, 1, 0, 0, 0);
+        }
+    }
+
+    fn grab_pointer(&self) {
+        unsafe {
+            XGrabPointer(self.display, self.root, 0, 0x48, 1, 1, 0, 0, 0);
+        }
+    }
+
+    fn ungrab_pointer(&self) {
+        unsafe {
+            XUngrabPointer(self.display, 0);
+        }
+    }
+
     fn remove_enter_events(&self) {
         unsafe {
             let event : *mut c_void = malloc(256);
             XSync(self.display, 0);
             while XCheckMaskEvent(self.display, 16, event) != 0 { }
+        }
+    }
+
+    fn remove_motion_events(&self) {
+        unsafe {
+            let event : *mut c_void = malloc(256);
+            XSync(self.display, 0);
+            while XCheckMaskEvent(self.display, 0x40, event) != 0 { }
         }
     }
 
@@ -547,5 +589,19 @@ impl WindowSystem for XlibWindowSystem {
         unsafe {
             XKillClient(self.display, window);
         }
+    }
+
+    fn get_pointer(&self, window: Window) -> (u32, u32) {
+        let mut tmp_win : Window = 0;
+        let mut x : c_int = 0;
+        let mut y : c_int = 0;
+        let mut tmp : c_int = 0;
+        let mut tmp2 : c_uint = 0;
+        unsafe {
+            XQueryPointer(self.display, window, &mut tmp_win, &mut tmp_win,
+                          &mut x, &mut y, &mut tmp, &mut tmp, &mut tmp2);
+        }
+
+        (x as u32, y as u32)
     }
 }

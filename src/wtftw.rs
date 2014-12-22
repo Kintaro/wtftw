@@ -66,6 +66,11 @@ fn main() {
         window_system.grab_keys(vec!(command.clone()));
     }
 
+    for (&command, _) in config.internal.mouse_handlers.iter() {
+        debug!("grabbing buttons {}", command);
+        window_system.grab_button(command);
+    }
+
     let window_ids = if matches.opt_present("r") {
         debug!("trying to manage pre-existing windows");
         debug!("found {}", matches.opt_str("r").unwrap());
@@ -132,11 +137,34 @@ fn main() {
                     window_manager = window_manager.focus(window, &window_system, &config.general);
                 }
             },
-            WindowSystemEvent::ButtonPressed(window, _, _, _, _) => {
-                if window_system.get_root() != window {
-                    window_manager = window_manager.focus(window, &window_system, &config.general);
+            WindowSystemEvent::ButtonPressed(window, subwindow, button, _, _) => {
+                let is_root = window_system.get_root() == window;
+                let is_sub_root = window_system.get_root() == subwindow || subwindow == 0;
+                let act = config.internal.mouse_handlers.get(&button);
+
+                println!("Registered button press {} -> {} {}", window_system.get_root(), window, subwindow);
+
+                match act {
+                    Some(ref action) => {
+                        if is_root && !is_sub_root {
+                            let local_window_manager = window_manager.clone();
+                            window_manager = action.call((local_window_manager, &window_system,
+                                                          &config.general, subwindow));
+                        }
+                    }
+                    None => { 
+                        if !is_root {
+                            window_manager.focus(window, &window_system, &config.general); 
+                        }
+                    }
                 }
             },
+            WindowSystemEvent::ButtonReleased => {
+                if let Some(_) = window_manager.dragging {
+                    window_system.ungrab_pointer();
+                    window_manager.dragging = None;
+                }
+            }
             WindowSystemEvent::KeyPressed(_, key) => {
                 for (command, ref handler) in config.internal.key_handlers.iter() {
                     if command == &key {
@@ -144,8 +172,15 @@ fn main() {
                         debug!("calling handler for {}", key);
                         window_manager = handler.call((local_window_manager,
                                                        &window_system, &config.general));
-                        continue;
                     }
+                }
+            },
+            WindowSystemEvent::MouseMotion(x, y) => {
+                error!("motion!");
+                let local_window_manager = window_manager.clone();
+                if let Some(drag) = window_manager.dragging {
+                    error!("dragging!");
+                    window_manager = drag.deref().call((x, y, local_window_manager));
                 }
             },
             _ => ()

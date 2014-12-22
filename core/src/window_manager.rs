@@ -1,7 +1,5 @@
 extern crate collections;
 
-use self::collections::BTreeSet;
-
 use core::RationalRect;
 use core::Screen;
 use core::Workspace;
@@ -12,11 +10,15 @@ use window_system::Rectangle;
 use window_system::Window;
 use window_system::WindowSystem;
 
+use std::rc::Rc;
+
 pub type ScreenDetail = Rectangle;
+pub type MouseDrag<'a> = Box<Fn<(u32, u32, WindowManager<'a>),WindowManager<'a>> + 'a>;
 
 #[deriving(Clone)]
 pub struct WindowManager<'a> {
     pub running: bool,
+    pub dragging: Option<Rc<MouseDrag<'a>>>,
     pub workspaces: Workspaces<'a>
 }
 
@@ -25,6 +27,7 @@ impl<'a> WindowManager<'a> {
     pub fn new(window_system: &WindowSystem, config: &GeneralConfig<'a>) -> WindowManager<'a> {
         WindowManager {
             running: true,
+            dragging: None,
             workspaces: Workspaces::new(config.layout.copy(),
                                         config.tags.clone(),
                                         window_system.get_screen_infos())
@@ -88,62 +91,38 @@ impl<'a> WindowManager<'a> {
 
     /// Reapply the layout to the whole workspace.
     pub fn reapply_layout(&self, window_system: &WindowSystem,
-                          config: &GeneralConfig<'a>) -> WindowManager<'a> {
-        for screen in self.workspaces.screens().iter() {
-            let workspace = &screen.workspace;
+                          config: &GeneralConfig<'a>) -> Vec<(Window, Rectangle)> {
+        let rects = self.workspaces.screens().into_iter()
+            // Iterate over all (screen, windows) pairs
+            .map(|s| {
+                let this  = self.workspaces.view(s.workspace.id);
+                // filter out floating and invisible windows
+                let tiled = this.clone().current.workspace.stack
+                    .map_or(None, |x| x.filter(|w| !self.workspaces.floating.contains_key(w)));
+                let viewrect = s.screen_detail;
 
-            let Rectangle(x, y, w, h) = screen.screen_detail;
-            let screen_space = Rectangle(x, y, w, h);
+                let m   = self.workspaces.floating.clone();
+                let fw : Vec<Window> = this.clone().with(Vec::new(), |x| x.integrate()).into_iter()
+                    .filter(|x| m.contains_key(x))
+                    .collect();
+                let vs : Vec<(Window, Rectangle)> = fw.iter()
+                    .zip(fw.iter().map(|&x| WindowManager::scale_rational_rect(viewrect, m[x])))
+                    .map(|(x, y)| (x.clone(), y))
+                    .chain(s.workspace.layout.apply_layout(window_system, viewrect, &tiled).into_iter())
+                    .collect();
 
-            let window_layout = workspace.layout.apply_layout(window_system,
-                                                              screen_space,
-                                                              &workspace.stack);
-            let windows_only : BTreeSet<Window> = window_layout.iter().map(|&(w, _)| w).collect();
+                window_system.restack_windows(vs.iter().map(|x| x.0).collect());
 
-            debug!("reapplying layout to {} screen", screen.screen_detail);
+                vs
+            }).flat_map(|x| x.into_iter())
+            .collect::<Vec<_>>();
 
-            for w in workspace.windows().into_iter().filter(|w| !windows_only.contains(w)) {
-                window_system.hide_window(w);
-            }
-
-            // First, hide all the windows that are marked as hidden now,
-            // by unmapping them from the server.
-            for workspace in self.workspaces.hidden.iter() {
-                match workspace.stack {
-                    Some(ref s) => {
-                        for win in s.integrate().into_iter() {
-                            window_system.hide_window(win);
-                        }
-                    }
-                    _ => ()
-                }
-            }
-
-            // Then, show, place and resize all now visible windows.
-            for &(win, Rectangle(x, y, w, h)) in window_layout.iter() {
-                window_system.show_window(win);
-                window_system.resize_window(win,
-                                            w - config.border_width * 2,
-                                            h - config.border_width * 2);
-                window_system.move_window(win, x, y);
-                window_system.set_window_border_width(win, config.border_width);
-                window_system.set_window_border_color(win, config.border_color);
-            }
-
-            let to_restack : Vec<Window>  = window_layout.iter().map(|&(win, _)| win).chain(
-                self.workspaces.floating.iter().map(|(&win, _)| win)).collect();
-
-            window_system.restack_windows(to_restack);
+        for &(window, rect) in rects.iter() {
+            WindowManager::tile_window(window_system, config, window, rect);
+            window_system.show_window(window);
         }
 
-        if let Some(focused_window) = self.workspaces.peek() {
-            window_system.set_window_border_color(focused_window, config.focus_border_color);
-        }
-
-        // Force a redraw on all windows.
-        window_system.flush();
-
-        self.clone()
+        rects
     }
 
     pub fn unfocus_windows(&self, window_system: &WindowSystem, config: &GeneralConfig<'a>) {
@@ -164,11 +143,10 @@ impl<'a> WindowManager<'a> {
 
         let is_transient = false;
         let is_fixed_size = size_hints.min_size.is_some() && size_hints.min_size == size_hints.max_size;
-        let r = RationalRect(0.0, 0.0, 200.0, 200.0);
 
         if is_transient || is_fixed_size {
             let i = self.workspaces.current.workspace.id;
-            self.windows(window_system, config, |x| x.view(i).insert_up(window).float(window, r))
+            self.windows(window_system, config, |x| x.view(i).insert_up(window))//.float(window, r))
                 .focus(window, window_system, config)
         } else {
             self.windows(window_system, config, |x| x.insert_up(window))
@@ -181,7 +159,7 @@ impl<'a> WindowManager<'a> {
                     config: &GeneralConfig<'a>) -> WindowManager<'a> {
         if self.workspaces.contains(window) {
             debug!("unmanaging window {}", window);
-            self.windows(window_system, config, |x| x.delete(window)).reapply_layout(window_system, config)
+            self.windows(window_system, config, |x| x.delete(window))
         } else {
             self.clone()
         }
@@ -209,7 +187,11 @@ impl<'a> WindowManager<'a> {
     }
 
     pub fn modify_workspaces(&self, f: |&Workspaces<'a>| -> Workspaces<'a>) -> WindowManager<'a> {
-        WindowManager { running: self.running, workspaces: f(&self.workspaces) }
+        WindowManager {
+            running: self.running,
+            dragging: self.dragging.clone(),
+            workspaces: f(&self.workspaces)
+        }
     }
 
     pub fn reveal(&self, window_system: &WindowSystem, window: Window) -> WindowManager<'a> {
@@ -243,20 +225,18 @@ impl<'a> WindowManager<'a> {
             window_system.set_initial_properties(window);
         }
 
-        // If there is a currently focused window, set the border to focused color
-        match self.workspaces.peek() {
-            Some(win) => window_system.set_window_border_color(win, config.border_color.clone()),
-            _         => ()
-        }
-
         // Apply the layout to the current workspace
+        let modified = self.modify_workspaces(|x| f(x));
         let result = self.modify_workspaces(f).reapply_layout(window_system, config);
 
         old_visible.iter().fold((),
             |_, &x| window_system.set_window_border_color(x, config.border_color.clone()));
 
-        // 
-        match result.workspaces.peek() {
+        old_visible.iter().chain(new_windows.iter()).filter(|&&x| !result.iter().any(|&(y, _)| x == y)).fold((),
+            |_, &x| window_system.hide_window(x));
+
+        //
+        match modified.workspaces.peek() {
             Some(focused_window) => {
                 window_system.set_window_border_color(focused_window,
                                                       config.focus_border_color.clone());
@@ -269,7 +249,7 @@ impl<'a> WindowManager<'a> {
             window_system.remove_enter_events();
         }
 
-        result
+        modified
     }
 
     /// Send the given message to the current layout
@@ -281,5 +261,75 @@ impl<'a> WindowManager<'a> {
     pub fn kill_window(&self, window_system: &WindowSystem) -> WindowManager<'a> {
         self.workspaces.with_focused(|w| window_system.kill_client(w));
         self.clone()
+    }
+
+    fn scale_rational_rect(Rectangle(sx, sy, sw, sh): Rectangle,
+                           RationalRect(rx, ry, rw, rh): RationalRect) -> Rectangle {
+        fn scale(s: u32, r: f32) -> u32 { ((s as f32) * r) as u32 }
+        Rectangle(sx + scale(sw, rx), sy + scale(sh, ry), scale(sw, rw), scale(sh, rh))
+    }
+
+    fn tile_window(window_system: &WindowSystem, config: &GeneralConfig,
+                   window: Window, Rectangle(x, y, w, h): Rectangle) {
+        window_system.resize_window(window, w - config.border_width * 2,
+                                    h - config.border_width * 2);
+        window_system.move_window(window, x, y);
+        window_system.set_window_border_width(window, config.border_width);
+    }
+
+    pub fn float_location(&self, window_system: &WindowSystem, window: Window) -> RationalRect {
+        let Rectangle(_, _, sw, sh)   = self.workspaces.current.screen_detail;
+        let Rectangle(rx, ry, rw, rh) = window_system.get_geometry(window);
+
+        RationalRect(rx as f32 / sw as f32,
+                     ry as f32 / sh as f32,
+                     rw as f32 / sw as f32,
+                     rh as f32 / sh as f32)
+    }
+
+    pub fn float(&self, window_system: &WindowSystem, config: &GeneralConfig<'a>,
+                 window: Window) -> WindowManager<'a> {
+        let rect = self.float_location(window_system, window);
+
+        self.windows(window_system, config, |w| w.float(window, rect))
+    }
+
+    pub fn mouse_drag(&self, window_system: &'a WindowSystem, 
+                      f: Box<Fn<(u32, u32, WindowManager<'a>), WindowManager<'a>> + 'a>) -> WindowManager<'a> {
+        window_system.grab_pointer();
+
+        let motion = Rc::new((box move |&: x, y, window_manager| {
+            let z = f.call((x, y, window_manager));
+            window_system.remove_motion_events();
+            z
+        }) as MouseDrag<'a>);
+
+        WindowManager {
+            running: self.running,
+            dragging: Some(motion),
+            workspaces: self.workspaces.clone()
+        }
+    }
+
+    pub fn mouse_move_window(&self, window_system: &'a WindowSystem, config: &GeneralConfig<'a>, 
+                             window: Window) -> WindowManager<'a> {
+        let (ox, oy) = window_system.get_pointer(window);
+        let Rectangle(x, y, _, _) = window_system.get_geometry(window);
+
+        self.mouse_drag(window_system, box move |&: ex: u32, ey: u32, m: WindowManager<'a>| {
+            window_system.move_window(window, x + (ex - ox), y + (ey - oy));
+            m.clone()
+        }).float(window_system, config, window)
+    }
+
+    pub fn mouse_resize_window(&self, window_system: &'a WindowSystem, config: &GeneralConfig<'a>, 
+                             window: Window) -> WindowManager<'a> {
+        let (ox, oy) = window_system.get_pointer(window);
+        let Rectangle(x, y, _, _) = window_system.get_geometry(window);
+
+        self.mouse_drag(window_system, box move |&: ex: u32, ey: u32, m: WindowManager<'a>| {
+            window_system.resize_window(window, ex - x, ey - y);
+            m.clone()
+        }).float(window_system, config, window)
     }
 }

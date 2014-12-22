@@ -5,7 +5,7 @@ use window_manager::ScreenDetail;
 use window_system::Window;
 use layout::{Layout, LayoutMessage};
 
-#[deriving(Clone, Copy)]
+#[deriving(Clone, Copy, Show)]
 pub struct RationalRect(pub f32, pub f32, pub f32, pub f32);
 
 /// Handles focus tracking on a workspace.
@@ -547,7 +547,6 @@ impl<'a> Workspaces<'a> {
         self.from_visible(self.visible.iter().map(|x| x.map_option(|s| f(s))).collect())
     }
 
-
     pub fn get_focus_window(&self) -> Option<Window> {
         self.current.workspace.stack.clone().map(|s| s.focus)
     }
@@ -597,6 +596,19 @@ impl<'a> Workspaces<'a> {
         self.peek()
             // and move it
             .map_or(self.clone(), |w| self.shift_window(index, w))
+    }
+
+    pub fn shift_master(&self) -> Workspaces<'a> {
+        self.modify_stack(|s| if s.up.len() == 0 {
+            s.clone()
+        } else {
+            let rev : Vec<Window> = s.up.iter()
+                .rev()
+                .chain(s.down.iter())
+                .map(|x| x.clone())
+                .collect();
+            Stack::<Window>::new(s.focus, Vec::<Window>::new(), rev)
+        })
     }
 
     pub fn insert_up(&self, window: Window) -> Workspaces<'a> {

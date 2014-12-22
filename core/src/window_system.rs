@@ -51,6 +51,18 @@ impl KeyCommand {
     }
 }
 
+#[deriving(Show, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct MouseCommand {
+    pub mask: KeyModifiers,
+    pub button: MouseButton
+}
+
+impl MouseCommand {
+    pub fn new(button: MouseButton, mask: KeyModifiers) -> MouseCommand {
+        MouseCommand { button: button, mask: mask }
+    }
+}
+
 bitflags! {
     flags KeyModifiers : u32 {
         const NONEMASK    = (0 << 0),
@@ -64,6 +76,13 @@ bitflags! {
         const MOD5MASK    = (1 << 7),
     }
 }
+
+pub type MouseButton = u32;
+pub const BUTTON1 : MouseButton = 1;
+pub const BUTTON2 : MouseButton = 2;
+pub const BUTTON3 : MouseButton = 3;
+pub const BUTTON4 : MouseButton = 4;
+pub const BUTTON5 : MouseButton = 5;
 
 impl Show for KeyModifiers {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
@@ -99,7 +118,9 @@ pub enum WindowSystemEvent {
     /// The pointer has left a window's area. Mostly used
     /// for mousefollow focus.
     Leave(Window),
-    ButtonPressed(Window, u32, u32, u32, u32),
+    ButtonPressed(Window, Window, MouseCommand, u32, u32),
+    ButtonReleased,
+    MouseMotion(u32, u32),
     KeyPressed(Window, KeyCommand),
     ClientMessageEvent(Window),
     /// The underlying event by xlib or wayland is unknown
@@ -144,7 +165,9 @@ pub trait WindowSystem {
     fn get_event(&self) -> WindowSystemEvent;
     fn flush(&self);
     fn grab_keys(&self, keys: Vec<KeyCommand>);
+    fn grab_button(&self, button: MouseCommand);
     fn remove_enter_events(&self);
+    fn remove_motion_events(&self);
     fn get_partial_strut(&self, window: Window) -> Option<Vec<c_ulong>>;
     fn get_strut(&self, window: Window) -> Option<Vec<c_ulong>>;
     fn set_initial_properties(&self, window: Window);
@@ -153,6 +176,9 @@ pub trait WindowSystem {
     fn get_size_hints(&self, window: Window) -> SizeHint;
     fn restack_windows(&self, windows: Vec<Window>);
     fn kill_client(&self, window: Window);
+    fn grab_pointer(&self);
+    fn ungrab_pointer(&self);
+    fn get_pointer(&self, window: Window) -> (u32, u32);
 }
 
 

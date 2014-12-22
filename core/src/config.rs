@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 use core::Workspaces;
 use window_system::*;
 use window_manager::WindowManager;
-use handlers::{ KeyHandler, ManageHook, StartupHook, LogHook };
+use handlers::{ KeyHandler, MouseHandler, ManageHook, StartupHook, LogHook };
 use handlers::default::{ exit, restart, start_terminal };
 use layout::{ Layout, TallLayout };
 
@@ -70,6 +70,7 @@ impl<'a> Clone for GeneralConfig<'a> {
 pub struct InternalConfig<'a> {
     pub library: Option<DynamicLibrary>,
     pub key_handlers: BTreeMap<KeyCommand, KeyHandler<'a>>,
+    pub mouse_handlers: BTreeMap<MouseCommand, MouseHandler<'a>>,
     pub manage_hook: ManageHook<'a>,
     pub startup_hook: StartupHook<'a>,
     pub loghook: Option<LogHook<'a>>,
@@ -107,6 +108,7 @@ impl<'a> Config<'a> {
             internal: InternalConfig {
                 library:      None,
                 key_handlers: BTreeMap::new(),
+                mouse_handlers: BTreeMap::new(),
                 manage_hook:  box move |&: m: Workspaces<'b>, _: &WindowSystem, _: Window| -> Workspaces<'b> {
                     m.clone()
                 },
@@ -134,6 +136,11 @@ impl<'a> Config<'a> {
 
     pub fn add_key_handler(&mut self, key: u64, mask: KeyModifiers, keyhandler: KeyHandler<'a>) {
         self.internal.key_handlers.insert(KeyCommand::new(key, mask), keyhandler);
+    }
+
+    pub fn add_mouse_handler(&mut self, button: MouseButton, mask: KeyModifiers, 
+                             mousehandler: MouseHandler<'a>) {
+        self.internal.mouse_handlers.insert(MouseCommand::new(button, mask), mousehandler);
     }
 
     pub fn set_manage_hook(&mut self, hook: ManageHook<'a>) {
