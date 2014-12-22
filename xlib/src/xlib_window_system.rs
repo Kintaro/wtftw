@@ -139,6 +139,17 @@ impl XlibWindowSystem {
         }
     }
 
+    fn get_protocols(&self, window: Window) -> Vec<u64> {
+        unsafe {
+            let mut protocols : *mut c_ulong = uninitialized();
+            let mut num = 0;
+            XGetWMProtocols(self.display, window, &mut protocols, &mut num);
+            from_raw_buf(&(protocols as *const c_ulong), num as uint).iter()
+                .map(|&c| c)
+                .collect::<Vec<_>>()
+        }
+    }
+
     fn change_property(&self, window: Window, property: u64, typ: u64, mode: c_int, dat: &mut [c_ulong]) {
         unsafe {
             let ptr : *mut u8 = transmute(dat.as_mut_ptr());
@@ -587,7 +598,29 @@ impl WindowSystem for XlibWindowSystem {
 
     fn kill_client(&self, window: Window) {
         unsafe {
-            XKillClient(self.display, window);
+            let wmdelete = self.get_atom("WM_DELETE_WINDOW");
+            let wmprotocols = self.get_atom("WM_PROTOCOLS");
+            let protocols = self.get_protocols(window);
+
+            debug!("supported protocols: {} (wmdelete = {})", protocols, wmdelete);
+
+            if protocols.iter().any(|&x| x == wmdelete) {
+                let mut event = XClientMessageEvent {
+                    _type: 33,
+                    serial: 0,
+                    send_event: 0,
+                    display: null_mut(),
+                    window: window,
+                    message_type: wmprotocols,
+                    format: 32,
+                    data: [((wmdelete & 0xFFFFFFFF00000000) >> 32) as i32, 
+                        (wmdelete & 0xFFFFFFFF) as i32, 0, 0, 0]
+                };
+                let event_pointer : *mut XClientMessageEvent = &mut event;
+                XSendEvent(self.display, window, 0, 0, (event_pointer as *mut c_void));
+            } else {
+                XKillClient(self.display, window);
+            }
         }
     }
 
