@@ -56,7 +56,12 @@ x.swap_down()));
     add_key_handler_str!(config, w, "Return", modm, |&: m, w, c| m.windows(w, c, |x| x.swap_master()));
     add_key_handler_str!(config, w, "c", modm, |&: m, w, c| m.kill_window(w).windows(w, c, |x| x.clone()));
 
-    add_key_handler_str!(config, w, "t", modm, |&: m, w, c| m.float(w, c, m.workspaces.peek().unwrap()));
+    add_key_handler_str!(config, w, "t", modm, |&: m, w, c| {
+        match m.workspaces.peek() {
+            Some(window) => m.windows(w, c, |x| x.sink(window)),
+            None => m.clone()
+        }
+    });
 
     // Layout messages
     add_key_handler_str!(config, w, "h", modm,
@@ -115,7 +120,7 @@ x.swap_down()));
 
     // Xmobar handling and formatting
     let mut xmobar = spawn_pipe(config, String::from_str("xmobar"),
-                                Some(String::from_str("/home/wollwage/.xmonad/xmobar1.hs")));
+                                Some(String::from_str("/home/rootnode/.xmonad/xmobar1.hs")));
     let tags = config.general.tags.clone();
     config.set_log_hook(box move |&mut: m, _| {
         let p = &mut xmobar;
