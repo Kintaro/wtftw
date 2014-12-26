@@ -184,6 +184,12 @@ impl<'a> Config<'a> {
     pub fn compile(&self) {
         let home = homedir().unwrap().to_c_str();
 
+        info!("updating dependencies");
+        Command::new("cargo")
+            .cwd(&Path::new(format!("{}/.wtftw", home)))
+            .arg("update")
+            .env("RUST_LOG", "none")
+            .output().unwrap();
         info!("compiling config module");
         let output = Command::new("cargo")
             .cwd(&Path::new(format!("{}/.wtftw", home)))
@@ -195,7 +201,7 @@ impl<'a> Config<'a> {
             info!("config module compiled");
         } else {
             error!("error compiling config module");
-            Command::new("xmessage").arg("\"error compiling config module\"").status().unwrap();
+            Command::new("xmessage").arg("\"error compiling config module\"").output().unwrap();
         }
     }
 
