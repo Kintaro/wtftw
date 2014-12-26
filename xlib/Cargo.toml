@@ -18,6 +18,3 @@ path = "../core"
 name = "wtftw_xlib"
 path = "src/xlib_window_system.rs"
 crate-type = ["rlib"]
-
-[target.x86_64-unknown-linux-gnu.wtftw]
-rustc-flags = "-C prefer-dynamic"

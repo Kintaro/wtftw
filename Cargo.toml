@@ -10,9 +10,6 @@ path = "core"
 [dependencies.wtftw_xlib]
 path = "xlib"
 
-[target.x86_64-unknown-linux-gnu.wtftw]
-rustc-flags = "-C prefer-dynamic"
-
 [lib]
 name = "wtftw"
 path = "core/src/wtftw.rs"

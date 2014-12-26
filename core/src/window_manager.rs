@@ -93,22 +93,14 @@ impl<'a> WindowManager<'a> {
     pub fn reapply_layout(&self, window_system: &WindowSystem,
                           config: &GeneralConfig<'a>) -> Vec<(Window, Rectangle)> {
         let rects = self.workspaces.screens().into_iter()
-            // Iterate over all (screen, windows) pairs
             .map(|s| {
-                let this  = self.workspaces.view(s.workspace.id);
-                // filter out floating and invisible windows
-                let tiled = this.clone().current.workspace.stack
-                    .map_or(None, |x| x.filter(|w| !self.workspaces.floating.contains_key(w)));
-                let viewrect = s.screen_detail;
-
-                let m   = self.workspaces.floating.clone();
-                let fw : Vec<Window> = this.clone().with(Vec::new(), |x| x.integrate()).into_iter()
-                    .filter(|x| m.contains_key(x))
-                    .collect();
-                let vs : Vec<(Window, Rectangle)> = fw.iter()
-                    .zip(fw.iter().map(|&x| WindowManager::scale_rational_rect(viewrect, m[x])))
-                    .map(|(x, y)| (x.clone(), y))
-                    .chain(s.workspace.layout.apply_layout(window_system, viewrect, &tiled).into_iter())
+                let vs : Vec<(Window, Rectangle)> = self.workspaces.view(s.workspace.id)
+                    .with(Vec::new(), |x| x.integrate()).into_iter()
+                    .filter(|x| self.workspaces.floating.contains_key(x))
+                    .map(|x| (x, WindowManager::scale_rational_rect(s.screen_detail, self.workspaces.floating[x])))
+                    .chain(s.workspace.layout.apply_layout(window_system, s.screen_detail, 
+                        &self.workspaces.view(s.workspace.id).current.workspace.stack
+                            .map_or(None, |x| x.filter(|w| !self.workspaces.floating.contains_key(w)))).into_iter())
                     .collect();
 
                 window_system.restack_windows(vs.iter().map(|x| x.0).collect());
@@ -135,8 +127,13 @@ impl<'a> WindowManager<'a> {
     /// when the WM started.
     pub fn manage(&self, window_system: &WindowSystem, window: Window,
                   config: &GeneralConfig<'a>) -> WindowManager<'a> {
-        // TODO: manage floating windows
-        // and ensure that they stay within screen boundaries
+        fn adjust(RationalRect(x, y, w, h): RationalRect) -> RationalRect {
+            if x + w > 1.0 || y + h > 1.0 || x < 0.0 || y < 0.0 {
+                RationalRect(0.5 - w / 2.0, 0.5 - h / 2.0, w, h)
+            } else {
+                RationalRect(x, y, w, h)
+            }
+        }
         debug!("managing window {}", window_system.get_window_name(window));
 
         let size_hints = window_system.get_size_hints(window);
@@ -146,7 +143,9 @@ impl<'a> WindowManager<'a> {
 
         if is_transient || is_fixed_size {
             let i = self.workspaces.current.workspace.id;
-            self.windows(window_system, config, |x| x.view(i).insert_up(window))//.float(window, r))
+            let r = adjust(self.float_location(window_system, window));
+            self.view(window_system, i, config)
+                .windows(window_system, config, |x| x.insert_up(window).float(window, r))
                 .focus(window, window_system, config)
         } else {
             self.windows(window_system, config, |x| x.insert_up(window))
@@ -313,6 +312,7 @@ impl<'a> WindowManager<'a> {
 
     pub fn mouse_move_window(&self, window_system: &'a WindowSystem, config: &GeneralConfig<'a>, 
                              window: Window) -> WindowManager<'a> {
+        debug!("MOVE IT BITCH!");
         let (ox, oy) = window_system.get_pointer(window);
         let Rectangle(x, y, _, _) = window_system.get_geometry(window);
 
@@ -324,7 +324,6 @@ impl<'a> WindowManager<'a> {
 
     pub fn mouse_resize_window(&self, window_system: &'a WindowSystem, config: &GeneralConfig<'a>, 
                              window: Window) -> WindowManager<'a> {
-        let (ox, oy) = window_system.get_pointer(window);
         let Rectangle(x, y, _, _) = window_system.get_geometry(window);
 
         self.mouse_drag(window_system, box move |&: ex: u32, ey: u32, m: WindowManager<'a>| {

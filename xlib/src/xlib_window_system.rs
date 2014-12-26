@@ -96,7 +96,6 @@ impl XlibWindowSystem {
     }
 
     fn get_property(&self, atom: Window, window: Window) -> Option<Vec<c_ulong>> {
-        debug!("getting property {} for window {}", atom, window);
         unsafe {
             let mut actual_type_return : Window = 0;
             let mut actual_format_return : c_int = 0;
@@ -126,7 +125,6 @@ impl XlibWindowSystem {
     }
 
     fn get_property_from_string(&self, s: &str, window: Window) -> Option<Vec<c_ulong>> {
-        debug!("getting property {} for window {}", s, window);
         unsafe {
             let atom = XInternAtom(self.display, s.to_c_str().as_mut_ptr(), 0);
             self.get_property(atom, window)
@@ -369,18 +367,45 @@ impl WindowSystem for XlibWindowSystem {
         }
     }
 
-    fn configure_window(&self, window: Window, window_changes: WindowChanges, mask: u64) {
+    fn configure_window(&self, window: Window, window_changes: WindowChanges, mask: u64, is_floating: bool) {
         unsafe {
-            let mut xlib_window_changes = XWindowChanges {
-                x: window_changes.x as i32,
-                y: window_changes.y as i32,
-                width: window_changes.width as i32,
-                height: window_changes.height as i32,
-                border_width: window_changes.border_width as i32,
-                sibling: window_changes.sibling,
-                stack_mode: window_changes.stack_mode as i32
-            };
-            XConfigureWindow(self.display, window, mask as u32, &mut xlib_window_changes);
+            if is_floating {
+                let mut xlib_window_changes = XWindowChanges {
+                    x: window_changes.x as i32,
+                    y: window_changes.y as i32,
+                    width: window_changes.width as i32,
+                    height: window_changes.height as i32,
+                    border_width: window_changes.border_width as i32,
+                    sibling: window_changes.sibling,
+                    stack_mode: window_changes.stack_mode as i32
+                };
+                XConfigureWindow(self.display, window, mask as u32, &mut xlib_window_changes);
+            } else {
+                let Rectangle(x, y, w, h) = self.get_geometry(window);
+
+                let mut attributes : XWindowAttributes = uninitialized();
+                XGetWindowAttributes(self.display, window, &mut attributes);
+
+                let mut event = XConfigureEvent {
+                    _type: CONFIGURENOTIFY as i32,
+                    display: self.display,
+                    serial: 0,
+                    send_event: 1,
+                    x: x as i32,
+                    y: y as i32,
+                    width: w as i32,
+                    height: h as i32,
+                    border_width: 1,
+                    event: window,
+                    window: window,
+                    above: 0,
+                    override_redirect: attributes.override_redirect
+                };
+                debug!("sending configure notification for window {}: ({}, {}) {}x{} redirect: {}", 
+                       window, x, y, w, h, attributes.override_redirect);
+                let event_ptr : *mut XConfigureEvent = &mut event;
+                XSendEvent(self.display, window, 0, 0, (event_ptr as *mut c_void));
+            }
         }
     }
 

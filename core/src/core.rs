@@ -687,7 +687,6 @@ impl<'a> Workspaces<'a> {
     /// Return a list of all visible windows.
     /// This is just a convenience function.
     pub fn visible_windows(&self) -> Vec<Window> {
-        debug!("retrieving visible windows");
         self.current.windows().into_iter().chain(self.visible.iter()
             .flat_map(|x| x.windows().into_iter()))
             .collect()
@@ -695,7 +694,6 @@ impl<'a> Workspaces<'a> {
 
     /// Return a list of all windows, hidden, visible and floating.
     pub fn all_windows(&self) -> Vec<Window> {
-        debug!("retrieving all windows");
         self.visible_windows().into_iter().chain(self.hidden.iter()
             .flat_map(|x| x.windows().into_iter()))
             .collect()
@@ -724,7 +722,6 @@ impl<'a> Workspaces<'a> {
     }
 
     pub fn with_focused(&self, f: |Window|) -> Workspaces<'a> {
-        debug!("applying closure to focused window");
         if let Some(window) = self.peek() {
             f(window);
         }

@@ -88,7 +88,6 @@ fn main() {
     // Enter the event loop and just listen for events
     while window_manager.running {
         let event = window_system.get_event();
-        debug!("processing event {}", event);
         match event {
             WindowSystemEvent::ClientMessageEvent(_) => {
             },
@@ -102,7 +101,9 @@ fn main() {
             },
             // A window asked to be reconfig.generalured (i.e. resized, border change, etc.)
             WindowSystemEvent::ConfigurationRequest(window, window_changes, mask) => {
-                window_system.configure_window(window, window_changes, mask);
+                let floating = window_manager.workspaces.floating.iter().any(|(&x, _)| x == window) ||
+                    !window_manager.workspaces.contains(window);
+                window_system.configure_window(window, window_changes, mask, floating);
                 window_manager = window_manager.windows(&window_system, &config.general, |x| x.clone());
             },
             // A new window was created, so we need to manage
@@ -112,9 +113,8 @@ fn main() {
                     continue;
                 }
 
-                window_manager = window_manager.manage(&window_system, window, &config.general);
-                debug!("calling manage hook for {}", window);
-                window_manager = window_manager.windows(&window_system, &config.general,
+                window_manager = window_manager.manage(&window_system, window, &config.general)
+                                               .windows(&window_system, &config.general,
                                                         |x| config.internal.manage_hook.call((x.clone(),
                                                         &window_system, window)));
             },
@@ -142,44 +142,45 @@ fn main() {
                 let is_sub_root = window_system.get_root() == subwindow || subwindow == 0;
                 let act = config.internal.mouse_handlers.get(&button);
 
-                println!("Registered button press {} -> {} {}", window_system.get_root(), window, subwindow);
+                debug!("button pressed: {}", button);
 
                 match act {
                     Some(ref action) => {
+                        debug!("found action!");
+                        // If it's a root window, then it's an event we grabbed
                         if is_root && !is_sub_root {
                             let local_window_manager = window_manager.clone();
                             window_manager = action.call((local_window_manager, &window_system,
                                                           &config.general, subwindow));
                         }
                     }
-                    None => { 
+                    None => {
+                        // Otherwise just clock to focus
                         if !is_root {
-                            window_manager.focus(window, &window_system, &config.general); 
+                            window_manager.focus(window, &window_system, &config.general);
                         }
                     }
                 }
             },
             WindowSystemEvent::ButtonReleased => {
+                // If we were dragging, release the pointer and
+                // reset the dragging closure
                 if let Some(_) = window_manager.dragging {
                     window_system.ungrab_pointer();
                     window_manager.dragging = None;
                 }
             }
             WindowSystemEvent::KeyPressed(_, key) => {
-                for (command, ref handler) in config.internal.key_handlers.iter() {
-                    if command == &key {
-                        let local_window_manager = window_manager.clone();
-                        debug!("calling handler for {}", key);
-                        window_manager = handler.call((local_window_manager,
-                                                       &window_system, &config.general));
-                    }
+                if config.internal.key_handlers.contains_key(&key) {
+                    let local_window_manager = window_manager.clone();
+                    debug!("calling handler for {}", key);
+                    window_manager = config.internal.key_handlers[key].call((local_window_manager,
+                        &window_system, &config.general));
                 }
             },
             WindowSystemEvent::MouseMotion(x, y) => {
-                error!("motion!");
                 let local_window_manager = window_manager.clone();
                 if let Some(drag) = window_manager.dragging {
-                    error!("dragging!");
                     window_manager = drag.deref().call((x, y, local_window_manager));
                 }
             },

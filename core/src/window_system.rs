@@ -158,7 +158,7 @@ pub trait WindowSystem {
     fn hide_window(&self, window: Window);
     fn focus_window(&self, window: Window, window_manager: &WindowManager);
     fn get_focused_window(&self) -> Window;
-    fn configure_window(&self, window: Window, window_changes: WindowChanges, mask: u64);
+    fn configure_window(&self, window: Window, window_changes: WindowChanges, mask: u64, is_floating: bool);
     /// Check if there are events pending
     fn event_pending(&self) -> bool;
     /// Get the next event from the queue
