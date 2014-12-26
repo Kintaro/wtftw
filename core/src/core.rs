@@ -728,4 +728,15 @@ impl<'a> Workspaces<'a> {
 
         self.clone()
     }
+
+    pub fn update_floating_rect(&self, window: Window, rect: RationalRect) -> Workspaces<'a> {
+        let mut map = self.floating.clone();
+        map.insert(window, rect);
+        Workspaces {
+            current: self.current.clone(),
+            visible: self.visible.clone(),
+            hidden: self.hidden.clone(),
+            floating: map
+        }
+    }
 }

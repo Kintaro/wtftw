@@ -142,10 +142,10 @@ impl<'a> WindowManager<'a> {
         let is_fixed_size = size_hints.min_size.is_some() && size_hints.min_size == size_hints.max_size;
 
         if is_transient || is_fixed_size {
+            //debug!("window is transient or fixed size ({}, {})", is_transient, is_fixed_size);
             let i = self.workspaces.current.workspace.id;
             let r = adjust(self.float_location(window_system, window));
-            self.view(window_system, i, config)
-                .windows(window_system, config, |x| x.insert_up(window).float(window, r))
+            self.windows(window_system, config, |x| x.insert_up(window).float(window, r))
                 .focus(window, window_system, config)
         } else {
             self.windows(window_system, config, |x| x.insert_up(window))
@@ -314,11 +314,16 @@ impl<'a> WindowManager<'a> {
                              window: Window) -> WindowManager<'a> {
         debug!("MOVE IT BITCH!");
         let (ox, oy) = window_system.get_pointer(window);
-        let Rectangle(x, y, _, _) = window_system.get_geometry(window);
+        let Rectangle(x, y, w, h) = window_system.get_geometry(window);
 
         self.mouse_drag(window_system, box move |&: ex: u32, ey: u32, m: WindowManager<'a>| {
             window_system.move_window(window, x + (ex - ox), y + (ey - oy));
-            m.clone()
+            let Rectangle(_, _, width, height) = m.workspaces.current.screen_detail;
+            let rect = RationalRect(
+                        (x + (ex - ox)) as f32 / width as f32,
+                        (y + (ey - oy)) as f32 / height as f32,
+                        w as f32 / width as f32, h as f32 / height as f32);
+            m.modify_workspaces(|workspaces| workspaces.update_floating_rect(window, rect.clone()))
         }).float(window_system, config, window)
     }
 
@@ -328,7 +333,12 @@ impl<'a> WindowManager<'a> {
 
         self.mouse_drag(window_system, box move |&: ex: u32, ey: u32, m: WindowManager<'a>| {
             window_system.resize_window(window, ex - x, ey - y);
-            m.clone()
+            let Rectangle(_, _, width, height) = m.workspaces.current.screen_detail;
+            let rect = RationalRect(
+                        x as f32 / width as f32,
+                        y as f32 / height as f32,
+                        (ex - x) as f32 / width as f32, (ey - y) as f32 / height as f32);
+            m.modify_workspaces(|workspaces| workspaces.update_floating_rect(window, rect))
         }).float(window_system, config, window)
     }
 }

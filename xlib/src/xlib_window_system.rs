@@ -369,7 +369,7 @@ impl WindowSystem for XlibWindowSystem {
 
     fn configure_window(&self, window: Window, window_changes: WindowChanges, mask: u64, is_floating: bool) {
         unsafe {
-            if is_floating {
+            let result = if is_floating {
                 let mut xlib_window_changes = XWindowChanges {
                     x: window_changes.x as i32,
                     y: window_changes.y as i32,
@@ -405,7 +405,10 @@ impl WindowSystem for XlibWindowSystem {
                        window, x, y, w, h, attributes.override_redirect);
                 let event_ptr : *mut XConfigureEvent = &mut event;
                 XSendEvent(self.display, window, 0, 0, (event_ptr as *mut c_void));
-            }
+            };
+
+            XSync(self.display, 0);
+            result
         }
     }
 
@@ -447,7 +450,6 @@ impl WindowSystem for XlibWindowSystem {
                     stack_mode: event.detail as u32
                 };
 
-                //unsafe { XSync(self.display, 0); }
                 WindowSystemEvent::ConfigurationRequest(event.window, window_changes, event.value_mask)
             },
             CONFIGURENOTIFY => {

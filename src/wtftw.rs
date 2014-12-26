@@ -146,7 +146,7 @@ fn main() {
 
                 match act {
                     Some(ref action) => {
-                        debug!("found action!");
+                        debug!("found action! {} {}", is_root, is_sub_root);
                         // If it's a root window, then it's an event we grabbed
                         if is_root && !is_sub_root {
                             let local_window_manager = window_manager.clone();
