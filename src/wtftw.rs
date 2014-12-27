@@ -142,11 +142,8 @@ fn main() {
                 let is_sub_root = window_system.get_root() == subwindow || subwindow == 0;
                 let act = config.internal.mouse_handlers.get(&button);
 
-                debug!("button pressed: {}", button);
-
                 match act {
                     Some(ref action) => {
-                        debug!("found action! {} {}", is_root, is_sub_root);
                         // If it's a root window, then it's an event we grabbed
                         if is_root && !is_sub_root {
                             let local_window_manager = window_manager.clone();
@@ -181,6 +178,7 @@ fn main() {
             WindowSystemEvent::MouseMotion(x, y) => {
                 let local_window_manager = window_manager.clone();
                 if let Some(drag) = window_manager.dragging {
+                    debug!("dragging: {} {}", x, y);
                     window_manager = drag.deref().call((x, y, local_window_manager));
                 }
             },

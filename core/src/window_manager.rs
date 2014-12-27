@@ -117,6 +117,14 @@ impl<'a> WindowManager<'a> {
         rects
     }
 
+    pub fn post_apply_layout(&self, window_system: &WindowSystem, config: &GeneralConfig<'a>) {
+        debug!("post applying layout!");
+        for s in self.workspaces.screens().into_iter() {
+            s.workspace.layout.post_apply_layout(window_system, s.screen_detail,
+                                                 &s.workspace.stack, config);
+        }
+    }
+
     pub fn unfocus_windows(&self, window_system: &WindowSystem, config: &GeneralConfig<'a>) {
         for &win in self.workspaces.visible_windows().iter() {
             window_system.set_window_border_color(win, config.border_color);
@@ -244,6 +252,8 @@ impl<'a> WindowManager<'a> {
             None => window_system.focus_window(window_system.get_root(), self)
         }
 
+        modified.post_apply_layout(window_system, config);
+
         if config.focus_follows_mouse {
             window_system.remove_enter_events();
         }
@@ -289,8 +299,10 @@ impl<'a> WindowManager<'a> {
     pub fn float(&self, window_system: &WindowSystem, config: &GeneralConfig<'a>,
                  window: Window) -> WindowManager<'a> {
         let rect = self.float_location(window_system, window);
-
-        self.windows(window_system, config, |w| w.float(window, rect))
+        debug!("float pre: {}", rect);
+        let result = self.windows(window_system, config, |w| w.float(window, rect));
+        debug!("float post: {}", result.float_location(window_system, window));
+        result
     }
 
     pub fn mouse_drag(&self, window_system: &'a WindowSystem, 
@@ -318,12 +330,7 @@ impl<'a> WindowManager<'a> {
 
         self.mouse_drag(window_system, box move |&: ex: u32, ey: u32, m: WindowManager<'a>| {
             window_system.move_window(window, x + (ex - ox), y + (ey - oy));
-            let Rectangle(_, _, width, height) = m.workspaces.current.screen_detail;
-            let rect = RationalRect(
-                        (x + (ex - ox)) as f32 / width as f32,
-                        (y + (ey - oy)) as f32 / height as f32,
-                        w as f32 / width as f32, h as f32 / height as f32);
-            m.modify_workspaces(|workspaces| workspaces.update_floating_rect(window, rect.clone()))
+            m.modify_workspaces(|wsp| wsp.update_floating_rect(window, m.float_location(window_system, window)))
         }).float(window_system, config, window)
     }
 
@@ -333,12 +340,7 @@ impl<'a> WindowManager<'a> {
 
         self.mouse_drag(window_system, box move |&: ex: u32, ey: u32, m: WindowManager<'a>| {
             window_system.resize_window(window, ex - x, ey - y);
-            let Rectangle(_, _, width, height) = m.workspaces.current.screen_detail;
-            let rect = RationalRect(
-                        x as f32 / width as f32,
-                        y as f32 / height as f32,
-                        (ex - x) as f32 / width as f32, (ey - y) as f32 / height as f32);
-            m.modify_workspaces(|workspaces| workspaces.update_floating_rect(window, rect))
+            m.modify_workspaces(|wsp| wsp.update_floating_rect(window, m.float_location(window_system, window)))
         }).float(window_system, config, window)
     }
 }

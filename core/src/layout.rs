@@ -7,6 +7,7 @@ use window_system::Window;
 use window_system::Rectangle;
 use window_system::WindowSystem;
 use window_manager::ScreenDetail;
+use config::GeneralConfig;
 
 #[deriving(Clone, Copy)]
 pub enum LayoutMessage {
@@ -59,6 +60,9 @@ pub trait Layout {
     fn apply_layout(&self, window_system: &WindowSystem, screen: Rectangle,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)>;
     fn apply_message(&mut self, message: LayoutMessage) -> bool;
+    fn post_apply_layout<'b>(&self, window_system: &WindowSystem, screen: Rectangle,
+                    stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) {
+    }
     fn description(&self) -> String;
     fn copy<'a>(&self) -> Box<Layout + 'a> { panic!("") }
 }
@@ -201,6 +205,11 @@ impl<'a> Layout for MirrorLayout<'a> {
     fn description(&self) -> String {
         self.layout.description()
     }
+    
+    fn post_apply_layout<'b>(&self, window_system: &WindowSystem, screen: Rectangle,
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) {
+        self.layout.post_apply_layout(window_system, screen, stack, config);
+    }
 
     fn copy<'b>(&self) -> Box<Layout + 'b> {
         box MirrorLayout { layout: self.layout.copy() }
@@ -324,6 +333,11 @@ impl<'a> Layout for AvoidStrutsLayout<'a> {
     fn description(&self) -> String {
         self.layout.description()
     }
+    
+    fn post_apply_layout<'b>(&self, window_system: &WindowSystem, screen: Rectangle,
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) {
+        self.layout.post_apply_layout(window_system, screen, stack, config);
+    }
 
     fn copy<'b>(&self) -> Box<Layout + 'b> {
         box AvoidStrutsLayout {
@@ -363,12 +377,74 @@ impl<'a> Layout for GapLayout<'a> {
     fn description(&self) -> String {
         self.layout.description()
     }
+    
+    fn post_apply_layout<'b>(&self, window_system: &WindowSystem, screen: Rectangle,
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) {
+        self.layout.post_apply_layout(window_system, screen, stack, config);
+    }
 
     fn copy<'b>(&self) -> Box<Layout + 'b> {
         box GapLayout {
             gap: self.gap,
             layout: self.layout.copy()
         }
+    }
+}
+
+pub struct WithBordersLayout<'a> {
+    border: u32,
+    layout: Box<Layout + 'a>
+}
+
+impl<'a> WithBordersLayout<'a> {
+    pub fn new(border: u32, layout: Box<Layout + 'a>) -> Box<Layout + 'a> {
+        box WithBordersLayout {
+            border: border,
+            layout: layout.copy()
+        }
+    }
+}
+
+impl<'a> Layout for WithBordersLayout<'a> {
+    fn apply_layout(&self, window_system: &WindowSystem, screen: Rectangle,
+                    stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
+        self.layout.apply_layout(window_system, screen, stack)
+    }
+
+    fn apply_message(&mut self, message: LayoutMessage) -> bool {
+        self.layout.apply_message(message)
+    }
+
+    fn description(&self) -> String {
+        self.layout.description()
+    }
+
+    fn post_apply_layout<'b>(&self, window_system: &WindowSystem, screen: Rectangle,
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) {
+        self.layout.post_apply_layout(window_system, screen, stack, config);
+        if let &Some(ref s) = stack {
+            for window in s.integrate().into_iter() {
+                let Rectangle(x, y, w, h) = window_system.get_geometry(window);
+                let gap = 2 * (config.border_width - self.border);
+                window_system.set_window_border_width(window, self.border);
+                window_system.resize_window(window, w + gap, h + gap);
+            }
+        }
+    }
+
+    fn copy<'b>(&self) -> Box<Layout + 'b> {
+        box WithBordersLayout {
+            border: self.border,
+            layout: self.layout.copy()
+        }
+    }
+}
+
+pub struct NoBordersLayout<'a>;
+
+impl<'a> NoBordersLayout<'a> {
+    pub fn new(layout: Box<Layout + 'a>) -> Box<Layout + 'a> {
+        WithBordersLayout::new(0, layout)
     }
 }
 
@@ -465,6 +541,11 @@ impl<'a> Layout for LayoutCollection<'a> {
 
     fn description(&self) -> String {
         self.layouts[self.current].description()
+    }
+    
+    fn post_apply_layout<'b>(&self, window_system: &WindowSystem, screen: Rectangle,
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) {
+        self.layouts[self.current].post_apply_layout(window_system, screen, stack, config);
     }
 
     fn copy<'b>(&self) -> Box<Layout + 'b> {
