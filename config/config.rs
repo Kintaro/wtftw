@@ -32,7 +32,7 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
         GapLayout::new(16, AvoidStrutsLayout::new(vec!(Direction::Up), ResizableTallLayout::new())),
         GapLayout::new(16, AvoidStrutsLayout::new(vec!(Direction::Up),
 MirrorLayout::new(ResizableTallLayout::new()))),
-        box FullLayout));
+        NoBordersLayout::new(box FullLayout)));
 
     config.general.tags = (vec!("1: term", "2: web", "3: code",
                                 "4: media", "5: steam", "6: latex",
@@ -128,7 +128,7 @@ x.swap_down()));
         let workspaces = tags.clone().iter()
             .enumerate()
             .map(|(i, x)| if i as u32 == m.workspaces.current.workspace.id {
-                format!("[<fc=#196271>{}</fc>] ", x)
+                format!("[<fc=#f07746>{}</fc>] ", x)
             } else {
                 format!("[{}] ", x)
             })
