@@ -30,8 +30,8 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
     config.general.terminal = (String::from_str("urxvt"), String::from_str(""));
     config.general.layout = LayoutCollection::new(vec!(
         GapLayout::new(16, AvoidStrutsLayout::new(vec!(Direction::Up), ResizableTallLayout::new())),
-        GapLayout::new(16, AvoidStrutsLayout::new(vec!(Direction::Up),
-MirrorLayout::new(ResizableTallLayout::new()))),
+        GapLayout::new(16, AvoidStrutsLayout::new(vec!(Direction::Up), MirrorLayout::new(ResizableTallLayout::new()))),
+        GapLayout::new(16, AvoidStrutsLayout::new(vec!(Direction::Up), CenterLayout::new(ResizableTallLayout::new()))),
         NoBordersLayout::new(box FullLayout)));
 
     config.general.tags = (vec!("1: term", "2: web", "3: code",

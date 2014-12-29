@@ -120,6 +120,58 @@ impl Layout for TallLayout {
     }
 }
 
+pub struct CenterLayout<'a> {
+    pub layout: Box<Layout + 'a>
+}
+
+impl<'a> CenterLayout<'a> {
+    pub fn new(layout: Box<Layout + 'a>) -> Box<Layout + 'a> {
+        box CenterLayout {
+            layout: layout.copy()
+        } as Box<Layout + 'a>
+    }
+}
+
+impl<'a> Layout for CenterLayout <'a> {
+    fn apply_layout(&self, window_system: &WindowSystem, screen: Rectangle,
+                    stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
+        match stack {
+            &Some(ref s) => {
+                if s.len() == 1 {
+                    self.layout.apply_layout(window_system, screen, &Some(s.clone()))
+                } else {
+                    let new_stack = if s.up.len() > 0 {
+                        Stack::<Window>::new(s.up[0], s.up.as_slice().tail().to_vec(), s.down.clone())
+                    } else {
+                        Stack::<Window>::new(s.down[0], Vec::new(), s.down.as_slice().tail().to_vec())
+                    };
+                    (vec!({
+                        let x = screen.0 + ((screen.2 as f32 * 0.2) as u32 / 2);
+                        let y = screen.1 + ((screen.3 as f32 * 0.2) as u32 / 2);
+                        let w = (screen.2 as f32 * 0.8) as u32;
+                        let h = (screen.3 as f32 * 0.8) as u32;
+                        (s.focus, Rectangle(x, y, w, h))
+                    }).into_iter()).chain(self.layout.apply_layout(window_system, screen, 
+                                                                   &Some(new_stack)).into_iter()).collect()
+                }
+            },
+            _ => Vec::new()
+        }
+    }
+
+    fn apply_message(&mut self, message: LayoutMessage) -> bool {
+        self.layout.apply_message(message)
+    }
+
+    fn description(&self) -> String {
+        String::from_str("Center")
+    }
+
+    fn copy<'b>(&self) -> Box<Layout + 'b> {
+        CenterLayout::new(self.layout.copy())
+    }
+}
+
 #[deriving(Clone)]
 pub struct ResizableTallLayout {
     pub num_master: u32,

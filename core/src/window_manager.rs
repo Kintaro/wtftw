@@ -92,13 +92,13 @@ impl<'a> WindowManager<'a> {
     /// Reapply the layout to the whole workspace.
     pub fn reapply_layout(&self, window_system: &WindowSystem,
                           config: &GeneralConfig<'a>) -> Vec<(Window, Rectangle)> {
-        let rects = self.workspaces.screens().into_iter()
+        self.workspaces.screens().into_iter()
             .map(|s| {
                 let vs : Vec<(Window, Rectangle)> = self.workspaces.view(s.workspace.id)
                     .with(Vec::new(), |x| x.integrate()).into_iter()
                     .filter(|x| self.workspaces.floating.contains_key(x))
                     .map(|x| (x, WindowManager::scale_rational_rect(s.screen_detail, self.workspaces.floating[x])))
-                    .chain(s.workspace.layout.apply_layout(window_system, s.screen_detail, 
+                    .chain(s.workspace.layout.apply_layout(window_system, s.screen_detail,
                         &self.workspaces.view(s.workspace.id).current.workspace.stack
                             .map_or(None, |x| x.filter(|w| !self.workspaces.floating.contains_key(w)))).into_iter())
                     .collect();
@@ -107,14 +107,7 @@ impl<'a> WindowManager<'a> {
 
                 vs
             }).flat_map(|x| x.into_iter())
-            .collect::<Vec<_>>();
-
-        for &(window, rect) in rects.iter() {
-            WindowManager::tile_window(window_system, config, window, rect);
-            window_system.show_window(window);
-        }
-
-        rects
+            .collect()
     }
 
     pub fn post_apply_layout(&self, window_system: &WindowSystem, config: &GeneralConfig<'a>) {
@@ -252,7 +245,16 @@ impl<'a> WindowManager<'a> {
             None => window_system.focus_window(window_system.get_root(), self)
         }
 
+
+        for &(window, rect) in result.iter() {
+            WindowManager::tile_window(window_system, config, window, rect);
+        }
+
         modified.post_apply_layout(window_system, config);
+
+        for &(window, rect) in result.iter() {
+            window_system.show_window(window);
+        }
 
         if config.focus_follows_mouse {
             window_system.remove_enter_events();
@@ -299,13 +301,11 @@ impl<'a> WindowManager<'a> {
     pub fn float(&self, window_system: &WindowSystem, config: &GeneralConfig<'a>,
                  window: Window) -> WindowManager<'a> {
         let rect = self.float_location(window_system, window);
-        debug!("float pre: {}", rect);
         let result = self.windows(window_system, config, |w| w.float(window, rect));
-        debug!("float post: {}", result.float_location(window_system, window));
         result
     }
 
-    pub fn mouse_drag(&self, window_system: &'a WindowSystem, 
+    pub fn mouse_drag(&self, window_system: &'a WindowSystem,
                       f: Box<Fn<(u32, u32, WindowManager<'a>), WindowManager<'a>> + 'a>) -> WindowManager<'a> {
         window_system.grab_pointer();
 
@@ -322,9 +322,8 @@ impl<'a> WindowManager<'a> {
         }
     }
 
-    pub fn mouse_move_window(&self, window_system: &'a WindowSystem, config: &GeneralConfig<'a>, 
+    pub fn mouse_move_window(&self, window_system: &'a WindowSystem, config: &GeneralConfig<'a>,
                              window: Window) -> WindowManager<'a> {
-        debug!("MOVE IT BITCH!");
         let (ox, oy) = window_system.get_pointer(window);
         let Rectangle(x, y, w, h) = window_system.get_geometry(window);
 
@@ -334,7 +333,7 @@ impl<'a> WindowManager<'a> {
         }).float(window_system, config, window)
     }
 
-    pub fn mouse_resize_window(&self, window_system: &'a WindowSystem, config: &GeneralConfig<'a>, 
+    pub fn mouse_resize_window(&self, window_system: &'a WindowSystem, config: &GeneralConfig<'a>,
                              window: Window) -> WindowManager<'a> {
         let Rectangle(x, y, _, _) = window_system.get_geometry(window);
 
