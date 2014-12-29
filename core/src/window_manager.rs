@@ -92,22 +92,20 @@ impl<'a> WindowManager<'a> {
     /// Reapply the layout to the whole workspace.
     pub fn reapply_layout(&self, window_system: &WindowSystem,
                           config: &GeneralConfig<'a>) -> Vec<(Window, Rectangle)> {
-        self.workspaces.screens().into_iter()
-            .map(|s| {
-                let vs : Vec<(Window, Rectangle)> = self.workspaces.view(s.workspace.id)
-                    .with(Vec::new(), |x| x.integrate()).into_iter()
-                    .filter(|x| self.workspaces.floating.contains_key(x))
-                    .map(|x| (x, WindowManager::scale_rational_rect(s.screen_detail, self.workspaces.floating[x])))
-                    .chain(s.workspace.layout.apply_layout(window_system, s.screen_detail,
-                        &self.workspaces.view(s.workspace.id).current.workspace.stack
-                            .map_or(None, |x| x.filter(|w| !self.workspaces.floating.contains_key(w)))).into_iter())
-                    .collect();
+        self.workspaces.screens().into_iter().map(|s| {
+            let vs : Vec<(Window, Rectangle)> = self.workspaces.view(s.workspace.id)
+                .with(Vec::new(), |x| x.integrate()).into_iter()
+                .filter(|x| self.workspaces.floating.contains_key(x))
+                .map(|x| (x, WindowManager::scale_rational_rect(s.screen_detail, self.workspaces.floating[x])))
+                .chain(s.workspace.layout.apply_layout(window_system, s.screen_detail,
+                    &self.workspaces.view(s.workspace.id).current.workspace.stack
+                        .map_or(None, |x| x.filter(|w| !self.workspaces.floating.contains_key(w)))).into_iter())
+                .collect();
 
-                window_system.restack_windows(vs.iter().map(|x| x.0).collect());
+            window_system.restack_windows(vs.iter().map(|x| x.0).collect());
 
-                vs
-            }).flat_map(|x| x.into_iter())
-            .collect()
+            vs
+        }).flat_map(|x| x.into_iter()).collect()
     }
 
     pub fn post_apply_layout(&self, window_system: &WindowSystem, config: &GeneralConfig<'a>) {
@@ -223,6 +221,7 @@ impl<'a> WindowManager<'a> {
         // Initialize all new windows
         for &window in new_windows.iter() {
             window_system.set_initial_properties(window);
+            window_system.set_window_border_width(window, config.border_width);
         }
 
         // Apply the layout to the current workspace
@@ -235,25 +234,19 @@ impl<'a> WindowManager<'a> {
         old_visible.iter().chain(new_windows.iter()).filter(|&&x| !result.iter().any(|&(y, _)| x == y)).fold((),
             |_, &x| window_system.hide_window(x));
 
-        //
-        match modified.workspaces.peek() {
-            Some(focused_window) => {
-                window_system.set_window_border_color(focused_window,
-                                                      config.focus_border_color.clone());
-                window_system.focus_window(focused_window, self);
-            },
-            None => window_system.focus_window(window_system.get_root(), self)
-        }
-
-
         for &(window, rect) in result.iter() {
             WindowManager::tile_window(window_system, config, window, rect);
         }
 
         modified.post_apply_layout(window_system, config);
 
-        for &(window, rect) in result.iter() {
-            window_system.show_window(window);
+        //
+        match modified.workspaces.peek() {
+            Some(focused_window) => {
+                window_system.set_window_border_color(focused_window, config.focus_border_color.clone());
+                window_system.focus_window(focused_window, self);
+            },
+            None => window_system.focus_window(window_system.get_root(), self)
         }
 
         if config.focus_follows_mouse {
@@ -264,8 +257,9 @@ impl<'a> WindowManager<'a> {
     }
 
     /// Send the given message to the current layout
-    pub fn send_layout_message(&self, message: LayoutMessage) -> WindowManager<'a> {
-        self.modify_workspaces(|w| w.send_layout_message(message))
+    pub fn send_layout_message(&self, message: LayoutMessage, window_system: &WindowSystem, 
+                               config: &GeneralConfig) -> WindowManager<'a> {
+        self.modify_workspaces(|w| w.send_layout_message(message, window_system, config))
     }
 
     /// Kill the currently focused window
@@ -282,10 +276,10 @@ impl<'a> WindowManager<'a> {
 
     fn tile_window(window_system: &WindowSystem, config: &GeneralConfig,
                    window: Window, Rectangle(x, y, w, h): Rectangle) {
-        window_system.resize_window(window, w - config.border_width * 2,
-                                    h - config.border_width * 2);
+        window_system.resize_window(window, w, // - config.border_width * 2,
+                                    h);// - config.border_width * 2);
         window_system.move_window(window, x, y);
-        window_system.set_window_border_width(window, config.border_width);
+        window_system.show_window(window);
     }
 
     pub fn float_location(&self, window_system: &WindowSystem, window: Window) -> RationalRect {

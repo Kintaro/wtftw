@@ -1,8 +1,9 @@
 use std::collections::BTreeMap;
 use std::iter::AdditiveIterator;
 use std::iter::repeat;
+use config::GeneralConfig;
 use window_manager::ScreenDetail;
-use window_system::Window;
+use window_system::{ Window, WindowSystem };
 use layout::{Layout, LayoutMessage};
 
 #[deriving(Clone, Copy, Show)]
@@ -240,9 +241,9 @@ impl<'a> Workspace<'a> {
         Some(self.stack.clone().map_or(default, |x| f(x))))
     }
 
-    pub fn send_layout_message(&self, message: LayoutMessage) -> Workspace<'a> {
+    pub fn send_layout_message<'b>(&self, message: LayoutMessage, window_system: &WindowSystem, config: &GeneralConfig<'b>) -> Workspace<'a> {
         let mut layout = self.layout.copy();
-        layout.apply_message(message);
+        layout.apply_message(message, window_system, &self.stack, config);
         Workspace::new(self.id, self.tag.clone(), layout, self.stack.clone())
     }
 }
@@ -306,8 +307,9 @@ impl<'a> Screen<'a> {
         Screen::new(self.workspace.map_or(default, f), self.screen_id, self.screen_detail)
     }
 
-    pub fn send_layout_message(&self, message: LayoutMessage) -> Screen<'a> {
-        Screen::new(self.workspace.send_layout_message(message), self.screen_id, self.screen_detail)
+    pub fn send_layout_message<'b>(&self, message: LayoutMessage, window_system: &WindowSystem, 
+                                   config: &GeneralConfig<'b>) -> Screen<'a> {
+        Screen::new(self.workspace.send_layout_message(message, window_system, config), self.screen_id, self.screen_detail)
     }
 }
 
@@ -717,8 +719,9 @@ impl<'a> Workspaces<'a> {
         (vec!(self.current.clone())) + self.visible.as_slice()
     }
 
-    pub fn send_layout_message(&self, message: LayoutMessage) -> Workspaces<'a> {
-        self.from_current(self.current.send_layout_message(message))
+    pub fn send_layout_message<'b>(&self, message: LayoutMessage, window_system: &WindowSystem, 
+                                   config: &GeneralConfig<'b>) -> Workspaces<'a> {
+        self.from_current(self.current.send_layout_message(message, window_system, config))
     }
 
     pub fn with_focused(&self, f: |Window|) -> Workspaces<'a> {

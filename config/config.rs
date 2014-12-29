@@ -65,15 +65,15 @@ x.swap_down()));
 
     // Layout messages
     add_key_handler_str!(config, w, "h", modm,
-            |&: m, w, c| { m.send_layout_message(LayoutMessage::Decrease).windows(w, c, |x| x.clone()) });
+            |&: m, w, c| { m.send_layout_message(LayoutMessage::Decrease, w, c).windows(w, c, |x| x.clone()) });
     add_key_handler_str!(config, w, "l", modm,
-            |&: m, w, c| { m.send_layout_message(LayoutMessage::Increase).windows(w, c, |x| x.clone()) });
+            |&: m, w, c| { m.send_layout_message(LayoutMessage::Increase, w, c).windows(w, c, |x| x.clone()) });
     add_key_handler_str!(config, w, "comma", modm,
-            |&: m, w, c| { m.send_layout_message(LayoutMessage::IncreaseMaster).windows(w, c, |x| x.clone()) });
+            |&: m, w, c| { m.send_layout_message(LayoutMessage::IncreaseMaster, w, c).windows(w, c, |x| x.clone()) });
     add_key_handler_str!(config, w, "period", modm,
-            |&: m, w, c| m.send_layout_message(LayoutMessage::DecreaseMaster).windows(w, c, |x| x.clone()));
+            |&: m, w, c| m.send_layout_message(LayoutMessage::DecreaseMaster, w, c).windows(w, c, |x| x.clone()));
     add_key_handler_str!(config, w, "space", modm,
-            |&: m, w, c| m.send_layout_message(LayoutMessage::Next).windows(w, c, |x| x.clone()));
+            |&: m, w, c| m.send_layout_message(LayoutMessage::Next, w, c).windows(w, c, |x| x.clone()));
 
     // Workspace switching and moving
     for i in range(1u, 10) {

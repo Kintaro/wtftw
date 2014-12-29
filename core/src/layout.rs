@@ -18,7 +18,8 @@ pub enum LayoutMessage {
     Next,
     Prev,
     HorizontalSplit,
-    VerticalSplit
+    VerticalSplit,
+    Hide
 }
 
 pub fn mirror_rect(&Rectangle(x, y, w, h) : &Rectangle) -> Rectangle {
@@ -59,12 +60,14 @@ pub fn split_horizontally_by(ratio: f32, screen: ScreenDetail) -> (Rectangle, Re
 pub trait Layout {
     fn apply_layout(&self, window_system: &WindowSystem, screen: Rectangle,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)>;
-    fn apply_message(&mut self, message: LayoutMessage) -> bool;
+    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool;
     fn post_apply_layout<'b>(&self, window_system: &WindowSystem, screen: Rectangle,
                     stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) {
     }
     fn description(&self) -> String;
     fn copy<'a>(&self) -> Box<Layout + 'a> { panic!("") }
+    fn unhook<'b>(&self, window_system: &WindowSystem, &Option<Stack<Window>>, config: &GeneralConfig<'b>) { }
 }
 
 #[deriving(Clone, Copy)]
@@ -99,7 +102,8 @@ impl Layout for TallLayout {
         }
     }
 
-    fn apply_message(&mut self, message: LayoutMessage) -> bool {
+    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
         match message {
             LayoutMessage::Increase => { self.ratio += 0.05; true }
             LayoutMessage::Decrease => { self.ratio -= 0.05; true }
@@ -151,7 +155,7 @@ impl<'a> Layout for CenterLayout <'a> {
                         let w = (screen.2 as f32 * 0.8) as u32;
                         let h = (screen.3 as f32 * 0.8) as u32;
                         (s.focus, Rectangle(x, y, w, h))
-                    }).into_iter()).chain(self.layout.apply_layout(window_system, screen, 
+                    }).into_iter()).chain(self.layout.apply_layout(window_system, screen,
                                                                    &Some(new_stack)).into_iter()).collect()
                 }
             },
@@ -159,8 +163,9 @@ impl<'a> Layout for CenterLayout <'a> {
         }
     }
 
-    fn apply_message(&mut self, message: LayoutMessage) -> bool {
-        self.layout.apply_message(message)
+    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
+        self.layout.apply_message(message, window_system, stack, config)
     }
 
     fn description(&self) -> String {
@@ -206,7 +211,8 @@ impl Layout for ResizableTallLayout {
         }
     }
 
-    fn apply_message(&mut self, message: LayoutMessage) -> bool {
+    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
         match message {
             LayoutMessage::Increase => { self.ratio += 0.05; true }
             LayoutMessage::Decrease => { self.ratio -= 0.05; true }
@@ -250,14 +256,15 @@ impl<'a> Layout for MirrorLayout<'a> {
             .map(|&(w, r)| (w, mirror_rect(&r))).collect()
     }
 
-    fn apply_message(&mut self, message: LayoutMessage) -> bool {
-        self.layout.apply_message(message)
+    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
+        self.layout.apply_message(message, window_system, stack, config)
     }
 
     fn description(&self) -> String {
         self.layout.description()
     }
-    
+
     fn post_apply_layout<'b>(&self, window_system: &WindowSystem, screen: Rectangle,
                          stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) {
         self.layout.post_apply_layout(window_system, screen, stack, config);
@@ -360,7 +367,7 @@ impl<'a> Layout for AvoidStrutsLayout<'a> {
 
         let new_screen = stack.clone().map_or(screen, |_| {
             window_system.get_windows().into_iter()
-                .filter(|&w| window_system.is_dock(w) && 
+                .filter(|&w| window_system.is_dock(w) &&
                         window_system.get_geometry(w).overlaps(&screen))
                 .flat_map(|x| get_strut(window_system, x).into_iter())
                 .filter(|&Strut(s, _, _, _)| self.directions.contains(&s))
@@ -378,14 +385,15 @@ impl<'a> Layout for AvoidStrutsLayout<'a> {
         self.layout.apply_layout(window_system, new_screen, stack)
     }
 
-    fn apply_message(&mut self, message: LayoutMessage) -> bool {
-        self.layout.apply_message(message)
+    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
+        self.layout.apply_message(message, window_system, stack, config)
     }
 
     fn description(&self) -> String {
         self.layout.description()
     }
-    
+
     fn post_apply_layout<'b>(&self, window_system: &WindowSystem, screen: Rectangle,
                          stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) {
         self.layout.post_apply_layout(window_system, screen, stack, config);
@@ -422,14 +430,15 @@ impl<'a> Layout for GapLayout<'a> {
         layout.iter().map(|&(win, Rectangle(x, y, w, h))| (win, Rectangle(x + g, y + g, w - 2 * g, h - 2 * g))).collect()
     }
 
-    fn apply_message(&mut self, message: LayoutMessage) -> bool {
-        self.layout.apply_message(message)
+    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
+        self.layout.apply_message(message, window_system, stack, config)
     }
 
     fn description(&self) -> String {
         self.layout.description()
     }
-    
+
     fn post_apply_layout<'b>(&self, window_system: &WindowSystem, screen: Rectangle,
                          stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) {
         self.layout.post_apply_layout(window_system, screen, stack, config);
@@ -463,8 +472,9 @@ impl<'a> Layout for WithBordersLayout<'a> {
         self.layout.apply_layout(window_system, screen, stack)
     }
 
-    fn apply_message(&mut self, message: LayoutMessage) -> bool {
-        self.layout.apply_message(message)
+    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
+        self.layout.apply_message(message, window_system, stack, config)
     }
 
     fn description(&self) -> String {
@@ -473,21 +483,29 @@ impl<'a> Layout for WithBordersLayout<'a> {
 
     fn post_apply_layout<'b>(&self, window_system: &WindowSystem, screen: Rectangle,
                          stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) {
-        self.layout.post_apply_layout(window_system, screen, stack, config);
         if let &Some(ref s) = stack {
             for window in s.integrate().into_iter() {
-                let Rectangle(x, y, w, h) = window_system.get_geometry(window);
-                let gap = 2 * (config.border_width - self.border);
+                //let Rectangle(x, y, w, h) = window_system.get_geometry(window);
+                //let gap = 2 * (config.border_width - self.border);
                 window_system.set_window_border_width(window, self.border);
-                window_system.resize_window(window, w + gap, h + gap);
+                //window_system.resize_window(window, w + gap, h + gap);
             }
         }
+        self.layout.post_apply_layout(window_system, screen, stack, config);
     }
 
     fn copy<'b>(&self) -> Box<Layout + 'b> {
         box WithBordersLayout {
             border: self.border,
             layout: self.layout.copy()
+        }
+    }
+
+    fn unhook<'b>(&self, window_system: &WindowSystem, stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) {
+        if let &Some(ref s) = stack {
+            for window in s.integrate().into_iter() {
+                window_system.set_window_border_width(window, config.border_width);
+            }
         }
     }
 }
@@ -525,7 +543,8 @@ impl Layout for SplitLayout {
         Vec::new()
     }
 
-    fn apply_message(&mut self, _: LayoutMessage) -> bool {
+    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
         true
     }
 
@@ -550,12 +569,14 @@ impl Layout for FullLayout {
         }
     }
 
-    fn apply_message(&mut self, _: LayoutMessage) -> bool {
+    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
+
         true
     }
 
     fn description(&self) -> String {
-        String::from_str("Split")
+        String::from_str("Full")
     }
 
     fn copy<'a>(&self) -> Box<Layout + 'a> {
@@ -583,18 +604,27 @@ impl<'a> Layout for LayoutCollection<'a> {
         self.layouts[self.current].apply_layout(window_system, screen, stack)
     }
 
-    fn apply_message(&mut self, message: LayoutMessage) -> bool {
+    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
         match message {
-            LayoutMessage::Next => { self.current = (self.current + 1) % self.layouts.len(); true }
-            LayoutMessage::Prev => { self.current = (self.current + (self.layouts.len() - 1)) % self.layouts.len(); true }
-            _                   => self.layouts[self.current].apply_message(message)
+            LayoutMessage::Next => {
+                self.layouts[self.current].unhook(window_system, stack, config);
+                self.current = (self.current + 1) % self.layouts.len();
+                true
+            }
+            LayoutMessage::Prev => {
+                self.layouts[self.current].unhook(window_system, stack, config);
+                self.current = (self.current + (self.layouts.len() - 1)) % self.layouts.len();
+                true
+            }
+            _                   => self.layouts[self.current].apply_message(message, window_system, stack, config)
         }
     }
 
     fn description(&self) -> String {
         self.layouts[self.current].description()
     }
-    
+
     fn post_apply_layout<'b>(&self, window_system: &WindowSystem, screen: Rectangle,
                          stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) {
         self.layouts[self.current].post_apply_layout(window_system, screen, stack, config);
