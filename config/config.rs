@@ -64,16 +64,11 @@ x.swap_down()));
     });
 
     // Layout messages
-    add_key_handler_str!(config, w, "h", modm,
-            |&: m, w, c| { m.send_layout_message(LayoutMessage::Decrease, w, c).windows(w, c, |x| x.clone()) });
-    add_key_handler_str!(config, w, "l", modm,
-            |&: m, w, c| { m.send_layout_message(LayoutMessage::Increase, w, c).windows(w, c, |x| x.clone()) });
-    add_key_handler_str!(config, w, "comma", modm,
-            |&: m, w, c| { m.send_layout_message(LayoutMessage::IncreaseMaster, w, c).windows(w, c, |x| x.clone()) });
-    add_key_handler_str!(config, w, "period", modm,
-            |&: m, w, c| m.send_layout_message(LayoutMessage::DecreaseMaster, w, c).windows(w, c, |x| x.clone()));
-    add_key_handler_str!(config, w, "space", modm,
-            |&: m, w, c| m.send_layout_message(LayoutMessage::Next, w, c).windows(w, c, |x| x.clone()));
+    add_key_handler_str!(config, w, "h",      modm, send_layout_message!(LayoutMessage::Decrease));
+    add_key_handler_str!(config, w, "l",      modm, send_layout_message!(LayoutMessage::Increase));
+    add_key_handler_str!(config, w, "comma",  modm, send_layout_message!(LayoutMessage::IncreaseMaster));
+    add_key_handler_str!(config, w, "period", modm, send_layout_message!(LayoutMessage::DecreaseMaster));
+    add_key_handler_str!(config, w, "space",  modm, send_layout_message!(LayoutMessage::Next));
 
     // Workspace switching and moving
     for i in range(1u, 10) {
@@ -85,20 +80,14 @@ x.swap_down()));
     }
 
     // Media keys
-    add_key_handler_str!(config, w, "j", modm | CONTROLMASK,
-            |&: w, _, _| { run("amixer", Some("-q set Master 5%-")); w });
-    add_key_handler_str!(config, w, "k", modm | CONTROLMASK,
-            |&: w, _, _| { run("amixer", Some("-q set Master 5%+")); w });
+    add_key_handler_str!(config, w, "j", modm | CONTROLMASK, run!("amixer", Some("-q set Master 5%-")));
+    add_key_handler_str!(config, w, "k", modm | CONTROLMASK, run!("amixer", Some("-q set Master 5%+")));
 
-    add_key_handler_code!(config, 0x1008ff11, NONEMASK,
-            |&: w, _, _| { run("amixer", Some("-q set Master 5%-")); w });
-    add_key_handler_code!(config, 0x1008ff13, NONEMASK,
-            |&: w, _, _| { run("amixer", Some("-q set Master 5%+")); w });
+    add_key_handler_code!(config, 0x1008ff11, NONEMASK, run!("amixer", Some("-q set Master 5%-")));
+    add_key_handler_code!(config, 0x1008ff13, NONEMASK, run!("amixer", Some("-q set Master 5%+")));
 
-    add_key_handler_code!(config, 0x1008ff02, NONEMASK,
-            |&: w, _, _| { run("xbacklight", Some("+10")); w });
-    add_key_handler_code!(config, 0x1008ff03, NONEMASK,
-            |&: w, _, _| { run("xbacklight", Some("-10")); w });
+    add_key_handler_code!(config, 0x1008ff02, NONEMASK, run!("xbacklight", Some("+10")));
+    add_key_handler_code!(config, 0x1008ff03, NONEMASK, run!("xbacklight", Some("-10")));
 
     add_mouse_handler!(config, BUTTON1, modm,
             |&: m, w, c, s| {

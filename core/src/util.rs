@@ -27,6 +27,20 @@ macro_rules! add_mouse_handler(
     )
 );
 
+#[macro_export]
+macro_rules! send_layout_message(
+    ($message: expr) => (
+        |&: m, w, c| m.send_layout_message($message, w, c).windows(w, c, |x| x.clone())
+    )
+);
+
+#[macro_export]
+macro_rules! run(
+    ($command: expr, $options: expr) => (
+        |&: w, _, _| { run($command, $options); w }
+    )
+);
+
 
 pub fn run(program: &str, args: Option<&str>) {
     let arguments : Vec<String> = match args {
