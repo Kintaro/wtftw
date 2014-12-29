@@ -50,8 +50,7 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
     // Focus and window movement
     add_key_handler_str!(config, w, "j", modm, |&: m, w, c| m.windows(w, c, |x| x.focus_down()));
     add_key_handler_str!(config, w, "k", modm, |&: m, w, c| m.windows(w, c, |x| x.focus_up()));
-    add_key_handler_str!(config, w, "j", modm | SHIFTMASK, |&: m, w, c| m.windows(w, c, |x|
-x.swap_down()));
+    add_key_handler_str!(config, w, "j", modm | SHIFTMASK, |&: m, w, c| m.windows(w, c, |x| x.swap_down()));
     add_key_handler_str!(config, w, "k", modm | SHIFTMASK, |&: m, w, c| m.windows(w, c, |x| x.swap_up()));
     add_key_handler_str!(config, w, "Return", modm, |&: m, w, c| m.windows(w, c, |x| x.swap_master()));
     add_key_handler_str!(config, w, "c", modm, |&: m, w, c| m.kill_window(w).windows(w, c, |x| x.clone()));
@@ -64,11 +63,12 @@ x.swap_down()));
     });
 
     // Layout messages
-    add_key_handler_str!(config, w, "h",      modm, send_layout_message!(LayoutMessage::Decrease));
-    add_key_handler_str!(config, w, "l",      modm, send_layout_message!(LayoutMessage::Increase));
-    add_key_handler_str!(config, w, "comma",  modm, send_layout_message!(LayoutMessage::IncreaseMaster));
-    add_key_handler_str!(config, w, "period", modm, send_layout_message!(LayoutMessage::DecreaseMaster));
-    add_key_handler_str!(config, w, "space",  modm, send_layout_message!(LayoutMessage::Next));
+    add_key_handler_str!(config, w, "h",      modm,             send_layout_message!(LayoutMessage::Decrease));
+    add_key_handler_str!(config, w, "l",      modm,             send_layout_message!(LayoutMessage::Increase));
+    add_key_handler_str!(config, w, "comma",  modm,             send_layout_message!(LayoutMessage::IncreaseMaster));
+    add_key_handler_str!(config, w, "period", modm,             send_layout_message!(LayoutMessage::DecreaseMaster));
+    add_key_handler_str!(config, w, "space",  modm,             send_layout_message!(LayoutMessage::Next));
+    add_key_handler_str!(config, w, "space",  modm | SHIFTMASK, send_layout_message!(LayoutMessage::Prev));
 
     // Workspace switching and moving
     for i in range(1u, 10) {
