@@ -62,9 +62,6 @@ pub trait Layout {
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)>;
     fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
                          stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool;
-    fn post_apply_layout<'b>(&self, window_system: &WindowSystem, screen: Rectangle,
-                    stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) {
-    }
     fn description(&self) -> String;
     fn copy<'a>(&self) -> Box<Layout + 'a> { panic!("") }
     fn unhook<'b>(&self, window_system: &WindowSystem, &Option<Stack<Window>>, config: &GeneralConfig<'b>) { }
@@ -265,11 +262,6 @@ impl<'a> Layout for MirrorLayout<'a> {
         self.layout.description()
     }
 
-    fn post_apply_layout<'b>(&self, window_system: &WindowSystem, screen: Rectangle,
-                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) {
-        self.layout.post_apply_layout(window_system, screen, stack, config);
-    }
-
     fn copy<'b>(&self) -> Box<Layout + 'b> {
         box MirrorLayout { layout: self.layout.copy() }
     }
@@ -394,11 +386,6 @@ impl<'a> Layout for AvoidStrutsLayout<'a> {
         self.layout.description()
     }
 
-    fn post_apply_layout<'b>(&self, window_system: &WindowSystem, screen: Rectangle,
-                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) {
-        self.layout.post_apply_layout(window_system, screen, stack, config);
-    }
-
     fn copy<'b>(&self) -> Box<Layout + 'b> {
         box AvoidStrutsLayout {
             directions: self.directions.clone(),
@@ -439,11 +426,6 @@ impl<'a> Layout for GapLayout<'a> {
         self.layout.description()
     }
 
-    fn post_apply_layout<'b>(&self, window_system: &WindowSystem, screen: Rectangle,
-                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) {
-        self.layout.post_apply_layout(window_system, screen, stack, config);
-    }
-
     fn copy<'b>(&self) -> Box<Layout + 'b> {
         box GapLayout {
             gap: self.gap,
@@ -469,6 +451,11 @@ impl<'a> WithBordersLayout<'a> {
 impl<'a> Layout for WithBordersLayout<'a> {
     fn apply_layout(&self, window_system: &WindowSystem, screen: Rectangle,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
+        if let &Some(ref s) = stack {
+            for window in s.integrate().into_iter() {
+                window_system.set_window_border_width(window, self.border);
+            }
+        }
         self.layout.apply_layout(window_system, screen, stack)
     }
 
@@ -479,19 +466,6 @@ impl<'a> Layout for WithBordersLayout<'a> {
 
     fn description(&self) -> String {
         self.layout.description()
-    }
-
-    fn post_apply_layout<'b>(&self, window_system: &WindowSystem, screen: Rectangle,
-                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) {
-        if let &Some(ref s) = stack {
-            for window in s.integrate().into_iter() {
-                //let Rectangle(x, y, w, h) = window_system.get_geometry(window);
-                //let gap = 2 * (config.border_width - self.border);
-                window_system.set_window_border_width(window, self.border);
-                //window_system.resize_window(window, w + gap, h + gap);
-            }
-        }
-        self.layout.post_apply_layout(window_system, screen, stack, config);
     }
 
     fn copy<'b>(&self) -> Box<Layout + 'b> {
@@ -623,11 +597,6 @@ impl<'a> Layout for LayoutCollection<'a> {
 
     fn description(&self) -> String {
         self.layouts[self.current].description()
-    }
-
-    fn post_apply_layout<'b>(&self, window_system: &WindowSystem, screen: Rectangle,
-                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) {
-        self.layouts[self.current].post_apply_layout(window_system, screen, stack, config);
     }
 
     fn copy<'b>(&self) -> Box<Layout + 'b> {

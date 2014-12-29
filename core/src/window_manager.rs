@@ -108,14 +108,6 @@ impl<'a> WindowManager<'a> {
         }).flat_map(|x| x.into_iter()).collect()
     }
 
-    pub fn post_apply_layout(&self, window_system: &WindowSystem, config: &GeneralConfig<'a>) {
-        debug!("post applying layout!");
-        for s in self.workspaces.screens().into_iter() {
-            s.workspace.layout.post_apply_layout(window_system, s.screen_detail,
-                                                 &s.workspace.stack, config);
-        }
-    }
-
     pub fn unfocus_windows(&self, window_system: &WindowSystem, config: &GeneralConfig<'a>) {
         for &win in self.workspaces.visible_windows().iter() {
             window_system.set_window_border_color(win, config.border_color);
@@ -237,8 +229,6 @@ impl<'a> WindowManager<'a> {
         for &(window, rect) in result.iter() {
             WindowManager::tile_window(window_system, config, window, rect);
         }
-
-        modified.post_apply_layout(window_system, config);
 
         //
         match modified.workspaces.peek() {
