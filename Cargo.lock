@@ -16,7 +16,7 @@ version = "0.2.0"
 dependencies = [
  "wtftw_core 0.2.0",
  "xinerama 0.0.1 (git+https://github.com/Kintaro/rust-xinerama.git)",
- "xlib 0.1.0 (git+https://github.com/Kintaro/rust-xlib.git?ref=wtftw)",
+ "xlib 0.1.0 (git+https://github.com/Kintaro/rust-xlib.git?branch=wtftw)",
 ]
 
 [[package]]
@@ -24,11 +24,11 @@ name = "xinerama"
 version = "0.0.1"
 source = "git+https://github.com/Kintaro/rust-xinerama.git#60c722b188488b8cae4fc2e45c53b12fae497d4c"
 dependencies = [
- "xlib 0.1.0 (git+https://github.com/Kintaro/rust-xlib.git?ref=wtftw)",
+ "xlib 0.1.0 (git+https://github.com/Kintaro/rust-xlib.git?branch=wtftw)",
 ]
 
 [[package]]
 name = "xlib"
 version = "0.1.0"
-source = "git+https://github.com/Kintaro/rust-xlib.git?ref=wtftw#343b40e0aabcd5f2eb943d4ed8debf6d6cf71096"
+source = "git+https://github.com/Kintaro/rust-xlib.git?branch=wtftw#343b40e0aabcd5f2eb943d4ed8debf6d6cf71096"
 

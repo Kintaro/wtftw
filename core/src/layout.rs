@@ -60,11 +60,11 @@ pub fn split_horizontally_by(ratio: f32, screen: ScreenDetail) -> (Rectangle, Re
 pub trait Layout {
     fn apply_layout(&self, window_system: &WindowSystem, screen: Rectangle,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)>;
-    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
-                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool;
+    fn apply_message<'b>(&mut self, _: LayoutMessage, _: &WindowSystem,
+                         _: &Option<Stack<Window>>, _: &GeneralConfig<'b>) -> bool { true }
     fn description(&self) -> String;
     fn copy<'a>(&self) -> Box<Layout + 'a> { panic!("") }
-    fn unhook<'b>(&self, window_system: &WindowSystem, &Option<Stack<Window>>, config: &GeneralConfig<'b>) { }
+    fn unhook<'b>(&self, _: &WindowSystem, _: &Option<Stack<Window>>, _: &GeneralConfig<'b>) { }
 }
 
 #[deriving(Clone, Copy)]
@@ -99,8 +99,8 @@ impl Layout for TallLayout {
         }
     }
 
-    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
-                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
+    fn apply_message<'b>(&mut self, message: LayoutMessage, _: &WindowSystem,
+                         _: &Option<Stack<Window>>, _: &GeneralConfig<'b>) -> bool {
         match message {
             LayoutMessage::Increase => { self.ratio += 0.05; true }
             LayoutMessage::Decrease => { self.ratio -= 0.05; true }
@@ -208,8 +208,8 @@ impl Layout for ResizableTallLayout {
         }
     }
 
-    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
-                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
+    fn apply_message<'b>(&mut self, message: LayoutMessage, _: &WindowSystem,
+                         _: &Option<Stack<Window>>, _: &GeneralConfig<'b>) -> bool {
         match message {
             LayoutMessage::Increase => { self.ratio += 0.05; true }
             LayoutMessage::Decrease => { self.ratio -= 0.05; true }
@@ -517,11 +517,6 @@ impl Layout for SplitLayout {
         Vec::new()
     }
 
-    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
-                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
-        true
-    }
-
     fn description(&self) -> String {
         String::from_str("Split")
     }
@@ -541,12 +536,6 @@ impl Layout for FullLayout {
             Some(ref st) => vec!((st.focus, screen)),
             None     => Vec::new()
         }
-    }
-
-    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
-                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
-
-        true
     }
 
     fn description(&self) -> String {

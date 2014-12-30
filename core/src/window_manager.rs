@@ -91,7 +91,7 @@ impl<'a> WindowManager<'a> {
 
     /// Reapply the layout to the whole workspace.
     pub fn reapply_layout(&self, window_system: &WindowSystem,
-                          config: &GeneralConfig<'a>) -> Vec<(Window, Rectangle)> {
+                          _: &GeneralConfig<'a>) -> Vec<(Window, Rectangle)> {
         self.workspaces.screens().into_iter().map(|s| {
             let vs : Vec<(Window, Rectangle)> = self.workspaces.view(s.workspace.id)
                 .with(Vec::new(), |x| x.integrate()).into_iter()
@@ -133,7 +133,6 @@ impl<'a> WindowManager<'a> {
         let is_fixed_size = size_hints.min_size.is_some() && size_hints.min_size == size_hints.max_size;
 
         if is_transient || is_fixed_size {
-            //debug!("window is transient or fixed size ({}, {})", is_transient, is_fixed_size);
             let i = self.workspaces.current.workspace.id;
             let r = adjust(self.float_location(window_system, window));
             self.windows(window_system, config, |x| x.insert_up(window).float(window, r))
@@ -249,7 +248,7 @@ impl<'a> WindowManager<'a> {
     }
 
     /// Send the given message to the current layout
-    pub fn send_layout_message(&self, message: LayoutMessage, window_system: &WindowSystem, 
+    pub fn send_layout_message(&self, message: LayoutMessage, window_system: &WindowSystem,
                                config: &GeneralConfig) -> WindowManager<'a> {
         self.modify_workspaces(|w| w.send_layout_message(message, window_system, config))
     }
@@ -266,10 +265,9 @@ impl<'a> WindowManager<'a> {
         Rectangle(sx + scale(sw, rx), sy + scale(sh, ry), scale(sw, rw), scale(sh, rh))
     }
 
-    fn tile_window(window_system: &WindowSystem, config: &GeneralConfig,
+    fn tile_window(window_system: &WindowSystem, _: &GeneralConfig,
                    window: Window, Rectangle(x, y, w, h): Rectangle) {
-        window_system.resize_window(window, w, // - config.border_width * 2,
-                                    h);// - config.border_width * 2);
+        window_system.resize_window(window, w,h);
         window_system.move_window(window, x, y);
         window_system.show_window(window);
     }
@@ -311,7 +309,7 @@ impl<'a> WindowManager<'a> {
     pub fn mouse_move_window(&self, window_system: &'a WindowSystem, config: &GeneralConfig<'a>,
                              window: Window) -> WindowManager<'a> {
         let (ox, oy) = window_system.get_pointer(window);
-        let Rectangle(x, y, w, h) = window_system.get_geometry(window);
+        let Rectangle(x, y, _, _) = window_system.get_geometry(window);
 
         self.mouse_drag(window_system, box move |&: ex: u32, ey: u32, m: WindowManager<'a>| {
             window_system.move_window(window, x + (ex - ox), y + (ey - oy));
