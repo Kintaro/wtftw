@@ -1,7 +1,6 @@
 extern crate libc;
 
 use std::fmt::{ Error, Formatter, Show };
-use self::libc::c_ulong;
 use window_manager::WindowManager;
 
 pub type Window = u64;
