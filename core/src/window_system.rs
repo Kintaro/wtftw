@@ -168,8 +168,8 @@ pub trait WindowSystem {
     fn grab_button(&self, button: MouseCommand);
     fn remove_enter_events(&self);
     fn remove_motion_events(&self);
-    fn get_partial_strut(&self, window: Window) -> Option<Vec<c_ulong>>;
-    fn get_strut(&self, window: Window) -> Option<Vec<c_ulong>>;
+    fn get_partial_strut(&self, window: Window) -> Option<Vec<u64>>;
+    fn get_strut(&self, window: Window) -> Option<Vec<u64>>;
     fn set_initial_properties(&self, window: Window);
     fn is_dock(&self, window: Window) -> bool;
     fn get_geometry(&self, window: Window) -> Rectangle;
