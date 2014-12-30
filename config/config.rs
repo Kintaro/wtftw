@@ -28,7 +28,7 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
     config.general.spacing = 0;
     config.general.border_color = 0x3f3f4c;
     config.general.focus_border_color = 0x525263;
-    config.general.terminal = (String::from_str("urxvt"), String::from_str(""));
+    config.general.terminal = (String::from_str("urxvtcd"), String::from_str(""));
     config.general.layout = LayoutCollection::new(vec!(
         GapLayout::new(16, AvoidStrutsLayout::new(vec!(Direction::Up), ResizableTallLayout::new())),
         GapLayout::new(16, AvoidStrutsLayout::new(vec!(Direction::Up), MirrorLayout::new(ResizableTallLayout::new()))),
