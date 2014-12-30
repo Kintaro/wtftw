@@ -115,8 +115,7 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
         let tags = config.general.tags.clone();
         config.set_log_hook(box move |&mut: m, _| {
             let p = &mut xmobar;
-            let tags = &tags;
-            let workspaces = tags.clone().iter()
+            let workspaces = tags.iter()
                 .enumerate()
                 .map(|(i, x)| if i as u32 == m.workspaces.current.workspace.id {
                     format!("[<fc=#f07746>{}</fc>] ", x)

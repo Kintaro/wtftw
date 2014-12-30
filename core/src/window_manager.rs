@@ -133,7 +133,6 @@ impl<'a> WindowManager<'a> {
         let is_fixed_size = size_hints.min_size.is_some() && size_hints.min_size == size_hints.max_size;
 
         if is_transient || is_fixed_size {
-            let i = self.workspaces.current.workspace.id;
             let r = adjust(self.float_location(window_system, window));
             self.windows(window_system, config, |x| x.insert_up(window).float(window, r))
                 .focus(window, window_system, config)
@@ -265,9 +264,10 @@ impl<'a> WindowManager<'a> {
         Rectangle(sx + scale(sw, rx), sy + scale(sh, ry), scale(sw, rw), scale(sh, rh))
     }
 
-    fn tile_window(window_system: &WindowSystem, _: &GeneralConfig,
+    fn tile_window(window_system: &WindowSystem, config: &GeneralConfig,
                    window: Window, Rectangle(x, y, w, h): Rectangle) {
-        window_system.resize_window(window, w,h);
+        window_system.resize_window(window, w - config.border_width,
+                                            h - config.border_width);
         window_system.move_window(window, x, y);
         window_system.show_window(window);
     }

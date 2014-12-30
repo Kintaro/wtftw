@@ -157,7 +157,10 @@ impl<'a> Config<'a> {
         let toml = format!("{}/Cargo.toml", self.internal.wtftw_dir.clone());
 
         if !Path::new(self.internal.wtftw_dir.clone()).exists() {
-            fs::mkdir(&Path::new(self.internal.wtftw_dir.clone()), USER_DIR);
+            match fs::mkdir(&Path::new(self.internal.wtftw_dir.clone()), USER_DIR) {
+                Ok(()) => (),
+                Err(e) => panic!(format!("mkdir: {} failed with error {}", self.internal.wtftw_dir.clone(), e))
+            }
         }
 
         if !Path::new(toml.clone()).exists() {
