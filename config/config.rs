@@ -9,6 +9,8 @@ extern crate wtftw_core;
 
 extern crate wtftw_core;
 
+use std::io::fs::PathExtensions;
+use std::os::homedir;
 use wtftw_core::window_system::*;
 use wtftw_core::window_manager::*;
 use wtftw_core::handlers::default::*;
@@ -17,7 +19,6 @@ use wtftw_core::util::*;
 use wtftw_core::layout::*;
 use wtftw_core::layout::Direction::*;
 use wtftw_core::layout::LayoutMessage::*;
-use wtftw_core::core::*;
 
 #[no_mangle]
 pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Config) {
@@ -108,33 +109,36 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
             });
 
     // Xmobar handling and formatting
-    let mut xmobar = spawn_pipe(config, String::from_str("xmobar"),
-                                Some(String::from_str("/home/rootnode/.xmonad/xmobar1.hs")));
-    let tags = config.general.tags.clone();
-    config.set_log_hook(box move |&mut: m, _| {
-        let p = &mut xmobar;
-        let tags = &tags;
-        let workspaces = tags.clone().iter()
-            .enumerate()
-            .map(|(i, x)| if i as u32 == m.workspaces.current.workspace.id {
-                format!("[<fc=#f07746>{}</fc>] ", x)
-            } else {
-                format!("[{}] ", x)
-            })
-            .fold(String::from_str(""), |a, x| {
-                let mut r = a.clone();
-                r.push_str(x.as_slice());
-                r
-            });
+    let home = homedir().unwrap().to_c_str();
+    let xmobar_config = format!("{}/.wtftw/xmobar.hs", home);
 
-        let content = format!("{} {}", workspaces, m.workspaces.current.workspace.layout.description());
-        match p.deref().write().deref_mut().stdin.as_mut() {
-            Some(pin) => match pin.write_line(content.as_slice()) {
+    if Path::new(xmobar_config.clone()).is_file() {
+        let mut xmobar = spawn_pipe(config, String::from_str("xmobar"),
+                                    Some(xmobar_config));
+        let tags = config.general.tags.clone();
+        config.set_log_hook(box move |&mut: m, _| {
+            let p = &mut xmobar;
+            let tags = &tags;
+            let workspaces = tags.clone().iter()
+                .enumerate()
+                .map(|(i, x)| if i as u32 == m.workspaces.current.workspace.id {
+                    format!("[<fc=#f07746>{}</fc>] ", x)
+                } else {
+                    format!("[{}] ", x)
+                })
+                .fold(String::from_str(""), |a, x| {
+                    let mut r = a.clone();
+                    r.push_str(x.as_slice());
+                    r
+                });
+
+            let content = format!("{} {}", workspaces, m.workspaces.current.workspace.layout.description());
+            match p.deref().write().deref_mut().stdin.as_mut() {
+                Some(pin) => match pin.write_line(content.as_slice()) {
+                    _ => ()
+                },
                 _ => ()
-            },
-            _ => ()
-        }
-    });
+            }
+        });
+    };
 }
-
-
