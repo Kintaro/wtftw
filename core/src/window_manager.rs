@@ -157,15 +157,17 @@ impl<'a> WindowManager<'a> {
 
     pub fn focus(&self, window: Window, window_system: &WindowSystem,
                  config: &GeneralConfig<'a>) -> WindowManager<'a> {
-        let screen = self.workspaces.find_screen(window);
-
-        if screen.screen_id == self.workspaces.current.screen_id && screen.workspace.peek() != Some(window) {
-            self.windows(window_system, config, |w| w.focus_window(window))
-        } else if window == window_system.get_root() {
-            self.windows(window_system, config, |w| w.view(screen.workspace.id))
-        } else {
-            self.clone()
-        }
+        match self.workspaces.find_screen(window) {
+            Some(screen) => {
+                if screen.screen_id == self.workspaces.current.screen_id && screen.workspace.peek() != Some(window) {
+                    return self.windows(window_system, config, |w| w.focus_window(window))
+                } else if window == window_system.get_root() {
+                    return self.windows(window_system, config, |w| w.view(screen.workspace.id))
+                }
+            },
+            None => ()
+        };
+        self.clone()
     }
 
     pub fn focus_down(&self) -> WindowManager<'a> {
