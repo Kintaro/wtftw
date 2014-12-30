@@ -37,29 +37,20 @@ macro_rules! send_layout_message(
 #[macro_export]
 macro_rules! run(
     ($command: expr, $options: expr) => (
-        |&: w, _, _| { run($command, $options); w }
+        |&: w, _, _| { run($command, String::from_str($options).split(' ').map(String::from_str).collect()); w }
     )
 );
 
-
-pub fn run(program: &str, args: Option<&str>) {
-    let arguments : Vec<String> = match args {
-        None => Vec::new(),
-        Some(a) => String::from_str(a).split(' ').map(String::from_str).collect()
-    };
-
-    debug!("trying to run {} {}", program, arguments);
-
-    match Command::new(String::from_str(program)).args(arguments.as_slice()).detached().spawn() {
+pub fn run(program: &str, args: Vec<String>) {
+    debug!("trying to run {}", program);
+    match Command::new(String::from_str(program)).args(args.as_slice()).detached().spawn() {
         _ => ()
     }
 }
 
-pub fn spawn_pipe(config: &mut Config, program: String, args: Option<String>) -> Rc<RWLock<Process>> {
-    let result = match args {
-        Some(a) => Command::new(program).arg(a).detached().spawn().unwrap(),
-        None    => Command::new(program).detached().spawn().unwrap()
-    };
+pub fn spawn_pipe(config: &mut Config, program: &str, args: Vec<String>) -> Rc<RWLock<Process>> {
+    let result = Command::new(String::from_str(program))
+        .args(args.as_slice()).detached().spawn().unwrap();
     debug!("Created pipe with id {}", result.id());
     let rc = Rc::new(RWLock::new(result));
     config.general.pipes.push(rc.clone());
