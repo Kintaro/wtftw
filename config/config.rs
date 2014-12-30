@@ -10,7 +10,6 @@ extern crate wtftw_core;
 extern crate wtftw_core;
 
 use std::io::fs::PathExtensions;
-use std::os::homedir;
 use wtftw_core::window_system::*;
 use wtftw_core::window_manager::*;
 use wtftw_core::handlers::default::*;
@@ -25,7 +24,6 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
     let modm = MOD1MASK;
 
     config.general.mod_mask = modm;
-    config.general.spacing = 0;
     config.general.border_color = 0x3f3f4c;
     config.general.focus_border_color = 0x525263;
     config.general.terminal = (String::from_str("urxvt"), String::from_str(""));
@@ -109,8 +107,7 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
             });
 
     // Xmobar handling and formatting
-    let home = homedir().unwrap().to_c_str();
-    let xmobar_config = format!("{}/.wtftw/xmobar.hs", home);
+    let xmobar_config = format!("{}/xmobar.hs", config.internal.wtftw_dir.clone());
 
     if Path::new(xmobar_config.clone()).is_file() {
         let mut xmobar = spawn_pipe(config, "xmobar",
