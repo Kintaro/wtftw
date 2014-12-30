@@ -639,13 +639,14 @@ impl<'a> Workspaces<'a> {
             .nth(0)
     }
 
-    pub fn find_screen(&self, window: Window) -> Screen<'a> {
+    pub fn find_screen(&self, window: Window) -> Option<Screen<'a>> {
         if self.current.contains(window) {
-            self.current.clone()
+            Some(self.current.clone())
         } else {
-            self.visible.iter()
-                .filter(|x| x.contains(window))
-                .nth(0).unwrap().clone()
+            match self.visible.iter().filter(|x| x.contains(window)).nth(0) {
+                Some(s) => Some(s.clone()),
+                None => None
+            }
         }
     }
 
