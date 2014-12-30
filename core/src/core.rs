@@ -448,9 +448,9 @@ impl<'a> Workspaces<'a> {
     pub fn greedy_view(&self, index: u32) -> Workspaces<'a> {
         if self.hidden.iter().any(|x| x.id == index) {
             self.view(index)
-        } else if let Some(s) = self.visible.iter().position(|x| x.workspace.id == index) {
+        } else if let Some(s) = self.visible.iter().find(|x| x.workspace.id == index) {
             let screen = self.current.clone();
-            self.from_current(self.visible[s].clone())
+            self.from_current(s.clone())
                 .from_visible(self.visible.iter()
                               .filter(|x| x.workspace.id != index)
                               .map(|x| x.clone())
