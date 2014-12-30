@@ -49,11 +49,11 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
     add_key_handler_str!(config, w, "p",      modm,             start_launcher);
 
     // Focus and window movement
-    add_key_handler_str!(config, w, "j", modm, |&: m, w, c| m.windows(w, c, |x| x.focus_down()));
-    add_key_handler_str!(config, w, "k", modm, |&: m, w, c| m.windows(w, c, |x| x.focus_up()));
+    add_key_handler_str!(config, w, "j", modm,             |&: m, w, c| m.windows(w, c, |x| x.focus_down()));
+    add_key_handler_str!(config, w, "k", modm,             |&: m, w, c| m.windows(w, c, |x| x.focus_up()));
     add_key_handler_str!(config, w, "j", modm | SHIFTMASK, |&: m, w, c| m.windows(w, c, |x| x.swap_down()));
     add_key_handler_str!(config, w, "k", modm | SHIFTMASK, |&: m, w, c| m.windows(w, c, |x| x.swap_up()));
-    add_key_handler_str!(config, w, "Return", modm, |&: m, w, c| m.windows(w, c, |x| x.swap_master()));
+    add_key_handler_str!(config, w, "Return", modm,        |&: m, w, c| m.windows(w, c, |x| x.swap_master()));
     add_key_handler_str!(config, w, "c", modm, |&: m, w, c| m.kill_window(w).windows(w, c, |x| x.clone()));
 
     add_key_handler_str!(config, w, "t", modm, |&: m, w, c| {
@@ -81,14 +81,14 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
     }
 
     // Media keys
-    add_key_handler_str!(config, w, "j", modm | CONTROLMASK, run!("amixer", Some("-q set Master 5%-")));
-    add_key_handler_str!(config, w, "k", modm | CONTROLMASK, run!("amixer", Some("-q set Master 5%+")));
+    add_key_handler_str!(config, w, "j", modm | CONTROLMASK, run!("amixer", "-q set Master 5%-"));
+    add_key_handler_str!(config, w, "k", modm | CONTROLMASK, run!("amixer", "-q set Master 5%+"));
 
-    add_key_handler_code!(config, 0x1008ff11, NONEMASK, run!("amixer", Some("-q set Master 5%-")));
-    add_key_handler_code!(config, 0x1008ff13, NONEMASK, run!("amixer", Some("-q set Master 5%+")));
+    add_key_handler_code!(config, 0x1008ff11, NONEMASK, run!("amixer", "-q set Master 5%-"));
+    add_key_handler_code!(config, 0x1008ff13, NONEMASK, run!("amixer", "-q set Master 5%+"));
 
-    add_key_handler_code!(config, 0x1008ff02, NONEMASK, run!("xbacklight", Some("+10")));
-    add_key_handler_code!(config, 0x1008ff03, NONEMASK, run!("xbacklight", Some("-10")));
+    add_key_handler_code!(config, 0x1008ff02, NONEMASK, run!("xbacklight", "+10"));
+    add_key_handler_code!(config, 0x1008ff03, NONEMASK, run!("xbacklight", "-10"));
 
     add_mouse_handler!(config, BUTTON1, modm,
             |&: m, w, c, s| {
@@ -113,8 +113,8 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
     let xmobar_config = format!("{}/.wtftw/xmobar.hs", home);
 
     if Path::new(xmobar_config.clone()).is_file() {
-        let mut xmobar = spawn_pipe(config, String::from_str("xmobar"),
-                                    Some(xmobar_config));
+        let mut xmobar = spawn_pipe(config, "xmobar",
+                                    vec!(xmobar_config));
         let tags = config.general.tags.clone();
         config.set_log_hook(box move |&mut: m, _| {
             let p = &mut xmobar;
