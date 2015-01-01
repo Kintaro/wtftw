@@ -155,7 +155,7 @@ impl<'a> WindowManager<'a> {
 
     pub fn focus(&self, window: Window, window_system: &WindowSystem,
                  config: &GeneralConfig<'a>) -> WindowManager<'a> {
-        if Some(screen) = self.workspaces.find_screen(window) {
+        if let Some(screen) = self.workspaces.find_screen(window) {
             if screen.screen_id == self.workspaces.current.screen_id &&
                screen.workspace.peek() != Some(window) {
                 return self.windows(window_system, config, |w| w.focus_window(window))

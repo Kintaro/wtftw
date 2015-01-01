@@ -562,7 +562,7 @@ impl<'a> Workspaces<'a> {
     /// Apply the given function to the currently focused stack
     /// or return a default if the stack is empty
     pub fn with<T>(&self, default: T, f: |&Stack<Window>| -> T) -> T {
-        self.current.workspace.stack.map_or(default, f)
+        self.clone().current.workspace.stack.map_or(default, |x| f(&x))
     }
 
     /// Return the number of windows
@@ -640,7 +640,7 @@ impl<'a> Workspaces<'a> {
         if self.current.contains(window) {
             Some(self.current.clone())
         } else {
-            self.visible.iter().filter(|x| x.contains(window)).nth(0).clone()
+            self.visible.iter().filter(|x| x.contains(window)).map(|x| x.clone()).nth(0).clone()
         }
     }
 
