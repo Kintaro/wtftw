@@ -413,7 +413,7 @@ impl<'a> Layout for GapLayout<'a> {
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
         let layout = self.layout.apply_layout(window_system, screen, stack);
 
-        let g = self.gap / 2;
+        let g = self.gap;
         layout.iter().map(|&(win, Rectangle(x, y, w, h))| (win, Rectangle(x + g, y + g, w - 2 * g, h - 2 * g))).collect()
     }
 

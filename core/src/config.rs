@@ -32,8 +32,6 @@ pub struct GeneralConfig<'a> {
     pub border_color: u32,
     /// Border width. This is the same for both, focused and unfocused.
     pub border_width: u32,
-    /// Default spacing between windows
-    pub spacing: u32,
     /// Default terminal to start
     pub terminal: (String, String),
     /// Keybind for the terminal
@@ -55,7 +53,6 @@ impl<'a> Clone for GeneralConfig<'a> {
             focus_border_color: self.focus_border_color,
             border_color: self.border_color,
             border_width: self.border_width,
-            spacing: self.spacing,
             terminal: self.terminal.clone(),
             logfile: self.logfile.clone(),
             tags: self.tags.clone(),
@@ -74,6 +71,7 @@ pub struct InternalConfig<'a> {
     pub manage_hook: ManageHook<'a>,
     pub startup_hook: StartupHook<'a>,
     pub loghook: Option<LogHook<'a>>,
+    pub wtftw_dir: String,
 }
 
 /// Common configuration options for the window manager.
@@ -85,6 +83,10 @@ pub struct Config<'a> {
 impl<'a> Config<'a> {
     /// Create the Config from a json file
     pub fn initialize<'b>() -> Config<'b> {
+        let home = match homedir() {
+            Some(h) => h.to_c_str(),
+            _ => "./".to_c_str()
+        };
         // Default version of the config, for fallback
         Config {
             general: GeneralConfig {
@@ -92,10 +94,9 @@ impl<'a> Config<'a> {
                 focus_border_color:  0x00B6FFB0,
                 border_color:        0x00444444,
                 border_width:        2,
-                spacing:             10,
                 mod_mask:            MOD1MASK,
                 terminal:            (String::from_str("xterm"), String::from_str("")),
-                logfile:             format!("{}/.wtftw.log", homedir().unwrap().to_c_str()),
+                logfile:             format!("{}/.wtftw.log", home),
                 tags:                vec!(
                     String::from_str("1: term"),
                     String::from_str("2: web"),
@@ -103,7 +104,7 @@ impl<'a> Config<'a> {
                     String::from_str("4: media")),
                 launcher:            String::from_str("dmenu_run"),
                 pipes:               Vec::new(),
-                layout:              box TallLayout { num_master: 1, increment_ratio: 0.3/100.0, ratio: 0.5 }
+                layout:              box TallLayout { num_master: 1, increment_ratio: 0.3/100.0, ratio: 0.5 },
             },
             internal: InternalConfig {
                 library:      None,
@@ -116,6 +117,7 @@ impl<'a> Config<'a> {
                     m.clone()
                 },
                 loghook:      None,
+                wtftw_dir:    format!("{}/.wtftw", home),
             }
         }
     }
@@ -152,11 +154,13 @@ impl<'a> Config<'a> {
     }
 
     pub fn compile_and_call(&mut self, m: &mut WindowManager, w: &WindowSystem) {
-        let home = homedir().unwrap().to_c_str();
-        let toml = format!("{}/.wtftw/Cargo.toml", home);
+        let toml = format!("{}/Cargo.toml", self.internal.wtftw_dir.clone());
 
-        if !Path::new(format!("{}/.wtftw", home)).exists() {
-            fs::mkdir(&Path::new(format!("{}/.wtftw", home)), USER_DIR).unwrap();
+        if !Path::new(self.internal.wtftw_dir.clone()).exists() {
+            match fs::mkdir(&Path::new(self.internal.wtftw_dir.clone()), USER_DIR) {
+                Ok(()) => (),
+                Err(e) => panic!(format!("mkdir: {} failed with error {}", self.internal.wtftw_dir.clone(), e))
+            }
         }
 
         if !Path::new(toml.clone()).exists() {
@@ -172,7 +176,7 @@ impl<'a> Config<'a> {
                                      crate-type = [\"dylib\"]").unwrap();
         }
 
-        let config_source = format!("{}/.wtftw/src/config.rs", home);
+        let config_source = format!("{}/src/config.rs", self.internal.wtftw_dir.clone());
         if Path::new(config_source).exists() {
             self.compile();
             self.call(m, w)
@@ -182,17 +186,15 @@ impl<'a> Config<'a> {
     }
 
     pub fn compile(&self) {
-        let home = homedir().unwrap().to_c_str();
-
         info!("updating dependencies");
         Command::new("cargo")
-            .cwd(&Path::new(format!("{}/.wtftw", home)))
+            .cwd(&Path::new(self.internal.wtftw_dir.clone()))
             .arg("update")
             .env("RUST_LOG", "none")
             .output().unwrap();
         info!("compiling config module");
         let output = Command::new("cargo")
-            .cwd(&Path::new(format!("{}/.wtftw", home)))
+            .cwd(&Path::new(self.internal.wtftw_dir.clone()))
             .arg("build")//.arg("--release")
             .env("RUST_LOG", "none")
             .output().unwrap();
@@ -206,10 +208,8 @@ impl<'a> Config<'a> {
     }
 
     pub fn call(&mut self, m: &mut WindowManager, w: &WindowSystem) {
-        let home = homedir().unwrap().to_c_str();
-
         debug!("looking for config module");
-        let contents = fs::readdir(&Path::new(format!("{}/.wtftw/target", home))).unwrap();
+        let contents = fs::readdir(&Path::new(format!("{}/target", self.internal.wtftw_dir.clone()))).unwrap();
         let libname = contents.iter().find(|&x|
                              x.is_file() &&
                              x.filename_str().unwrap().contains("libconfig") &&
