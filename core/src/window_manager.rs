@@ -156,16 +156,14 @@ impl<'a> WindowManager<'a> {
 
     pub fn focus(&self, window: Window, window_system: &WindowSystem,
                  config: &GeneralConfig<'a>) -> WindowManager<'a> {
-        match self.workspaces.find_screen(window) {
-            Some(screen) => {
-                if screen.screen_id == self.workspaces.current.screen_id && screen.workspace.peek() != Some(window) {
-                    return self.windows(window_system, config, |w| w.focus_window(window))
-                } else if window == window_system.get_root() {
-                    return self.windows(window_system, config, |w| w.view(screen.workspace.id))
-                }
-            },
-            None => ()
-        };
+        if Some(screen) = self.workspaces.find_screen(window) {
+            if screen.screen_id == self.workspaces.current.screen_id &&
+               screen.workspace.peek() != Some(window) {
+                return self.windows(window_system, config, |w| w.focus_window(window))
+            } else if window == window_system.get_root() {
+                return self.windows(window_system, config, |w| w.view(screen.workspace.id))
+            }
+        }
         self.clone()
     }
 
@@ -221,11 +219,13 @@ impl<'a> WindowManager<'a> {
         let modified = self.modify_workspaces(|x| f(x));
         let result = self.modify_workspaces(f).reapply_layout(window_system, config);
 
-        old_visible.iter().fold((),
-            |_, &x| window_system.set_window_border_color(x, config.border_color.clone()));
+        old_visible.iter()
+            .fold((),|_, &x| window_system.set_window_border_color(x, config.border_color.clone()));
 
-        old_visible.iter().chain(new_windows.iter()).filter(|&&x| !result.iter().any(|&(y, _)| x == y)).fold((),
-            |_, &x| window_system.hide_window(x));
+        old_visible.iter()
+            .chain(new_windows.iter())
+            .filter(|&&x| !result.iter().any(|&(y, _)| x == y))
+            .fold((), |_, &x| window_system.hide_window(x));
 
         for &(window, rect) in result.iter() {
             WindowManager::tile_window(window_system, config, window, rect);
@@ -265,9 +265,9 @@ impl<'a> WindowManager<'a> {
         Rectangle(sx + scale(sw, rx), sy + scale(sh, ry), scale(sw, rw), scale(sh, rh))
     }
 
-    fn tile_window(window_system: &WindowSystem, _: &GeneralConfig,
+    fn tile_window(window_system: &WindowSystem, c: &GeneralConfig,
                    window: Window, Rectangle(x, y, w, h): Rectangle) {
-        window_system.resize_window(window, w,h);
+        window_system.resize_window(window, w - c.border_width, h - c.border_width);
         window_system.move_window(window, x, y);
         window_system.show_window(window);
     }

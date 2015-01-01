@@ -307,7 +307,7 @@ impl<'a> Screen<'a> {
         Screen::new(self.workspace.map_or(default, f), self.screen_id, self.screen_detail)
     }
 
-    pub fn send_layout_message<'b>(&self, message: LayoutMessage, window_system: &WindowSystem, 
+    pub fn send_layout_message<'b>(&self, message: LayoutMessage, window_system: &WindowSystem,
                                    config: &GeneralConfig<'b>) -> Screen<'a> {
         Screen::new(self.workspace.send_layout_message(message, window_system, config), self.screen_id, self.screen_detail)
     }
@@ -562,10 +562,7 @@ impl<'a> Workspaces<'a> {
     /// Apply the given function to the currently focused stack
     /// or return a default if the stack is empty
     pub fn with<T>(&self, default: T, f: |&Stack<Window>| -> T) -> T {
-        match self.current.workspace.stack {
-            Some(ref s) => f(s),
-            None        => default
-        }
+        self.current.workspace.stack.map_or(default, f)
     }
 
     /// Return the number of windows
@@ -643,10 +640,7 @@ impl<'a> Workspaces<'a> {
         if self.current.contains(window) {
             Some(self.current.clone())
         } else {
-            match self.visible.iter().filter(|x| x.contains(window)).nth(0) {
-                Some(s) => Some(s.clone()),
-                None => None
-            }
+            self.visible.iter().filter(|x| x.contains(window)).nth(0).clone()
         }
     }
 
@@ -720,7 +714,7 @@ impl<'a> Workspaces<'a> {
         (vec!(self.current.clone())) + self.visible.as_slice()
     }
 
-    pub fn send_layout_message<'b>(&self, message: LayoutMessage, window_system: &WindowSystem, 
+    pub fn send_layout_message<'b>(&self, message: LayoutMessage, window_system: &WindowSystem,
                                    config: &GeneralConfig<'b>) -> Workspaces<'a> {
         self.from_current(self.current.send_layout_message(message, window_system, config))
     }
