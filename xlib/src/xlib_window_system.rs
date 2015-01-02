@@ -10,7 +10,72 @@ extern crate wtftw_core;
 
 use libc::{ c_char, c_uchar, c_int, c_uint, c_void, c_long, c_ulong };
 use libc::funcs::c95::stdlib::malloc;
-use xlib::*;
+use xlib::{
+    Display,
+    PMinSize,
+    PMaxSize,
+    XButtonEvent,
+    XChangeProperty,
+    XCheckMaskEvent,
+    XClassHint,
+    XClientMessageEvent,
+    XConfigureEvent,
+    XConfigureRequestEvent,
+    XConfigureWindow,
+    XDefaultScreenOfDisplay,
+    XDestroyWindowEvent,
+    XDisplayWidth,
+    XDisplayHeight,
+    XEnterWindowEvent,
+    XErrorEvent,
+    XFetchName,
+    XFlush,
+    XGetClassHint,
+    XGetGeometry,
+    XGetInputFocus,
+    XGetWindowAttributes,
+    XGetWindowProperty,
+    XGetWMNormalHints,
+    XGetWMProtocols,
+    XGrabButton,
+    XGrabKey,
+    XGrabPointer,
+    XInternAtom,
+    XKeycodeToKeysym,
+    XKeyEvent,
+    XKeysymToKeycode,
+    XKeysymToString,
+    XKillClient,
+    XLeaveWindowEvent,
+    XMapRequestEvent,
+    XMapWindow,
+    XMotionEvent,
+    XMoveWindow,
+    XNextEvent,
+    XOpenDisplay,
+    XPending,
+    XQueryPointer,
+    XQueryTree,
+    XResizeWindow,
+    XRestackWindows,
+    XRootWindowOfScreen,
+    XScreenCount,
+    XSendEvent,
+    XSelectInput,
+    XSetErrorHandler,
+    XSetInputFocus,
+    XSetWindowBorder,
+    XSetWindowBorderWidth,
+    XSizeHints,
+    XStringToKeysym,
+    XSync,
+    XUngrabButton,
+    XUngrabPointer,
+    XUnmapEvent,
+    XUnmapWindow,
+    XWindowAttributes,
+    XWindowChanges,
+};
 use xinerama::XineramaQueryScreens;
 
 use std::os::env;
@@ -401,7 +466,7 @@ impl WindowSystem for XlibWindowSystem {
                     above: 0,
                     override_redirect: attributes.override_redirect
                 };
-                debug!("sending configure notification for window {}: ({}, {}) {}x{} redirect: {}", 
+                debug!("sending configure notification for window {}: ({}, {}) {}x{} redirect: {}",
                        window, x, y, w, h, attributes.override_redirect);
                 let event_ptr : *mut XConfigureEvent = &mut event;
                 XSendEvent(self.display, window as c_ulong, 0, 0, (event_ptr as *mut c_void));
@@ -547,7 +612,7 @@ impl WindowSystem for XlibWindowSystem {
 
     fn grab_button(&self, button: MouseCommand) {
         unsafe {
-            XGrabButton(self.display, button.button, button.mask.get_mask(), 
+            XGrabButton(self.display, button.button, button.mask.get_mask(),
                         self.root as c_ulong, 0, 4, 1, 0, 0, 0);
         }
     }
@@ -640,7 +705,7 @@ impl WindowSystem for XlibWindowSystem {
                     window: window as c_ulong,
                     message_type: wmprotocols as c_ulong,
                     format: 32,
-                    data: [((wmdelete & 0xFFFFFFFF00000000) >> 32) as i32, 
+                    data: [((wmdelete & 0xFFFFFFFF00000000) >> 32) as i32,
                         (wmdelete & 0xFFFFFFFF) as i32, 0, 0, 0]
                 };
                 let event_pointer : *mut XClientMessageEvent = &mut event;

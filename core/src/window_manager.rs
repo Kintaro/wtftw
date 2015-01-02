@@ -83,7 +83,7 @@ impl<'a> WindowManager<'a> {
 
         self.modify_workspaces(|w: &Workspaces<'a>| {
             let mut r = w.clone();
-            r.current = sc.head().unwrap().clone();
+            r.current = sc.first().unwrap().clone();
             r.visible = sc.iter().skip(1).map(|x| x.clone()).collect();
             r
         })

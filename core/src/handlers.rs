@@ -95,7 +95,7 @@ pub mod default {
         let windows = window_ids.to_c_str();
 
         for ref p in c.pipes.iter() {
-            match p.deref().write().deref_mut().wait() {
+            match p.deref().write().unwrap().deref_mut().wait() {
                 _ => ()
             }
         }
