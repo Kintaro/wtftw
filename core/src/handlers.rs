@@ -21,6 +21,7 @@ pub mod default {
     use std::os;
     use std::ptr::null;
     use std::io::process::Command;
+    use std::c_str::ToCStr;
     use std::thread::Thread;
     use serialize::json;
     use core::Workspaces;
