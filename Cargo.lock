@@ -30,5 +30,5 @@ dependencies = [
 [[package]]
 name = "xlib"
 version = "0.1.0"
-source = "git+https://github.com/Kintaro/rust-xlib.git?branch=wtftw#343b40e0aabcd5f2eb943d4ed8debf6d6cf71096"
+source = "git+https://github.com/Kintaro/rust-xlib.git?branch=wtftw#43822f52a6b06f77fcd95f3b94ccdbe84b78b096"
 

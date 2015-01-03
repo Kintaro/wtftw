@@ -10,6 +10,8 @@ extern crate wtftw_core;
 extern crate wtftw_core;
 
 use std::io::fs::PathExtensions;
+use std::os::homedir;
+use std::c_str::ToCStr;
 use wtftw_core::window_system::*;
 use wtftw_core::window_manager::*;
 use wtftw_core::handlers::default::*;
@@ -28,9 +30,9 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
     config.general.focus_border_color = 0x525263;
     config.general.terminal = (String::from_str("urxvt"), String::from_str(""));
     config.general.layout = LayoutCollection::new(vec!(
-        GapLayout::new(16, AvoidStrutsLayout::new(vec!(Direction::Up), ResizableTallLayout::new())),
-        GapLayout::new(16, AvoidStrutsLayout::new(vec!(Direction::Up), MirrorLayout::new(ResizableTallLayout::new()))),
-        GapLayout::new(16, AvoidStrutsLayout::new(vec!(Direction::Up), CenterLayout::new(ResizableTallLayout::new()))),
+        GapLayout::new(8, AvoidStrutsLayout::new(vec!(Direction::Up), ResizableTallLayout::new())),
+        GapLayout::new(8, AvoidStrutsLayout::new(vec!(Direction::Up), MirrorLayout::new(ResizableTallLayout::new()))),
+        GapLayout::new(8, AvoidStrutsLayout::new(vec!(Direction::Up), CenterLayout::new(ResizableTallLayout::new()))),
         NoBordersLayout::new(box FullLayout)));
 
     config.general.tags = (vec!("1: term", "2: web", "3: code",
@@ -107,7 +109,8 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
             });
 
     // Xmobar handling and formatting
-    let xmobar_config = format!("{}/xmobar.hs", config.internal.wtftw_dir.clone());
+    let home = homedir().unwrap().to_c_str();
+    let xmobar_config = format!("{}/.xmonad/xmobar1.hs", home);
 
     if Path::new(xmobar_config.clone()).is_file() {
         let mut xmobar = spawn_pipe(config, "xmobar",
@@ -115,7 +118,8 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
         let tags = config.general.tags.clone();
         config.set_log_hook(box move |&mut: m, _| {
             let p = &mut xmobar;
-            let workspaces = tags.iter()
+            let tags = &tags;
+            let workspaces = tags.clone().iter()
                 .enumerate()
                 .map(|(i, x)| if i as u32 == m.workspaces.current.workspace.id {
                     format!("[<fc=#f07746>{}</fc>] ", x)
@@ -129,7 +133,7 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
                 });
 
             let content = format!("{} {}", workspaces, m.workspaces.current.workspace.layout.description());
-            match p.deref().write().deref_mut().stdin.as_mut() {
+            match p.write().unwrap().stdin.as_mut() {
                 Some(pin) => match pin.write_line(content.as_slice()) {
                     _ => ()
                 },
