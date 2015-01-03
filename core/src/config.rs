@@ -6,6 +6,7 @@ extern crate libc;
 
 use std::os::homedir;
 use std::collections::BTreeMap;
+use std::c_str::ToCStr;
 use core::Workspaces;
 use window_system::*;
 use window_manager::WindowManager;

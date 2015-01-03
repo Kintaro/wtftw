@@ -179,7 +179,7 @@ fn main() {
                 let local_window_manager = window_manager.clone();
                 if let Some(drag) = window_manager.dragging {
                     debug!("dragging: {} {}", x, y);
-                    window_manager = drag.deref().call((x, y, local_window_manager));
+                    window_manager = drag.call((x, y, local_window_manager));
                 }
             },
             _ => ()
