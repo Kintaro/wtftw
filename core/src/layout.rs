@@ -9,7 +9,7 @@ use window_system::WindowSystem;
 use window_manager::ScreenDetail;
 use config::GeneralConfig;
 
-#[deriving(Clone, Copy)]
+#[derive(Clone, Copy)]
 pub enum LayoutMessage {
     Increase,
     Decrease,
@@ -67,7 +67,7 @@ pub trait Layout {
     fn unhook<'b>(&self, _: &WindowSystem, _: &Option<Stack<Window>>, _: &GeneralConfig<'b>) { }
 }
 
-#[deriving(Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct TallLayout {
     pub num_master: u32,
     pub increment_ratio: f32,
@@ -174,7 +174,7 @@ impl<'a> Layout for CenterLayout <'a> {
     }
 }
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct ResizableTallLayout {
     pub num_master: u32,
     pub increment_ratio: f32,
@@ -268,7 +268,7 @@ impl<'a> Layout for MirrorLayout<'a> {
 }
 
 #[repr(uint)]
-#[deriving(Clone, Copy)]
+#[derive(Clone, Copy)]
 pub enum Direction {
     Up,
     Down,
@@ -291,7 +291,7 @@ impl CLike for Direction {
     }
 }
 
-#[deriving(Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct Strut(Direction, u64, u64, u64);
 
 fn parse_strut_partial(x: Vec<u64>) -> Vec<Strut> {
@@ -492,7 +492,7 @@ impl<'a> NoBordersLayout<'a> {
     }
 }
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub enum SplitBox {
     Horizontal(Box<SplitBox>, Box<SplitBox>, Window, Window),
     Vertical(Box<SplitBox>, Box<SplitBox>, Window, Window),
@@ -500,7 +500,7 @@ pub enum SplitBox {
     None
 }
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct SplitLayout {
     pub root: SplitBox
 }
@@ -526,7 +526,7 @@ impl Layout for SplitLayout {
     }
 }
 
-#[deriving(Copy, Clone)]
+#[derive(Copy, Clone)]
 pub struct FullLayout;
 
 impl Layout for FullLayout {

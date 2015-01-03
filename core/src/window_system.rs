@@ -5,7 +5,7 @@ use window_manager::WindowManager;
 
 pub type Window = u64;
 
-#[deriving(Show, Clone, Copy, PartialEq, Eq)]
+#[derive(Show, Clone, Copy, PartialEq, Eq)]
 pub struct Rectangle(pub u32, pub u32, pub u32, pub u32);
 
 impl Rectangle {
@@ -24,7 +24,7 @@ impl Rectangle {
     }
 }
 
-#[deriving(Clone, Copy, Show)]
+#[derive(Clone, Copy, Show)]
 pub struct WindowChanges {
     pub x: u32,
     pub y: u32,
@@ -38,7 +38,7 @@ pub struct WindowChanges {
 /// Represents a keyboard input
 /// with an abstracted modifier mask
 /// and the key represented as a string
-#[deriving(Show, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Show, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct KeyCommand {
     pub mask: KeyModifiers,
     pub key: u64
@@ -50,7 +50,7 @@ impl KeyCommand {
     }
 }
 
-#[deriving(Show, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Show, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct MouseCommand {
     pub mask: KeyModifiers,
     pub button: MouseButton
@@ -96,13 +96,13 @@ impl KeyModifiers {
     }
 }
 
-#[deriving(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct SizeHint {
     pub min_size: Option<(u32, u32)>,
     pub max_size: Option<(u32, u32)>
 }
 
-#[deriving(Clone, Copy, Show)]
+#[derive(Clone, Copy, Show)]
 pub enum WindowSystemEvent {
     ConfigurationNotification(Window),
     ConfigurationRequest(Window, WindowChanges, u64),

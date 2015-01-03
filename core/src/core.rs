@@ -6,14 +6,14 @@ use window_manager::ScreenDetail;
 use window_system::{ Window, WindowSystem };
 use layout::{Layout, LayoutMessage};
 
-#[deriving(Clone, Copy, Show)]
+#[derive(Clone, Copy, Show)]
 pub struct RationalRect(pub f32, pub f32, pub f32, pub f32);
 
 /// Handles focus tracking on a workspace.
 /// `focus` keeps track of the focused window's id
 /// and `up` and `down` are the windows above or
 /// below the focus stack respectively.
-#[deriving(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct Stack<T> {
     pub focus: T,
     pub up:    Vec<T>,
