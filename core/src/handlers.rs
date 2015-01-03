@@ -101,7 +101,7 @@ pub mod default {
         }
 
         unsafe {
-            let mut slice : &mut [*const i8, ..4] = &mut [
+            let mut slice : &mut [*const i8; 4] = &mut [
                 program_name.as_ptr(),
                 resume.as_ptr(),
                 windows.as_ptr(),
