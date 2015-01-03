@@ -84,7 +84,7 @@ use std::mem::transmute;
 use std::mem::uninitialized;
 use std::str::from_c_str;
 use std::slice::from_raw_buf;
-use std::c_str::CString;
+use std::c_str::{CString,ToCStr};
 
 use wtftw_core::window_system::*;
 use wtftw_core::window_manager::*;
