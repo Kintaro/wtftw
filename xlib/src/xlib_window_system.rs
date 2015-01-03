@@ -84,7 +84,7 @@ use std::mem::transmute;
 use std::mem::uninitialized;
 use std::str::from_c_str;
 use std::slice::from_raw_buf;
-use std::c_str::CString;
+use std::c_str::{CString,ToCStr};
 
 use wtftw_core::window_system::*;
 use wtftw_core::window_manager::*;
@@ -112,7 +112,7 @@ extern fn error_handler(_: *mut Display, _: *mut XErrorEvent) -> c_int {
 /// The xlib interface. Holds a pointer to the display,
 /// the root window's id and a generic event so
 /// we don't have to allocate it every time.
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct XlibWindowSystem {
     display: *mut Display,
     root:    Window,

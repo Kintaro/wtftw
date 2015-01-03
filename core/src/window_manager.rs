@@ -15,7 +15,7 @@ use std::rc::Rc;
 pub type ScreenDetail = Rectangle;
 pub type MouseDrag<'a> = Box<Fn<(u32, u32, WindowManager<'a>),WindowManager<'a>> + 'a>;
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct WindowManager<'a> {
     pub running: bool,
     pub dragging: Option<Rc<MouseDrag<'a>>>,
