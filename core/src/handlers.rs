@@ -91,7 +91,7 @@ pub mod default {
 
         // Create arguments
         let program_name = os::args()[0].clone().to_c_str();
-        let resume = String::from_str("--resume").to_c_str();
+        let resume = &"--resume".to_c_str();
         let windows = window_ids.to_c_str();
 
         for ref p in c.pipes.iter() {
