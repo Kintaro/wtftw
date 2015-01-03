@@ -3,6 +3,7 @@
 #![feature(globs)]
 #![feature(macro_rules)]
 #![feature(default_type_params)]
+#![feature(old_orphan_check)]
 #[phase(plugin, link)]
 extern crate log;
 extern crate serialize;
