@@ -1,17 +1,17 @@
 #![feature(unboxed_closures)]
 #![feature(globs)]
-#![feature(phase)]
 #![feature(macro_rules)]
-#[phase(plugin, link)]
+#![feature(plugin)]
+#[macro_use]
+#[plugin]
 extern crate log;
-#[phase(plugin)]
-extern crate wtftw_core;
-
+#[macro_use]
+#[plugin]
 extern crate wtftw_core;
 
 use std::io::fs::PathExtensions;
 use std::os::homedir;
-use std::c_str::ToCStr;
+use std::ffi::CString;
 use wtftw_core::window_system::*;
 use wtftw_core::window_manager::*;
 use wtftw_core::handlers::default::*;
@@ -30,14 +30,14 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
     config.general.focus_border_color = 0x525263;
     config.general.terminal = (String::from_str("urxvt"), String::from_str(""));
     config.general.layout = LayoutCollection::new(vec!(
-        GapLayout::new(8, AvoidStrutsLayout::new(vec!(Direction::Up), ResizableTallLayout::new())),
-        GapLayout::new(8, AvoidStrutsLayout::new(vec!(Direction::Up), MirrorLayout::new(ResizableTallLayout::new()))),
-        GapLayout::new(8, AvoidStrutsLayout::new(vec!(Direction::Up), CenterLayout::new(ResizableTallLayout::new()))),
+        GapLayout::new(10, AvoidStrutsLayout::new(vec!(Direction::Up), ResizableTallLayout::new())),
+        GapLayout::new(10, AvoidStrutsLayout::new(vec!(Direction::Up), MirrorLayout::new(ResizableTallLayout::new()))),
+        GapLayout::new(10, AvoidStrutsLayout::new(vec!(Direction::Up), CenterLayout::new(ResizableTallLayout::new()))),
         NoBordersLayout::new(box FullLayout)));
 
-    config.general.tags = (vec!("1: term", "2: web", "3: code",
-                                "4: media", "5: steam", "6: latex",
-                                "7: music", "8: im", "9: rest"))
+    config.general.tags = (vec!("一: ターミナル", "二: ウェブ", "三: コード",
+                                "四: メディア", "五: スチーム", "六: ラテック",
+                                "七: 音楽", "八: im", "九: 残り"))
         .into_iter().map(String::from_str).collect();
 
     // Register key handlers
@@ -66,6 +66,8 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
     // Layout messages
     add_key_handler_str!(config, w, "h",      modm,             send_layout_message!(LayoutMessage::Decrease));
     add_key_handler_str!(config, w, "l",      modm,             send_layout_message!(LayoutMessage::Increase));
+    add_key_handler_str!(config, w, "z",      modm,             send_layout_message!(LayoutMessage::DecreaseSlave));
+    add_key_handler_str!(config, w, "a",      modm,             send_layout_message!(LayoutMessage::IncreaseSlave));
     add_key_handler_str!(config, w, "comma",  modm,             send_layout_message!(LayoutMessage::IncreaseMaster));
     add_key_handler_str!(config, w, "period", modm,             send_layout_message!(LayoutMessage::DecreaseMaster));
     add_key_handler_str!(config, w, "space",  modm,             send_layout_message!(LayoutMessage::Next));
@@ -109,7 +111,7 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
             });
 
     // Xmobar handling and formatting
-    let home = homedir().unwrap().to_c_str();
+    let home = String::from_str(homedir().unwrap().as_str().unwrap());
     let xmobar_config = format!("{}/.xmonad/xmobar1.hs", home);
 
     if Path::new(xmobar_config.clone()).is_file() {
@@ -122,7 +124,9 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
             let workspaces = tags.clone().iter()
                 .enumerate()
                 .map(|(i, x)| if i as u32 == m.workspaces.current.workspace.id {
-                    format!("[<fc=#f07746>{}</fc>] ", x)
+                    format!("[<fc=#cee318>{}</fc>] ", x)
+                } else if m.workspaces.visible.iter().any(|w| w.workspace.id == i as u32) {
+                    format!("[<fc=#8aa004>{}</fc>] ", x)
                 } else {
                     format!("[{}] ", x)
                 })

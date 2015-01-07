@@ -6,7 +6,6 @@ extern crate libc;
 
 use std::os::homedir;
 use std::collections::BTreeMap;
-use std::c_str::ToCStr;
 use core::Workspaces;
 use window_system::*;
 use window_manager::WindowManager;
@@ -21,7 +20,8 @@ use std::io::fs::PathExtensions;
 use std::io::process::{ Command, Process, ExitStatus };
 use std::dynamic_lib::DynamicLibrary;
 use std::rc::Rc;
-use std::sync::RWLock;
+use std::sync::RwLock;
+use std::path::BytesContainer;
 
 pub struct GeneralConfig<'a> {
     /// Whether focus follows mouse movements or
@@ -43,7 +43,7 @@ pub struct GeneralConfig<'a> {
     /// Default launcher application
     pub launcher: String,
     pub mod_mask: KeyModifiers,
-    pub pipes: Vec<Rc<RWLock<Process>>>,
+    pub pipes: Vec<Rc<RwLock<Process>>>,
     pub layout: Box<Layout + 'a>
 }
 
@@ -84,10 +84,8 @@ pub struct Config<'a> {
 impl<'a> Config<'a> {
     /// Create the Config from a json file
     pub fn initialize<'b>() -> Config<'b> {
-        let home = match homedir() {
-            Some(h) => h.to_c_str(),
-            _ => "./".to_c_str()
-        };
+        let homepath = homedir().unwrap_or(Path::new("./"));
+        let home = homepath.container_as_str().unwrap();
         // Default version of the config, for fallback
         Config {
             general: GeneralConfig {

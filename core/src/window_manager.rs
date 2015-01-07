@@ -174,7 +174,7 @@ impl<'a> WindowManager<'a> {
         self.modify_workspaces(|x| x.focus_up())
     }
 
-    pub fn modify_workspaces(&self, f: |&Workspaces<'a>| -> Workspaces<'a>) -> WindowManager<'a> {
+    pub fn modify_workspaces<F>(&self, f: F) -> WindowManager<'a> where F : Fn(&Workspaces<'a>) -> Workspaces<'a> {
         WindowManager {
             running: self.running,
             dragging: self.dragging.clone(),
@@ -187,8 +187,8 @@ impl<'a> WindowManager<'a> {
         self.clone()
     }
 
-    pub fn windows(&self, window_system: &WindowSystem, config: &GeneralConfig<'a>,
-                   f: |&Workspaces<'a>| -> Workspaces<'a>) -> WindowManager<'a> {
+    pub fn windows<F>(&self, window_system: &WindowSystem, config: &GeneralConfig<'a>,
+                   f: F) -> WindowManager<'a> where F : Fn(&Workspaces<'a>) -> Workspaces<'a> {
         let ws = f(&self.workspaces);
 
         // Collect all visible and new windows

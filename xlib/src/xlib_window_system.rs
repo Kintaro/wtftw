@@ -1,6 +1,6 @@
-#![feature(globs)]
-#![feature(phase)]
-#[phase(plugin, link)]
+#![feature(plugin)]
+#[macro_use]
+#[plugin]
 
 extern crate log;
 extern crate libc;
@@ -67,6 +67,7 @@ use xlib::{
     XSetWindowBorder,
     XSetWindowBorderWidth,
     XSizeHints,
+    XStoreName,
     XStringToKeysym,
     XSync,
     XUngrabButton,
@@ -84,7 +85,9 @@ use std::mem::transmute;
 use std::mem::uninitialized;
 use std::str::from_c_str;
 use std::slice::from_raw_buf;
-use std::c_str::{CString,ToCStr};
+use std::ffi::CString;
+use std::ffi::c_str_to_bytes;
+use std::path::BytesContainer;
 
 use wtftw_core::window_system::*;
 use wtftw_core::window_manager::*;
@@ -145,6 +148,11 @@ impl XlibWindowSystem {
 
             XUngrabButton(display, 0, 0x8000, root);
 
+            let name_str = "wtftw";
+            let name_c = CString::from_slice(name_str.as_bytes());
+            let name = name_c.as_slice_with_nul().as_ptr();
+            XStoreName(display, root, name as *mut i8);
+
             //XGrabButton(display, 0, 0, root, 0, 4, 1, 1, 0, 0);
 
             XlibWindowSystem {
@@ -191,14 +199,14 @@ impl XlibWindowSystem {
 
     fn get_property_from_string(&self, s: &str, window: Window) -> Option<Vec<u64>> {
         unsafe {
-            let atom = XInternAtom(self.display, s.to_c_str().as_mut_ptr(), 0);
+            let atom = XInternAtom(self.display, CString::from_slice(s.as_bytes()).as_slice_with_nul().as_ptr() as *mut i8, 0);
             self.get_property(atom as u64, window)
         }
     }
 
     fn get_atom(&self, s: &str) -> u64 {
         unsafe {
-            XInternAtom(self.display, s.to_c_str().as_mut_ptr(), 0) as u64
+            XInternAtom(self.display, CString::from_slice(s.as_bytes()).as_slice_with_nul().as_ptr() as *mut i8, 0) as u64
         }
     }
 
@@ -273,7 +281,7 @@ impl WindowSystem for XlibWindowSystem {
 
     fn get_keycode_from_string(&self, key: &str) -> u64 {
         unsafe {
-            XStringToKeysym(key.to_c_str().as_mut_ptr()) as u64
+            XStringToKeysym(CString::from_slice(key.as_bytes()).as_slice_with_nul().as_ptr() as *mut i8) as u64
         }
     }
 
@@ -329,8 +337,8 @@ impl WindowSystem for XlibWindowSystem {
             if XFetchName(self.display, window as c_ulong, &mut name) == BADWINDOW || name.is_null() {
                 String::from_str("Unknown")
             } else {
-                let string = CString::new(name as *const c_char, true);
-                (format!("{}", string)).clone()
+                let string = CString::from_slice(c_str_to_bytes(&(name as *const c_char)));
+                String::from_str(string.container_as_str().unwrap())
             }
         }
     }
@@ -341,8 +349,8 @@ impl WindowSystem for XlibWindowSystem {
             if XGetClassHint(self.display, window as c_ulong, &mut class_hint) != 0 || class_hint.res_class.is_null() {
                 String::from_str("unknown")
             } else {
-                let string = CString::new(class_hint.res_class as *const c_char, false);
-                (format!("{}", string)).clone()
+                let string = CString::from_slice(c_str_to_bytes(&(class_hint.res_class as *const c_char)));
+                String::from_str(string.container_as_str().unwrap())
             }
         }
     }
@@ -582,7 +590,6 @@ impl WindowSystem for XlibWindowSystem {
                         key: XKeycodeToKeysym(self.display, event.keycode as u8, 0) as u64,
                         mask: KeyModifiers::from_bits(0xEF & event.state as u32).unwrap()
                     };
-                    debug!("key pressed: {} with mask {}", key.key, key.mask);
                     WindowSystemEvent::KeyPressed(event.window as u64, key)
                 }
             },
@@ -601,7 +608,6 @@ impl WindowSystem for XlibWindowSystem {
     fn grab_keys(&self, keys: Vec<KeyCommand>) {
         for &key in keys.iter() {
             unsafe {
-                debug!("grabbing key {}", key);
                 XGrabKey(self.display, XKeysymToKeycode(self.display, key.key as c_ulong) as i32,
                          key.mask.get_mask(), self.root as c_ulong, 1, 1, 1);
                 XGrabKey(self.display, XKeysymToKeycode(self.display, key.key as c_ulong) as i32,

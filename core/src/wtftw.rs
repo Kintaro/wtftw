@@ -1,10 +1,10 @@
 #![feature(unboxed_closures)]
-#![feature(phase)]
 #![feature(globs)]
 #![feature(macro_rules)]
 #![feature(default_type_params)]
 #![feature(old_orphan_check)]
-#[phase(plugin, link)]
+#[macro_use]
+#[link]
 extern crate log;
 extern crate serialize;
 

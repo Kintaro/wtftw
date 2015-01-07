@@ -1,7 +1,8 @@
 #![feature(globs)]
-#![feature(phase)]
 #![feature(unboxed_closures)]
-#[phase(plugin, link)]
+#![feature(plugin)]
+#[macro_use]
+#[plugin]
 extern crate log;
 extern crate getopts;
 extern crate serialize;
@@ -62,12 +63,10 @@ fn main() {
     debug!("Size of keyhandlers after config.generaluration: {}", config.internal.key_handlers.len());
 
     for (command, _) in config.internal.key_handlers.iter() {
-        debug!("grabbing command {}", command);
         window_system.grab_keys(vec!(command.clone()));
     }
 
     for (&command, _) in config.internal.mouse_handlers.iter() {
-        debug!("grabbing buttons {}", command);
         window_system.grab_button(command);
     }
 
@@ -170,7 +169,6 @@ fn main() {
             WindowSystemEvent::KeyPressed(_, key) => {
                 if config.internal.key_handlers.contains_key(&key) {
                     let local_window_manager = window_manager.clone();
-                    debug!("calling handler for {}", key);
                     window_manager = config.internal.key_handlers[key].call((local_window_manager,
                         &window_system, &config.general));
                 }
