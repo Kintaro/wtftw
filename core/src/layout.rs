@@ -387,7 +387,7 @@ fn parse_strut_partial(x: Vec<u64>) -> Vec<Strut> {
 pub fn get_strut(window_system: &WindowSystem, window: Window) -> Vec<Strut> {
     let partial_strut = window_system.get_partial_strut(window);
 
-    let parse_strut = |x: Vec<u64>| {
+    fn parse_strut(x: Vec<u64>) -> Vec<Strut> {
         match x.as_slice() {
             [a, b, c, d] => {
                 let t = vec!(a, b, c, d);
@@ -397,7 +397,7 @@ pub fn get_strut(window_system: &WindowSystem, window: Window) -> Vec<Strut> {
             }
             _ => Vec::new()
         }
-    };;
+    }
 
     match partial_strut {
         Some(ps) => parse_strut_partial(ps),

@@ -62,7 +62,7 @@ impl<T: Clone + Eq> Stack<T> {
 
     /// Filter the stack to retain only windows
     /// that yield true in the given filter function
-    pub fn filter(&self, f: |&T| -> bool) -> Option<Stack<T>> {
+    pub fn filter<F>(&self, f: F) -> Option<Stack<T>> where F : Fn(&T) -> bool {
         let lrs : Vec<T> = (vec!(self.focus.clone()) + self.down.as_slice()).iter()
             .filter(|&x| f(x))
             .map(|x| x.clone())
@@ -226,17 +226,17 @@ impl<'a> Workspace<'a> {
         self.stack.clone().map(|s| s.focus)
     }
 
-    pub fn map(&self, f: |Stack<Window>| -> Stack<Window>) -> Workspace<'a> {
+    pub fn map<F>(&self, f: F) -> Workspace<'a> where F : Fn(Stack<Window>) -> Stack<Window> {
         Workspace::new(self.id, self.tag.clone(), self.layout.copy(),
         self.stack.clone().map(|x| f(x)))
     }
 
-    pub fn map_option(&self, f: |Stack<Window>| -> Option<Stack<Window>>) -> Workspace<'a> {
+    pub fn map_option<F>(&self, f: F) -> Workspace<'a> where F : Fn(Stack<Window>) -> Option<Stack<Window>> {
         Workspace::new(self.id, self.tag.clone(), self.layout.copy(),
         self.stack.clone().map_or(None, |x| f(x)))
     }
 
-    pub fn map_or(&self, default: Stack<Window>, f: |Stack<Window>| -> Stack<Window>) -> Workspace<'a> {
+    pub fn map_or<F>(&self, default: Stack<Window>, f: F) -> Workspace<'a> where F : Fn(Stack<Window>) -> Stack<Window> {
         Workspace::new(self.id, self.tag.clone(), self.layout.copy(),
         Some(self.stack.clone().map_or(default, |x| f(x))))
     }
@@ -291,19 +291,19 @@ impl<'a> Screen<'a> {
         self.workspace.windows()
     }
 
-    pub fn map_workspace(&self, f: |Workspace<'a>| -> Workspace<'a>) -> Screen<'a> {
+    pub fn map_workspace<F>(&self, f: F) -> Screen<'a> where F : Fn(Workspace<'a>) -> Workspace<'a> {
         Screen::new(f(self.workspace.clone()), self.screen_id, self.screen_detail)
     }
 
-    pub fn map(&self, f: |Stack<Window>| -> Stack<Window>) -> Screen<'a> {
+    pub fn map<F>(&self, f: F) -> Screen<'a> where F : Fn(Stack<Window>) -> Stack<Window> {
         Screen::new(self.workspace.map(f), self.screen_id, self.screen_detail)
     }
 
-    pub fn map_option(&self, f: |Stack<Window>| -> Option<Stack<Window>>) -> Screen<'a> {
+    pub fn map_option<F>(&self, f: F) -> Screen<'a> where F : Fn(Stack<Window>) -> Option<Stack<Window>> {
         Screen::new(self.workspace.map_option(f), self.screen_id, self.screen_detail)
     }
 
-    pub fn map_or(&self, default: Stack<Window>, f: |Stack<Window>| -> Stack<Window>) -> Screen<'a> {
+    pub fn map_or<F>(&self, default: Stack<Window>, f: F) -> Screen<'a> where F : Fn(Stack<Window>) -> Stack<Window> {
         Screen::new(self.workspace.map_or(default, f), self.screen_id, self.screen_detail)
     }
 
@@ -477,13 +477,13 @@ impl<'a> Workspaces<'a> {
     }
 
     pub fn delete_p(&self, window: Window) -> Workspaces<'a> {
-        let remove_from_workspace = |stack: Stack<Window>| -> Option<Stack<Window>> {
+        fn remove_from_workspace(stack: Stack<Window>, window: Window) -> Option<Stack<Window>> {
             stack.filter(|&x| x != window)
-        };
+        }
 
-        self.modify_stack_option(|x| remove_from_workspace(x))
-            .modify_hidden_option(|x| remove_from_workspace(x))
-            .modify_visible_option(|x| remove_from_workspace(x))
+        self.modify_stack_option(|x| remove_from_workspace(x, window))
+            .modify_hidden_option(|x| remove_from_workspace(x, window))
+            .modify_visible_option(|x| remove_from_workspace(x, window))
     }
 
     pub fn focus_window(&self, window: Window) -> Workspaces<'a> {
@@ -524,28 +524,28 @@ impl<'a> Workspaces<'a> {
         self.modify_stack(|x| x.swap_master())
     }
 
-    pub fn modify_stack(&self, f: |Stack<Window>| -> Stack<Window>) -> Workspaces<'a> {
+    pub fn modify_stack<F>(&self, f: F) -> Workspaces<'a> where F : Fn(Stack<Window>) -> Stack<Window> {
         self.from_current(self.current.map(|s| f(s)))
     }
 
-    pub fn modify_stack_option(&self, f: |Stack<Window>| -> Option<Stack<Window>>) -> Workspaces<'a> {
+    pub fn modify_stack_option<F>(&self, f: F) -> Workspaces<'a> where F : Fn(Stack<Window>) -> Option<Stack<Window>> {
         self.from_current(self.current.map_option(|s| f(s)))
     }
 
-    pub fn modify_hidden(&self, f: |Stack<Window>| -> Stack<Window>) -> Workspaces<'a> {
+    pub fn modify_hidden<F>(&self, f: F) -> Workspaces<'a> where F : Fn(Stack<Window>) -> Stack<Window> {
         self.from_hidden(self.hidden.iter().map(|x| x.map(|s| f(s))).collect())
     }
 
-    pub fn modify_hidden_option(&self, f: |Stack<Window>| -> Option<Stack<Window>>) -> Workspaces<'a> {
+    pub fn modify_hidden_option<F>(&self, f: F) -> Workspaces<'a> where F : Fn(Stack<Window>) -> Option<Stack<Window>> {
         self.from_hidden(self.hidden.iter().map(|x| x.map_option(|s| f(s))).collect())
     }
 
 
-    pub fn modify_visible(&self, f: |Stack<Window>| -> Stack<Window>) -> Workspaces<'a> {
+    pub fn modify_visible<F>(&self, f: F) -> Workspaces<'a> where F : Fn(Stack<Window>) -> Stack<Window> {
         self.from_visible(self.visible.iter().map(|x| x.map(|s| f(s))).collect())
     }
 
-    pub fn modify_visible_option(&self, f: |Stack<Window>| -> Option<Stack<Window>>) -> Workspaces<'a> {
+    pub fn modify_visible_option<F>(&self, f: F) -> Workspaces<'a> where F : Fn(Stack<Window>) -> Option<Stack<Window>> { 
         self.from_visible(self.visible.iter().map(|x| x.map_option(|s| f(s))).collect())
     }
 
@@ -561,7 +561,7 @@ impl<'a> Workspaces<'a> {
 
     /// Apply the given function to the currently focused stack
     /// or return a default if the stack is empty
-    pub fn with<T>(&self, default: T, f: |&Stack<Window>| -> T) -> T {
+    pub fn with<T, F>(&self, default: T, f: F) -> T where F : Fn(&Stack<Window>) -> T {
         self.clone().current.workspace.stack.map_or(default, |x| f(&x))
     }
 
@@ -719,7 +719,7 @@ impl<'a> Workspaces<'a> {
         self.from_current(self.current.send_layout_message(message, window_system, config))
     }
 
-    pub fn with_focused(&self, f: |Window|) -> Workspaces<'a> {
+    pub fn with_focused<F>(&self, f: F) -> Workspaces<'a> where F : Fn(Window) {
         if let Some(window) = self.peek() {
             f(window);
         }
