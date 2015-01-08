@@ -22,7 +22,7 @@ pub struct Stack<T> {
 
 impl<T: Clone + Eq> Stack<T> {
     /// Create a new stack with the given values
-    pub fn new<T>(f: T, up: Vec<T>, down: Vec<T>) -> Stack<T> {
+    pub fn new(f: T, up: Vec<T>, down: Vec<T>) -> Stack<T> {
         Stack {
             focus: f,
             up:    up,

@@ -125,21 +125,26 @@ impl<'a> WindowManager<'a> {
                 RationalRect(x, y, w, h)
             }
         }
-        debug!("managing window {}", window_system.get_window_name(window));
 
         let size_hints = window_system.get_size_hints(window);
 
         let is_transient = false;
         let is_fixed_size = size_hints.min_size.is_some() && size_hints.min_size == size_hints.max_size;
 
-        if is_transient || is_fixed_size {
+        debug!("setting focus to newly managed window {}", window);
+
+        let result = if is_transient || is_fixed_size {
             let r = adjust(self.float_location(window_system, window));
             self.windows(window_system, config, |x| x.insert_up(window).float(window, r))
                 .focus(window, window_system, config)
         } else {
             self.windows(window_system, config, |x| x.insert_up(window))
                 .focus(window, window_system, config)
-        }
+        };
+
+        debug!("focus is set to {}", window);
+
+        result
     }
 
     /// Unmanage a window. This happens when a window is closed.

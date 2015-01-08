@@ -105,12 +105,12 @@ pub mod default {
 
         unsafe {
             let mut slice : &mut [*const i8; 4] = &mut [
-                CString::from_slice(program_name.as_bytes()).as_slice_with_nul().as_ptr(),
-                CString::from_slice(resume.as_bytes()).as_slice_with_nul().as_ptr(),
-                CString::from_slice(windows.as_bytes()).as_slice_with_nul().as_ptr(),
+                CString::from_slice(program_name.as_bytes()).as_ptr(),
+                CString::from_slice(resume.as_bytes()).as_ptr(),
+                CString::from_slice(windows.as_bytes()).as_ptr(),
                 null()
             ];
-            execvp(filename_c.as_slice_with_nul().as_ptr(), slice.as_mut_ptr());
+            execvp(filename_c.as_ptr(), slice.as_mut_ptr());
         }
 
         window_manager.clone()

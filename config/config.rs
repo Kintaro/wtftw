@@ -1,7 +1,7 @@
 #![feature(unboxed_closures)]
-#![feature(globs)]
 #![feature(macro_rules)]
 #![feature(plugin)]
+#![feature(box_syntax)]
 #[macro_use]
 #[plugin]
 extern crate log;

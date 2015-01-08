@@ -84,8 +84,7 @@ pub struct Config<'a> {
 impl<'a> Config<'a> {
     /// Create the Config from a json file
     pub fn initialize<'b>() -> Config<'b> {
-        let homepath = homedir().unwrap_or(Path::new("./"));
-        let home = homepath.container_as_str().unwrap();
+        let home = String::from_str(homedir().unwrap_or(Path::new("./")).as_str().unwrap());
         // Default version of the config, for fallback
         Config {
             general: GeneralConfig {
