@@ -1,5 +1,6 @@
 #![feature(unboxed_closures)]
 #![feature(old_orphan_check)]
+#![feature(box_syntax)]
 #[macro_use]
 #[link]
 extern crate log;

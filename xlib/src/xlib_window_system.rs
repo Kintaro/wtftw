@@ -80,13 +80,15 @@ use xlib::{
 use xinerama::XineramaQueryScreens;
 
 use std::os::env;
+use std::ffi;
+use std::str;
 use std::ptr::null_mut;
 use std::mem::transmute;
 use std::mem::uninitialized;
 use std::str::from_c_str;
 use std::slice::from_raw_buf;
 use std::ffi::CString;
-use std::ffi::c_str_to_bytes;
+use std::ffi::c_str_to_bytes_with_nul;
 use std::path::BytesContainer;
 
 use wtftw_core::window_system::*;
@@ -148,10 +150,10 @@ impl XlibWindowSystem {
 
             XUngrabButton(display, 0, 0x8000, root);
 
-            let name_str = "wtftw";
-            let name_c = CString::from_slice(name_str.as_bytes());
-            let name = name_c.as_slice_with_nul().as_ptr();
-            XStoreName(display, root, name as *mut i8);
+            //let name_str = "wtftw";
+            //let name_c = CString::from_slice(name_str.as_bytes());
+            //let name = name_c.as_slice_with_nul().as_ptr();
+            //XStoreName(display, root, name as *mut i8);
 
             //XGrabButton(display, 0, 0, root, 0, 4, 1, 1, 0, 0);
 
@@ -199,14 +201,14 @@ impl XlibWindowSystem {
 
     fn get_property_from_string(&self, s: &str, window: Window) -> Option<Vec<u64>> {
         unsafe {
-            let atom = XInternAtom(self.display, CString::from_slice(s.as_bytes()).as_slice_with_nul().as_ptr() as *mut i8, 0);
+            let atom = XInternAtom(self.display, CString::from_slice(s.as_bytes()).as_ptr() as *mut i8, 0);
             self.get_property(atom as u64, window)
         }
     }
 
     fn get_atom(&self, s: &str) -> u64 {
         unsafe {
-            XInternAtom(self.display, CString::from_slice(s.as_bytes()).as_slice_with_nul().as_ptr() as *mut i8, 0) as u64
+            XInternAtom(self.display, CString::from_slice(s.as_bytes()).as_ptr() as *mut i8, 0) as u64
         }
     }
 
@@ -281,7 +283,7 @@ impl WindowSystem for XlibWindowSystem {
 
     fn get_keycode_from_string(&self, key: &str) -> u64 {
         unsafe {
-            XStringToKeysym(CString::from_slice(key.as_bytes()).as_slice_with_nul().as_ptr() as *mut i8) as u64
+            XStringToKeysym(CString::from_slice(key.as_bytes()).as_ptr() as *mut i8) as u64
         }
     }
 
@@ -333,25 +335,29 @@ impl WindowSystem for XlibWindowSystem {
     fn get_window_name(&self, window: Window) -> String {
         if window == self.root { return String::from_str("root"); }
         unsafe {
-            let mut name : *mut c_char = uninitialized();
-            if XFetchName(self.display, window as c_ulong, &mut name) == BADWINDOW || name.is_null() {
+            //let mut name : *mut c_char = uninitialized();
+            //if XFetchName(self.display, window as c_ulong, &mut name) == BADWINDOW || name.is_null() {
                 String::from_str("Unknown")
-            } else {
-                let string = CString::from_slice(c_str_to_bytes(&(name as *const c_char)));
-                String::from_str(string.container_as_str().unwrap())
-            }
+            //} else {
+                //debug!("getting window name");
+                //String::from_str(str::from_utf8_unchecked(ffi::c_str_to_bytes(&(name as *const c_char))))
+            //}
         }
     }
 
     fn get_class_name(&self, window: Window) -> String {
         unsafe {
             let mut class_hint : XClassHint = uninitialized();
-            if XGetClassHint(self.display, window as c_ulong, &mut class_hint) != 0 || class_hint.res_class.is_null() {
+            //let result = if XGetClassHint(self.display, window as c_ulong, &mut class_hint) != 0 || class_hint.res_class.is_null() {
                 String::from_str("unknown")
-            } else {
-                let string = CString::from_slice(c_str_to_bytes(&(class_hint.res_class as *const c_char)));
-                String::from_str(string.container_as_str().unwrap())
-            }
+            //} else {
+                //debug!("getting class name");
+                //String::from_str(str::from_utf8_unchecked(ffi::c_str_to_bytes(&(class_hint.res_class as *const c_char))))
+            //};
+
+            //debug!("class name is {}", result);
+
+            //result
         }
     }
 
@@ -700,7 +706,7 @@ impl WindowSystem for XlibWindowSystem {
             let wmprotocols = self.get_atom("WM_PROTOCOLS");
             let protocols = self.get_protocols(window);
 
-            debug!("supported protocols: {} (wmdelete = {})", protocols, wmdelete);
+            debug!("supported protocols: {:?} (wmdelete = {:?})", protocols, wmdelete);
 
             if protocols.iter().any(|&x| x == wmdelete) {
                 let mut event = XClientMessageEvent {

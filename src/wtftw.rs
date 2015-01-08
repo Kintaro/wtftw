@@ -1,5 +1,6 @@
 #![feature(unboxed_closures)]
 #![feature(plugin)]
+#![feature(box_syntax)]
 #[macro_use]
 #[plugin]
 extern crate log;
@@ -86,6 +87,7 @@ fn main() {
     // Enter the event loop and just listen for events
     while window_manager.running {
         let event = window_system.get_event();
+        debug!("Got event {:?}", event);
         match event {
             WindowSystemEvent::ClientMessageEvent(_) => {
             },
@@ -181,6 +183,7 @@ fn main() {
             },
             _ => ()
         };
+        debug!("processed {:?}", event);
 
         if let Some(ref mut loghook) = config.internal.loghook {
             loghook.call_mut((window_manager.clone(), &window_system));

@@ -290,7 +290,7 @@ impl Layout for ResizableTallLayout {
                 if self.num_master > 1 { self.num_master -= 1 } true
             }
             LayoutMessage::IncreaseSlave => { self.resize(stack,  d); 
-            debug!("slaves are {}", self.slaves); true }
+            debug!("slaves are {:?}", self.slaves); true }
             LayoutMessage::DecreaseSlave => { self.resize(stack, -d); true }
             _                       => false
         }
