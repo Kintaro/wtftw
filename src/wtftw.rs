@@ -1,4 +1,3 @@
-#![feature(globs)]
 #![feature(unboxed_closures)]
 #![feature(plugin)]
 #[macro_use]
