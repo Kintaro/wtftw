@@ -1,7 +1,6 @@
 extern crate collections;
 
 use std::iter;
-use std::cmp;
 use std::num::Float;
 use self::collections::EnumSet;
 use self::collections::enum_set::CLike;

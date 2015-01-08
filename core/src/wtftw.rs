@@ -1,7 +1,4 @@
 #![feature(unboxed_closures)]
-#![feature(globs)]
-#![feature(macro_rules)]
-#![feature(default_type_params)]
 #![feature(old_orphan_check)]
 #[macro_use]
 #[link]
