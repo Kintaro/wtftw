@@ -205,7 +205,7 @@ impl ResizableTallLayout {
             let v = mf.collect::<Vec<_>>();
             let (r1, r2) = ResizableTallLayout::split_horizontally_by(ratio, screen);
             let v1 = ResizableTallLayout::split_vertically(v.clone().into_iter(), num_master, r1);
-            let v2 = ResizableTallLayout::split_vertically(v.clone().into_iter().skip(num_master as uint), num_windows - num_master, r2);
+            let v2 = ResizableTallLayout::split_vertically(v.clone().into_iter().skip(num_master as usize), num_windows - num_master, r2);
             v1.iter().chain(v2.iter()).map(|&x| x).collect()
         }
     }
@@ -239,7 +239,7 @@ impl ResizableTallLayout {
     }
 
     fn resize(&mut self, stack: &Option<Stack<Window>>, d: f32) {
-        fn modify<U>(v: U, d: f32, n: uint) -> Vec<f32> where U : Iterator<Item=f32> {
+        fn modify<U>(v: U, d: f32, n: usize) -> Vec<f32> where U : Iterator<Item=f32> {
             if v.size_hint().0 == 0 { return Vec::new(); }
             if n == 0 {
                 let frac = v.collect::<Vec<_>>();
@@ -352,11 +352,11 @@ pub enum Direction {
 }
 
 impl CLike for Direction {
-    fn to_uint(&self) -> uint {
-        *self as uint
+    fn to_uint(&self) -> usize {
+        *self as usize
     }
 
-    fn from_uint(v: uint) -> Direction {
+    fn from_uint(v: usize) -> Direction {
         match v {
             0 => Direction::Up,
             1 => Direction::Down,
@@ -624,7 +624,7 @@ impl Layout for FullLayout {
 
 pub struct LayoutCollection<'a> {
     pub layouts: Vec<Box<Layout + 'a>>,
-    pub current: uint
+    pub current: usize
 }
 
 impl<'a> LayoutCollection<'a> {

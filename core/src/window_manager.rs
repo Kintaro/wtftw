@@ -45,7 +45,7 @@ impl<'a> WindowManager<'a> {
     pub fn view(&self, window_system: &WindowSystem, index: u32,
                 config: &GeneralConfig<'a>) -> WindowManager<'a> {
         if index < self.workspaces.number_workspaces() {
-            debug!("switching to workspace {}", config.tags[index as uint].clone());
+            debug!("switching to workspace {}", config.tags[index as usize].clone());
             self.windows(window_system, config, |w| w.view(index))
         } else {
             self.clone()
