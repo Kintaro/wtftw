@@ -4,7 +4,7 @@ wtftw
 
 Window Tiling For The Win. A tiling window manager written in Rust
 
-![Screenshot](https://i.imgur.com/Pq03fLx.jpg)
+![Screenshot](https://i.imgur.com/8KzbKB9.jpg)
 
 ## Status
 [![Build Status](https://travis-ci.org/Kintaro/wtftw.svg?branch=master)](https://travis-ci.org/Kintaro/wtftw)
