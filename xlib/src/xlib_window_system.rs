@@ -94,18 +94,18 @@ use std::path::BytesContainer;
 use wtftw_core::window_system::*;
 use wtftw_core::window_manager::*;
 
-const KEYPRESS               : uint =  2;
-const BUTTONPRESS            : uint =  4;
-const BUTTONRELEASE          : uint =  5;
-const MOTIONOTIFY            : uint =  6;
-const ENTERNOTIFY            : uint =  7;
-const LEAVENOTIFY            : uint =  8;
-const DESTROYNOTIFY          : uint = 17;
-const UNMAPNOTIFY            : uint = 18;
-const MAPREQUEST             : uint = 20;
-const CONFIGURENOTIFY        : uint = 22;
-const CONFIGUREREQUEST       : uint = 23;
-const CLIENTMESSAGE          : uint = 33;
+const KEYPRESS               : usize =  2;
+const BUTTONPRESS            : usize =  4;
+const BUTTONRELEASE          : usize =  5;
+const MOTIONOTIFY            : usize =  6;
+const ENTERNOTIFY            : usize =  7;
+const LEAVENOTIFY            : usize =  8;
+const DESTROYNOTIFY          : usize = 17;
+const UNMAPNOTIFY            : usize = 18;
+const MAPREQUEST             : usize = 20;
+const CONFIGURENOTIFY        : usize = 22;
+const CONFIGUREREQUEST       : usize = 23;
+const CLIENTMESSAGE          : usize = 33;
 const BADWINDOW              :  i32 =  3;
 
 /// A custom error handler to prevent xlib from crashing the whole WM.
@@ -191,7 +191,7 @@ impl XlibWindowSystem {
                 if actual_format_return == 0 {
                     None
                 } else {
-                    Some(from_raw_buf(&(prop_return as *const c_ulong), nitems_return as uint).iter()
+                    Some(from_raw_buf(&(prop_return as *const c_ulong), nitems_return as usize).iter()
                                 .map(|&c| c as u64)
                                 .collect())
                 }
@@ -217,7 +217,7 @@ impl XlibWindowSystem {
             let mut protocols : *mut c_ulong = uninitialized();
             let mut num = 0;
             XGetWMProtocols(self.display, window as c_ulong, &mut protocols, &mut num);
-            from_raw_buf(&(protocols as *const c_ulong), num as uint).iter()
+            from_raw_buf(&(protocols as *const c_ulong), num as usize).iter()
                 .map(|&c| c as u64)
                 .collect::<Vec<_>>()
         }
@@ -304,7 +304,7 @@ impl WindowSystem for XlibWindowSystem {
                                       self.get_display_height(0)));
             }
 
-            from_raw_buf(&screen_ptr, num as uint).iter().map(
+            from_raw_buf(&screen_ptr, num as usize).iter().map(
                 |ref screen_info|
                     Rectangle(
                         screen_info.x_org as u32,
@@ -314,19 +314,19 @@ impl WindowSystem for XlibWindowSystem {
         }
     }
 
-    fn get_number_of_screens(&self) -> uint {
+    fn get_number_of_screens(&self) -> usize {
         unsafe {
-            XScreenCount(self.display) as uint
+            XScreenCount(self.display) as usize
         }
     }
 
-    fn get_display_width(&self, screen: uint) -> u32 {
+    fn get_display_width(&self, screen: usize) -> u32 {
         unsafe {
             XDisplayWidth(self.display, screen as i32) as u32
         }
     }
 
-    fn get_display_height(&self, screen: uint) -> u32 {
+    fn get_display_height(&self, screen: usize) -> u32 {
         unsafe {
             XDisplayHeight(self.display, screen as i32) as u32
         }
@@ -369,7 +369,7 @@ impl WindowSystem for XlibWindowSystem {
             let mut num_children : c_uint = 0;
             XQueryTree(self.display, self.root as c_ulong, &mut unused, &mut unused, children_ptr, &mut num_children);
             let const_children : *const u64 = children as *const u64;
-            from_raw_buf(&const_children, num_children as uint).iter()
+            from_raw_buf(&const_children, num_children as usize).iter()
                             .filter(|&&c| c != self.root)
                             .map(|&c| c)
                             .collect()
@@ -510,7 +510,7 @@ impl WindowSystem for XlibWindowSystem {
 
         let event_type : c_int = unsafe { *self.get_event_as() };
 
-        match event_type as uint {
+        match event_type as usize {
             CLIENTMESSAGE => {
                 unsafe {
                     let event : &XClientMessageEvent = self.get_event_as();

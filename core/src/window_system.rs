@@ -134,11 +134,11 @@ pub trait WindowSystem {
     /// Retrieve geometry infos over all screens
     fn get_screen_infos(&self) -> Vec<Rectangle>;
     /// Get the number of physical displays
-    fn get_number_of_screens(&self) -> uint;
+    fn get_number_of_screens(&self) -> usize;
     /// Get the width of the given physical screen
-    fn get_display_width(&self, screen: uint) -> u32;
+    fn get_display_width(&self, screen: usize) -> u32;
     /// Get the height of the given physical screen
-    fn get_display_height(&self, screen: uint) -> u32;
+    fn get_display_height(&self, screen: usize) -> u32;
     /// Get the given window's name
     fn get_window_name(&self, window: Window) -> String;
     fn get_class_name(&self, window: Window) -> String;

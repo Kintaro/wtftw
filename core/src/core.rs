@@ -157,7 +157,7 @@ impl<T: Clone + Eq> Stack<T> {
     }
 
     /// Return the number of elements tracked by the stack
-    pub fn len(&self) -> uint {
+    pub fn len(&self) -> usize {
         1 + self.up.len() + self.down.len()
     }
 
@@ -209,7 +209,7 @@ impl<'a> Workspace<'a> {
     }
 
     /// Returns the number of windows contained in this workspace
-    pub fn len(&self) -> uint {
+    pub fn len(&self) -> usize {
         self.stack.clone().map_or(0, |x| x.len())
     }
 
@@ -283,7 +283,7 @@ impl<'a> Screen<'a> {
 
     /// Returns the number of windows in the
     /// screen's workspace
-    pub fn len(&self) -> uint {
+    pub fn len(&self) -> usize {
         self.workspace.len()
     }
 
@@ -567,7 +567,7 @@ impl<'a> Workspaces<'a> {
 
     /// Return the number of windows
     /// contained in all workspaces, including floating windows
-    pub fn len(&self) -> uint {
+    pub fn len(&self) -> usize {
         self.current.len() +
             self.visible.iter().map(|x| x.len()).sum() +
             self.hidden.iter().map(|x| x.len()).sum() +

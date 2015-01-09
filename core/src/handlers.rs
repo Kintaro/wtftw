@@ -72,12 +72,12 @@ pub mod default {
     }
 
     pub fn switch_to_workspace<'a>(window_manager: WindowManager<'a>, window_system: &WindowSystem,
-                               config: &GeneralConfig<'a>, index: uint) -> WindowManager<'a> {
+                               config: &GeneralConfig<'a>, index: usize) -> WindowManager<'a> {
         window_manager.view(window_system, index as u32, config)
     }
 
     pub fn move_window_to_workspace<'a>(window_manager: WindowManager<'a>, window_system: &WindowSystem,
-                                    config: &GeneralConfig<'a>, index: uint) -> WindowManager<'a> {
+                                    config: &GeneralConfig<'a>, index: usize) -> WindowManager<'a> {
         window_manager.move_window_to_workspace(window_system, config, index as u32)
     }
 
