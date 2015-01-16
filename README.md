@@ -69,17 +69,17 @@ ALT+SHIFT+Enter
 
 #### Does it work with dual monitors?
 
-Yes, yes it does. Just use xrandr and you're set. Wtftw will automatically detect the changed setup
+Yes, yes it does. Just use xrandr and you're set. Wtftw will automatically detect the changed setup. It works with as many monitors as your xrandr and xinerama can handle.
 
 #### What are the alternatives to xmobar?
 
 Dzen
 
-#### what font and programs are you using on the screenshot?
+#### What font and programs are you using on the screenshot?
 
-The font is Envy Code R, and the programs are xmobar, ranger (file manager), vim and pms (mpd client)
+The font is Envy Code R, and the programs are xmobar, vim, htop, screenfetch, weechat and ncmpcpp.
 
-#### why should I use wtftw than dwm or even awesome?
+#### Why should I use wtftw than dwm or even awesome?
 
 That is more of a personal choice. Wtftw is akin to xmonad. You can do almost anything you want with the config file. Extend it, change it at runtime, your only boundary is the rust language itself. Plus, using it would help a Rust project to detect bugs and improve it.
 
