@@ -52,6 +52,7 @@ impl<T: Clone + Eq> Stack<T> {
 
     /// Flatten the stack into a list
     pub fn integrate(&self) -> Vec<T> {
+        self.u
         self.up.iter()
             .rev()
             .chain((vec!(self.focus.clone())).iter())
@@ -94,8 +95,9 @@ impl<T: Clone + Eq> Stack<T> {
     /// Move the focus to the next element in the `up` list
     pub fn focus_up(&self) -> Stack<T> {
         if self.up.is_empty() {
-            let tmp : Vec<T> = (vec!(self.focus.clone()) + self.down.as_slice()).into_iter()
+            let tmp : Vec<T> = (vec!(self.focus.clone()) + self.down.as_slice()).iter()
                 .rev()
+                .map(|x| x.clone())
                 .collect();
             let xs : Vec<T> = tmp.iter()
                 .skip(1)
