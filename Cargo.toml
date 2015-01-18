@@ -4,6 +4,9 @@ name = "wtftw"
 version = "0.2.0"
 authors = ["Simon Wollwage"]
 
+[dependencies]
+bitflags = "0.1"
+
 [dependencies.wtftw_core]
 path = "core"
 

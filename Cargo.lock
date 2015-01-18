@@ -2,13 +2,22 @@
 name = "wtftw"
 version = "0.2.0"
 dependencies = [
+ "bitflags 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "wtftw_core 0.2.0",
  "wtftw_xlib 0.2.0",
 ]
 
 [[package]]
+name = "bitflags"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "wtftw_core"
 version = "0.2.0"
+dependencies = [
+ "bitflags 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "wtftw_xlib"
@@ -30,5 +39,8 @@ dependencies = [
 [[package]]
 name = "xlib"
 version = "0.1.0"
-source = "git+https://github.com/Kintaro/rust-xlib.git?branch=wtftw#43822f52a6b06f77fcd95f3b94ccdbe84b78b096"
+source = "git+https://github.com/Kintaro/rust-xlib.git?branch=wtftw#e7337bfdaa0473537e1793d16a2ee0cdad07cf28"
+dependencies = [
+ "bitflags 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 

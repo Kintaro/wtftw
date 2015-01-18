@@ -606,6 +606,7 @@ impl WindowSystem for XlibWindowSystem {
                 }
             },
             _  => {
+                debug!("unknown event is {}", event_type);
                 WindowSystemEvent::UnknownEvent
             }
         }
