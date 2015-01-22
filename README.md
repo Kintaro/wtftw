@@ -22,6 +22,18 @@ To build it, just run
 cargo build
 ```
 
+On OSX, you might get a linker error when linking against X11 or Xinerama. For example:
+
+```
+ld: library not found for -lXinerama
+```
+
+You need to install XQuartz to get the X11 libraries, and make sure that they are found. Then just run
+
+```
+LIBRARY_PATH=/opt/X11/lib cargo build
+```
+
 ## Testing
 
 If you want to have your own custom config, create one in *~/.wtftw/src/config.rs*.
