@@ -20,6 +20,8 @@ pub enum LayoutMessage {
     DecreaseMaster,
     IncreaseSlave,
     DecreaseSlave,
+    IncreaseGap,
+    DecreaseGap,
     Next,
     Prev,
     HorizontalSplit,
@@ -494,7 +496,11 @@ impl<'a> Layout for GapLayout<'a> {
 
     fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
                          stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
-        self.layout.apply_message(message, window_system, stack, config)
+        match message {
+            LayoutMessage::IncreaseGap => { self.gap += 1; true }
+            LayoutMessage::DecreaseGap => { self.gap -= 1; true }
+            _                          => self.layout.apply_message(message, window_system, stack, config)
+        }
     }
 
     fn description(&self) -> String {
@@ -554,6 +560,8 @@ impl<'a> Layout for WithBordersLayout<'a> {
         if let &Some(ref s) = stack {
             for window in s.integrate().into_iter() {
                 window_system.set_window_border_width(window, config.border_width);
+                let Rectangle(_, _, w, h) = window_system.get_geometry(window);
+                window_system.resize_window(window, w + 2 * config.border_width, h + 2 * config.border_width);
             }
         }
     }

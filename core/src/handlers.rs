@@ -20,7 +20,7 @@ extern {
 pub mod default {
     use std::os;
     use std::ptr::null;
-    use std::io::process::Command;
+    use std::old_io::process::Command;
     use std::thread::Thread;
     use std::path::BytesContainer;
     use serialize::json;
