@@ -1,5 +1,5 @@
-use std::io::process::Command;
-use std::io::process::Process;
+use std::old_io::process::Command;
+use std::old_io::process::Process;
 use std::rc::Rc;
 use std::sync::RwLock;
 use core::Workspaces;

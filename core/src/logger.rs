@@ -1,6 +1,6 @@
 use log::Logger;
 use log::LogRecord;
-use std::io::{ LineBufferedWriter, File, Writer };
+use std::old_io::{ LineBufferedWriter, File, Writer };
 use std::path::BytesContainer;
 
 pub struct FileLogger {

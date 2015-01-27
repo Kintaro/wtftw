@@ -698,12 +698,12 @@ impl<'a> Workspaces<'a> {
     /// Returns a list of all windows as tuples together with their
     /// respective workspace IDs
     pub fn all_windows_with_workspaces(&self) -> Vec<(Window, u32)> {
-        self.current.windows().into_iter()
+        self.current.windows().into_iter().rev()
             .zip(repeat(self.current.workspace.id))
             .chain(self.visible.clone().into_iter()
-            .flat_map(|x| x.windows().into_iter().zip(repeat(x.workspace.id))))
+            .flat_map(|x| x.windows().into_iter().rev().zip(repeat(x.workspace.id))))
             .chain(self.hidden.iter()
-            .flat_map(|x| x.windows().into_iter().zip(repeat(x.id))))
+            .flat_map(|x| x.windows().into_iter().rev().zip(repeat(x.id))))
             .collect()
     }
 

@@ -14,10 +14,10 @@ use handlers::default::{ exit, restart, start_terminal };
 use layout::{ Layout, TallLayout };
 
 use std::mem;
-use std::io::{ USER_DIR, File };
-use std::io::fs;
-use std::io::fs::PathExtensions;
-use std::io::process::{ Command, Process, ExitStatus };
+use std::old_io::{ USER_DIR, File };
+use std::old_io::fs;
+use std::old_io::fs::PathExtensions;
+use std::old_io::process::{ Command, Process, ExitStatus };
 use std::dynamic_lib::DynamicLibrary;
 use std::rc::Rc;
 use std::sync::RwLock;
