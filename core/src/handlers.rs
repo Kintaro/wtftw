@@ -6,11 +6,11 @@ use window_system::WindowSystem;
 use window_system::Window;
 use config::{ GeneralConfig, Config };
 
-pub type KeyHandler<'a> = Box<Fn<(WindowManager<'a>, &'a (WindowSystem + 'a), &'a GeneralConfig<'a>), WindowManager<'a>> + 'a>;
-pub type MouseHandler<'a> = Box<Fn<(WindowManager<'a>, &'a (WindowSystem + 'a), &'a GeneralConfig<'a>, Window), WindowManager<'a>> + 'a>;
-pub type ManageHook<'a> = Box<Fn<(Workspaces<'a>, &'a (WindowSystem + 'a), Window), Workspaces<'a>> + 'a>;
-pub type StartupHook<'a> = Box<Fn<(WindowManager<'a>, &'a (WindowSystem + 'a), &'a Config<'a>), WindowManager<'a>> + 'a>;
-pub type LogHook<'a> = Box<FnMut<(WindowManager<'a>, &'a (WindowSystem + 'a)), ()> + 'a>;
+pub type KeyHandler<'a> = Box<Fn(WindowManager<'a>, &(WindowSystem + 'a), &'a GeneralConfig<'a>) -> WindowManager<'a> + 'a>;
+pub type MouseHandler<'a> = Box<Fn(WindowManager<'a>, &WindowSystem, &'a GeneralConfig<'a>, Window) -> WindowManager<'a> + 'a>;
+pub type ManageHook<'a> = Box<Fn(Workspaces<'a>, &(WindowSystem + 'a), Window) -> Workspaces<'a> + 'a>;
+pub type StartupHook<'a> = Box<Fn(WindowManager<'a>, &(WindowSystem + 'a), &'a Config<'a>) -> WindowManager<'a> + 'a>;
+pub type LogHook<'a> = Box<FnMut(WindowManager<'a>, &(WindowSystem + 'a)) + 'a>;
 
 extern {
     pub fn waitpid(fd: libc::pid_t, status: *mut libc::c_int, options: libc::c_int) -> libc::pid_t;
@@ -89,7 +89,7 @@ pub mod default {
         // Get absolute path to binary
         let filename = os::make_absolute(&Path::new(os::args()[0].clone())).unwrap();
         // Collect all managed windows
-        let window_ids : String = json::encode(&window_manager.workspaces.all_windows_with_workspaces());
+        let window_ids : String = json::encode(&window_manager.workspaces.all_windows_with_workspaces()).unwrap();
 
         // Create arguments
         let program_name = os::args()[0].clone();

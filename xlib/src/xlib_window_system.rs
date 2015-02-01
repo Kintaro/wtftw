@@ -74,6 +74,7 @@ use xlib::{
     XUngrabPointer,
     XUnmapEvent,
     XUnmapWindow,
+    XWarpPointer,
     XWindowAttributes,
     XWindowChanges,
 };
@@ -741,5 +742,11 @@ impl WindowSystem for XlibWindowSystem {
         }
 
         (x as u32, y as u32)
+    }
+
+    fn warp_pointer(&self, window: Window, x: u32, y: u32) {
+        unsafe {
+            XWarpPointer(self.display, 0, window, 0, 0, 0, 0, x as i32, y as i32);
+        }
     }
 }
