@@ -2,6 +2,7 @@ extern crate collections;
 
 use std::iter;
 use std::num::Float;
+use std::ops::Deref;
 use self::collections::EnumSet;
 use self::collections::enum_set::CLike;
 use core::Stack;
@@ -26,7 +27,8 @@ pub enum LayoutMessage {
     Prev,
     HorizontalSplit,
     VerticalSplit,
-    Hide
+    Hide,
+    TreeRotate,
 }
 
 pub fn mirror_rect(&Rectangle(x, y, w, h) : &Rectangle) -> Rectangle {
@@ -65,7 +67,7 @@ pub fn split_horizontally_by(ratio: f32, screen: ScreenDetail) -> (Rectangle, Re
 }
 
 pub trait Layout {
-    fn apply_layout(&self, window_system: &WindowSystem, screen: Rectangle,
+    fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)>;
     fn apply_message<'b>(&mut self, _: LayoutMessage, _: &WindowSystem,
                          _: &Option<Stack<Window>>, _: &GeneralConfig<'b>) -> bool { true }
@@ -92,7 +94,7 @@ impl TallLayout {
 }
 
 impl Layout for TallLayout {
-    fn apply_layout(&self, _: &WindowSystem, screen: Rectangle,
+    fn apply_layout(&mut self, _: &WindowSystem, screen: Rectangle,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
         match stack {
             &Some(ref s) => {
@@ -141,7 +143,7 @@ impl<'a> CenterLayout<'a> {
 }
 
 impl<'a> Layout for CenterLayout <'a> {
-    fn apply_layout(&self, window_system: &WindowSystem, screen: Rectangle,
+    fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
         match stack {
             &Some(ref s) => {
@@ -227,7 +229,7 @@ impl ResizableTallLayout {
         let f = fxv[0];
         let smallh = ((sh / num) as f32 * f) as u32;
         (vec!(Rectangle(sx, sy, sw, smallh))).iter()
-            .chain(ResizableTallLayout::split_vertically(fxv.into_iter().skip(1), num - 1, 
+            .chain(ResizableTallLayout::split_vertically(fxv.into_iter().skip(1), num - 1,
                                                          Rectangle(sx, sy + smallh, sw, sh - smallh)).iter())
             .map(|&x| x)
             .collect()
@@ -265,14 +267,14 @@ impl ResizableTallLayout {
 }
 
 impl Layout for ResizableTallLayout {
-    fn apply_layout(&self, _: &WindowSystem, screen: Rectangle,
+    fn apply_layout(&mut self, _: &WindowSystem, screen: Rectangle,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
         match stack {
             &Some(ref s) => {
                 let ws = s.integrate();
                 s.integrate().iter()
-                    .zip(ResizableTallLayout::tile(self.ratio, 
-                                                   self.slaves.clone().into_iter().chain(iter::repeat(1.0)).take(ws.len()), 
+                    .zip(ResizableTallLayout::tile(self.ratio,
+                                                   self.slaves.clone().into_iter().chain(iter::repeat(1.0)).take(ws.len()),
                                                    screen, self.num_master, ws.len() as u32).iter())
                     .map(|(&x, &y)| (x, y))
                     .collect()
@@ -291,7 +293,7 @@ impl Layout for ResizableTallLayout {
             LayoutMessage::DecreaseMaster => {
                 if self.num_master > 1 { self.num_master -= 1 } true
             }
-            LayoutMessage::IncreaseSlave => { self.resize(stack,  d); 
+            LayoutMessage::IncreaseSlave => { self.resize(stack,  d);
             debug!("slaves are {:?}", self.slaves); true }
             LayoutMessage::DecreaseSlave => { self.resize(stack, -d); true }
             _                       => false
@@ -322,7 +324,7 @@ impl<'a> MirrorLayout<'a> {
 }
 
 impl<'a> Layout for MirrorLayout<'a> {
-    fn apply_layout(&self, w: &WindowSystem, screen: Rectangle,
+    fn apply_layout(&mut self, w: &WindowSystem, screen: Rectangle,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
         // Rotate the screen, apply the layout, ...
         self.layout.apply_layout(w, mirror_rect(&screen), stack).iter()
@@ -431,7 +433,7 @@ impl<'a> AvoidStrutsLayout<'a> {
 }
 
 impl<'a> Layout for AvoidStrutsLayout<'a> {
-    fn apply_layout(&self, window_system: &WindowSystem, screen: Rectangle,
+    fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
 
         let new_screen = stack.clone().map_or(screen, |_| {
@@ -486,7 +488,7 @@ impl<'a> GapLayout<'a> {
 }
 
 impl<'a> Layout for GapLayout<'a> {
-    fn apply_layout(&self, window_system: &WindowSystem, screen: Rectangle,
+    fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
         let layout = self.layout.apply_layout(window_system, screen, stack);
 
@@ -530,7 +532,7 @@ impl<'a> WithBordersLayout<'a> {
 }
 
 impl<'a> Layout for WithBordersLayout<'a> {
-    fn apply_layout(&self, window_system: &WindowSystem, screen: Rectangle,
+    fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
         if let &Some(ref s) = stack {
             for window in s.integrate().into_iter() {
@@ -595,7 +597,7 @@ impl SplitLayout {
 }
 
 impl Layout for SplitLayout {
-    fn apply_layout(&self, _: &WindowSystem, _: Rectangle,
+    fn apply_layout(&mut self, _: &WindowSystem, _: Rectangle,
                     _: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
         Vec::new()
     }
@@ -613,7 +615,7 @@ impl Layout for SplitLayout {
 pub struct FullLayout;
 
 impl Layout for FullLayout {
-    fn apply_layout(&self, _: &WindowSystem, screen: Rectangle,
+    fn apply_layout(&mut self, _: &WindowSystem, screen: Rectangle,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
         match *stack {
             Some(ref st) => vec!((st.focus, screen)),
@@ -645,7 +647,7 @@ impl<'a> LayoutCollection<'a> {
 }
 
 impl<'a> Layout for LayoutCollection<'a> {
-    fn apply_layout(&self, window_system: &WindowSystem, screen: Rectangle,
+    fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
         self.layouts[self.current].apply_layout(window_system, screen, stack)
     }
@@ -676,5 +678,391 @@ impl<'a> Layout for LayoutCollection<'a> {
             current: self.current,
             layouts: self.layouts.iter().map(|x| x.copy()).collect()
         }
+    }
+}
+
+#[derive(Clone)]
+pub enum Axis {
+    Horizontal,
+    Vertical
+}
+
+impl Axis {
+    pub fn opposite(&self) -> Axis {
+        match self {
+            &Axis::Horizontal => Axis::Vertical,
+            &Axis::Vertical   => Axis::Horizontal
+        }
+    }
+}
+
+#[derive(Clone)]
+pub enum Tree<T> {
+    Leaf,
+    Node(T, Box<Tree<T>>, Box<Tree<T>>)
+}
+
+impl<T> Tree<T> {
+    pub fn number_of_leaves(&self) -> usize {
+        match self {
+            &Tree::Leaf => 1,
+            &Tree::Node(_, ref l, ref r) => l.number_of_leaves() + r.number_of_leaves()
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct Split {
+    axis: Axis,
+    ratio: f32
+}
+
+impl Split {
+    pub fn new(axis: Axis, r: f32) -> Split {
+        Split { axis: axis, ratio: r }
+    }
+    
+    pub fn split(&self, Rectangle(x, y, w, h): Rectangle) -> (Rectangle, Rectangle) {
+        match self.axis {
+            Axis::Horizontal => {
+                let hr = (h as f32 * self.ratio) as u32;
+                (Rectangle(x, y, w, hr), Rectangle(x, y + hr, w, h - hr))
+            },
+            Axis::Vertical => {
+                let wr = (w as f32 * self.ratio) as u32;
+                (Rectangle(x, y, wr, h), Rectangle(x + wr, y, w - wr, h))
+            }
+        }
+    }
+
+    pub fn opposite(&self) -> Split {
+        Split { axis: self.axis.opposite(), ratio: self.ratio }
+    }
+}
+
+#[derive(Clone)]
+pub enum Crumb<T> {
+    LeftCrumb(T, Tree<T>),
+    RightCrumb(T, Tree<T>)
+}
+
+impl<T: Clone> Crumb<T> {
+    pub fn swap(&self) -> Crumb<T> {
+        match self {
+            &Crumb::LeftCrumb(ref s, ref t)  => Crumb::RightCrumb(s.clone(), t.clone()),
+            &Crumb::RightCrumb(ref s, ref t) => Crumb::LeftCrumb(s.clone(), t.clone())
+        }
+    }
+
+    pub fn parent(&self) -> T {
+        match self {
+            &Crumb::LeftCrumb(ref s, _)  => s.clone(),
+            &Crumb::RightCrumb(ref s, _) => s.clone()
+        }
+    }
+
+    pub fn modify_parent<F>(&self, f: F) -> Crumb<T> where F: Fn(&T) -> T {
+        match self {
+            &Crumb::LeftCrumb(ref s, ref t)  => Crumb::LeftCrumb(f(s), t.clone()),
+            &Crumb::RightCrumb(ref s, ref t) => Crumb::RightCrumb(f(s), t.clone())
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct Zipper {
+    tree: Tree<Split>,
+    crumbs: Vec<Crumb<Split>>
+}
+
+impl Zipper {
+    fn left_append<S>(x: S, v: Vec<S>) -> Vec<S> {
+        (vec!(x)).into_iter().chain(v.into_iter()).collect()
+    }
+
+    pub fn from_tree(tree: Tree<Split>) -> Zipper {
+        Zipper {
+            tree: tree.clone(),
+            crumbs: Vec::new()
+        }
+    }
+
+    pub fn go_left(&self) -> Option<Zipper> {
+        match &self.tree {
+            &Tree::Leaf => None,
+            &Tree::Node(ref x, ref l, ref r) => Some(Zipper { 
+                tree: l.deref().clone(), 
+                crumbs: Zipper::left_append::<Crumb<Split>>(Crumb::LeftCrumb(x.clone(), r.deref().clone()), self.crumbs.clone()) 
+            })
+        }
+    }
+    
+    pub fn go_right(&self) -> Option<Zipper> {
+        match &self.tree {
+            &Tree::Leaf => None,
+            &Tree::Node(ref x, ref l, ref r) => Some(Zipper { 
+                tree: r.deref().clone(), 
+                crumbs: Zipper::left_append::<Crumb<Split>>(Crumb::RightCrumb(x.clone(), l.deref().clone()), self.crumbs.clone()) 
+            })
+        }
+    }
+
+    pub fn go_up(&self) -> Option<Zipper> {
+        if self.crumbs.is_empty() {
+            None
+        } else {
+            let head = self.crumbs[0].clone();
+            let rest = if self.crumbs.len() == 1 { Vec::new() } else { self.crumbs.clone().split_off(1) };
+
+            match head {
+                Crumb::LeftCrumb(x, r)  => Some(Zipper { tree: Tree::Node(x, box self.tree.clone(), box r), crumbs: rest }),
+                Crumb::RightCrumb(x, l) => Some(Zipper { tree: Tree::Node(x, box l, box self.tree.clone()), crumbs: rest })
+            }
+        }
+    }
+
+    pub fn go_sibling(&self) -> Option<Zipper> {
+        if self.crumbs.is_empty() {
+            return None;
+        }
+
+        let head = self.crumbs[0].clone();
+
+        match head {
+            Crumb::LeftCrumb(_, _) => self.go_up().and_then(|x| x.go_right()),
+            Crumb::RightCrumb(_, _) => self.go_up().and_then(|x| x.go_left())
+        }
+    }
+
+    pub fn go_to_nth_leaf(&self, n: usize) -> Option<Zipper> {
+        match self.tree {
+            Tree::Leaf => Some(self.clone()),
+            Tree::Node(_, ref l, _)  => {
+                if l.number_of_leaves() > n {
+                    self.go_left().and_then(|x| x.go_to_nth_leaf(n))
+                } else {
+                    self.go_right().and_then(|x| x.go_to_nth_leaf(n - l.number_of_leaves()))
+                }
+            }
+        }
+    }
+
+    pub fn split_current_leaf(&self) -> Option<Zipper> {
+        match self.tree {
+            Tree::Leaf => {
+                if self.crumbs.is_empty() {
+                    Some(Zipper { tree: Tree::Node(Split::new(Axis::Vertical, 0.5), box Tree::Leaf, box Tree::Leaf), crumbs: Vec::new() })
+                } else {
+                    let head = self.crumbs[0].clone();
+                    Some(Zipper { 
+                        tree: Tree::Node(Split::new(head.parent().axis.opposite(), 0.5), box Tree::Leaf, box Tree::Leaf), 
+                        crumbs: self.crumbs.clone() 
+                    })
+                }
+            }
+            _ => None
+        }
+    }
+
+    pub fn remove_current_leaf(&self) -> Option<Zipper> {
+        match self.tree {
+            Tree::Leaf => {
+                if self.crumbs.is_empty() {
+                    None
+                } else {
+                    let head = self.crumbs[0].clone();
+                    let rest = if self.crumbs.len() == 1 { Vec::new() } else {  self.crumbs.clone().split_off(1) };
+                    match head {
+                        Crumb::LeftCrumb(_, r) => Some(Zipper { tree: r.clone(), crumbs: rest }),
+                        Crumb::RightCrumb(_, l) => Some(Zipper { tree: l.clone(), crumbs: rest })
+                    }
+                }
+            },
+            _ => None
+        }
+    }
+    
+    pub fn rotate_current_leaf(&self) -> Option<Zipper> {
+        match self.tree {
+            Tree::Leaf => {
+                if self.crumbs.is_empty() {
+                    Some(Zipper { tree: Tree::Leaf, crumbs: Vec::new() })
+                } else {
+                    let mut c = self.crumbs.clone();
+                    c[0] = c[0].modify_parent(|x| x.opposite());
+                    Some(Zipper { 
+                        tree: Tree::Leaf, 
+                        crumbs: c 
+                    })
+                }
+            }
+            _ => None
+        }
+    }
+
+
+    pub fn top(&self) -> Zipper {
+        self.go_up().map_or(self.clone(), |x| x.top())
+    }
+
+    pub fn to_tree(&self) -> Tree<Split> {
+        self.top().tree.clone()
+    }
+}
+
+#[derive(Clone)]
+pub struct BinarySpacePartition {
+    tree: Option<Tree<Split>>
+}
+
+impl BinarySpacePartition {
+    pub fn new<'a>() -> Box<Layout + 'a> {
+        box BinarySpacePartition::empty()
+    }
+
+    pub fn empty() -> BinarySpacePartition {
+        BinarySpacePartition { tree: None }
+    }
+
+    pub fn make(tree: Tree<Split>) -> BinarySpacePartition {
+        BinarySpacePartition { tree: Some(tree) }
+    }
+
+    pub fn make_zipper(&self) -> Option<Zipper> {
+        self.tree.clone().map(|x| Zipper::from_tree(x))
+    }
+
+    pub fn size(&self) -> usize {
+        self.tree.clone().map_or(0, |x| x.number_of_leaves())
+    }
+
+    pub fn from_zipper(zipper: Option<Zipper>) -> BinarySpacePartition {
+        BinarySpacePartition {
+            tree: zipper.clone().map(|x| x.top().to_tree())
+        }
+    }
+
+    pub fn rectangles(&self, rect: Rectangle) -> Vec<Rectangle> {
+        self.tree.clone().map_or(Vec::new(), |t| {
+            match t {
+                Tree::Leaf => vec!(rect),
+                Tree::Node(value, l, r) => {
+                    let (left_box, right_box) = value.split(rect);
+                    let left  = BinarySpacePartition::make(l.deref().clone()).rectangles(left_box);
+                    let right = BinarySpacePartition::make(r.deref().clone()).rectangles(right_box);
+                    left.into_iter().chain(right.into_iter()).collect()
+                }
+            }
+        })
+    }
+
+    pub fn do_to_nth<F>(&self, n: usize, f: F) -> BinarySpacePartition where F: Fn(Zipper) -> Option<Zipper> {
+        BinarySpacePartition::from_zipper(self.make_zipper().and_then(|x| x.go_to_nth_leaf(n)).and_then(f))
+    }
+
+    pub fn split_nth(&self, n: usize) -> BinarySpacePartition {
+        if self.tree.is_none() {
+            BinarySpacePartition::make(Tree::Leaf)
+        } else {
+            self.do_to_nth(n, |x| x.split_current_leaf())
+        }
+    }
+
+    pub fn remove_nth(&self, n: usize) -> BinarySpacePartition {
+        match self.tree {
+            None => BinarySpacePartition::empty(),
+            Some(ref tree) => {
+                match tree {
+                    &Tree::Leaf => BinarySpacePartition::empty(),
+                    _           => self.do_to_nth(n, |x| x.remove_current_leaf())
+                }
+            }
+        }
+    }
+
+    pub fn rotate_nth(&self, n: usize) -> BinarySpacePartition {
+        match self.tree {
+            None => BinarySpacePartition::empty(),
+            Some(ref tree) => {
+                match tree {
+                    &Tree::Leaf => self.clone(),
+                    _           => self.do_to_nth(n, |x| x.rotate_current_leaf())
+                }
+            }
+        }
+    }
+
+    fn to_index<T: Clone + Eq>(s: Option<Stack<T>>) -> (Vec<T>, Option<usize>) {
+        match s {
+            None => (Vec::new(), None),
+            Some(x) => (x.integrate(), Some(x.up.len()))
+        }
+    }
+
+    fn stack_index<T: Clone + Eq>(s: &Stack<T>) -> usize {
+        match BinarySpacePartition::to_index(Some(s.clone())) {
+            (_, None) => 0,
+            (_, Some(x)) => x
+        }
+    }
+}
+
+impl Layout for BinarySpacePartition {
+    fn apply_layout(&mut self, _: &WindowSystem, screen: Rectangle,
+                    stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
+        match *stack {
+            Some(ref st) => {
+                debug!("{:?}", st.integrate());
+                let ws = st.integrate();
+
+                fn layout(bsp: BinarySpacePartition, l: usize, n: usize) -> Option<BinarySpacePartition> {
+                    if l == bsp.size() {
+                        Some(bsp.clone())
+                    } else if l > bsp.size() {
+                        layout(bsp.split_nth(n), l, n)
+                    } else {
+                        layout(bsp.remove_nth(n), l, n)
+                    }
+                }
+
+                let bsp = layout(self.clone(), ws.len(), BinarySpacePartition::stack_index(st));;
+
+                let rs = match bsp {
+                    None => self.rectangles(screen),
+                    Some(ref b) => b.rectangles(screen)
+                };
+                if let Some(ref t) = bsp.clone() {
+                    self.tree =  t.tree.clone();
+                }
+
+                ws.into_iter().zip(rs.into_iter()).collect()
+            },
+            None     => Vec::new()
+        }
+    }
+
+    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
+        stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
+            match message {
+                LayoutMessage::TreeRotate => {
+                    if let &Some(ref s) = stack {
+                        let index = BinarySpacePartition::stack_index(s);
+                        let r = self.rotate_nth(index);
+                        self.tree = r.tree.clone();
+                        true
+                    } else {
+                        false
+                    }
+                },
+                _ => false
+            }
+        }
+
+    fn description(&self) -> String {
+        String::from_str("BSP")
+    }
+
+    fn copy<'a>(&self) -> Box<Layout + 'a> {
+        box self.clone()
     }
 }

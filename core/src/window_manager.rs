@@ -93,12 +93,13 @@ impl<'a> WindowManager<'a> {
     pub fn reapply_layout(&self, window_system: &WindowSystem,
                           _: &GeneralConfig<'a>) -> Vec<(Window, Rectangle)> {
         self.workspaces.screens().into_iter().map(|s| {
+            let mut ms = s.clone();
             let vs : Vec<(Window, Rectangle)> = self.workspaces.view(s.workspace.id)
                 .with(Vec::new(), |x| x.integrate()).into_iter()
                 .filter(|x| self.workspaces.floating.contains_key(x))
                 .map(|x| (x, WindowManager::scale_rational_rect(s.screen_detail, self.workspaces.floating[x])))
-                .chain(s.workspace.layout.apply_layout(window_system, s.screen_detail,
-                    &self.workspaces.view(s.workspace.id).current.workspace.stack
+                .chain(ms.workspace.layout.apply_layout(window_system, ms.screen_detail,
+                    &self.workspaces.view(ms.workspace.id).current.workspace.stack
                         .map_or(None, |x| x.filter(|w| !self.workspaces.floating.contains_key(w)))).into_iter())
                 .collect();
 
@@ -106,6 +107,23 @@ impl<'a> WindowManager<'a> {
 
             vs
         }).flat_map(|x| x.into_iter()).collect()
+    }
+
+    pub fn update_layouts(&self, window_system: &WindowSystem,
+                          _: &GeneralConfig<'a>) -> WindowManager<'a> {
+        let screens : Vec<Screen> = self.workspaces.screens().into_iter().map(|s| {
+            let mut ms = s.clone();
+            ms.workspace.layout.apply_layout(window_system, ms.screen_detail,
+                    &self.workspaces.view(ms.workspace.id).current.workspace.stack
+                        .map_or(None, |x| x.filter(|w| !self.workspaces.floating.contains_key(w))));
+            ms
+        }).collect();
+
+        WindowManager {
+            running: self.running,
+            dragging: self.dragging.clone(),
+            workspaces: self.workspaces.from_current(screens[0].clone()).from_visible(screens.into_iter().skip(1).collect())
+        }
     }
 
     pub fn unfocus_windows(&self, window_system: &WindowSystem, config: &GeneralConfig<'a>) {
@@ -220,8 +238,8 @@ impl<'a> WindowManager<'a> {
         }
 
         // Apply the layout to the current workspace
-        let modified = self.modify_workspaces(|x| f(x));
-        let result = self.modify_workspaces(f).reapply_layout(window_system, config);
+        let modified = self.modify_workspaces(|x| f(x)).update_layouts(window_system, config);
+        let result   = self.modify_workspaces(f).reapply_layout(window_system, config);
 
         old_visible.iter()
             .fold((),|_, &x| window_system.set_window_border_color(x, config.border_color.clone()));
