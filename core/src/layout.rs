@@ -29,6 +29,9 @@ pub enum LayoutMessage {
     VerticalSplit,
     Hide,
     TreeRotate,
+    TreeSwap,
+    TreeExpandTowards(Direction),
+    TreeShrinkFrom(Direction)
 }
 
 pub fn mirror_rect(&Rectangle(x, y, w, h) : &Rectangle) -> Rectangle {
@@ -353,6 +356,26 @@ pub enum Direction {
     Down,
     Left,
     Right
+}
+
+impl Direction {
+    pub fn opposite(&self) -> Direction {
+        match self {
+            &Direction::Up    => Direction::Down,
+            &Direction::Down  => Direction::Up,
+            &Direction::Left  => Direction::Right,
+            &Direction::Right => Direction::Left
+        }
+    }
+
+    pub fn to_axis(&self) -> Axis {
+        match self {
+            &Direction::Up    => Axis::Horizontal,
+            &Direction::Down  => Axis::Horizontal,
+            &Direction::Left  => Axis::Vertical,
+            &Direction::Right => Axis::Vertical
+        }
+    }
 }
 
 impl CLike for Direction {
@@ -681,7 +704,7 @@ impl<'a> Layout for LayoutCollection<'a> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum Axis {
     Horizontal,
     Vertical
@@ -737,6 +760,10 @@ impl Split {
 
     pub fn opposite(&self) -> Split {
         Split { axis: self.axis.opposite(), ratio: self.ratio }
+    }
+
+    pub fn increase_ratio(&self, r: f32) -> Split {
+        Split { axis: self.axis.clone(), ratio: self.ratio + r }
     }
 }
 
@@ -899,7 +926,88 @@ impl Zipper {
             _ => None
         }
     }
+    
+    pub fn swap_current_leaf(&self) -> Option<Zipper> {
+        match self.tree {
+            Tree::Leaf => {
+                if self.crumbs.is_empty() {
+                    Some(Zipper { tree: Tree::Leaf, crumbs: Vec::new() })
+                } else {
+                    let mut c = self.crumbs.clone();
+                    c[0] = c[0].swap();
+                    Some(Zipper { 
+                        tree: Tree::Leaf, 
+                        crumbs: c 
+                    })
+                }
+            }
+            _ => None
+        }
+    }
 
+    pub fn is_all_the_way(&self, dir: Direction) -> bool {
+        if self.crumbs.is_empty() {
+            return true;
+        }
+
+        let head = self.crumbs[0].clone();
+        match (dir, head) {
+            (Direction::Right, Crumb::LeftCrumb(ref s, _))  if s.axis == Axis::Vertical   => false,
+            (Direction::Left,  Crumb::RightCrumb(ref s, _)) if s.axis == Axis::Vertical   => false,
+            (Direction::Down,  Crumb::LeftCrumb(ref s, _))  if s.axis == Axis::Horizontal => false,
+            (Direction::Up,    Crumb::RightCrumb(ref s, _)) if s.axis == Axis::Horizontal => false,
+            _ => self.go_up().map_or(false, |x| x.is_all_the_way(dir))
+        }
+    }
+
+    pub fn expand_towards(&self, dir: Direction) -> Option<Zipper> {
+        if self.crumbs.is_empty() {
+            return Some(self.clone());
+        }
+
+        if self.is_all_the_way(dir) {
+            return None;
+        }
+
+        let head = self.crumbs[0].clone();
+        let rest = if self.crumbs.len() == 1 { Vec::new() } else { self.crumbs.clone().split_off(1) };
+
+        match (dir, head) {
+            (Direction::Right, Crumb::LeftCrumb(ref s, ref r)) if s.axis == Axis::Vertical => Some(Zipper { 
+                tree: self.tree.clone(), 
+                crumbs: Zipper::left_append(Crumb::LeftCrumb(s.increase_ratio(0.05), r.clone()), rest)
+            }),
+            (Direction::Left, Crumb::RightCrumb(ref s, ref r)) if s.axis == Axis::Vertical => Some(Zipper { 
+                tree: self.tree.clone(), 
+                crumbs: Zipper::left_append(Crumb::RightCrumb(s.increase_ratio(-0.05), r.clone()), rest)
+            }),
+            (Direction::Down, Crumb::LeftCrumb(ref s, ref r)) if s.axis == Axis::Horizontal => Some(Zipper { 
+                tree: self.tree.clone(), 
+                crumbs: Zipper::left_append(Crumb::LeftCrumb(s.increase_ratio(0.05), r.clone()), rest)
+            }),
+            (Direction::Up, Crumb::RightCrumb(ref s, ref r)) if s.axis == Axis::Horizontal => Some(Zipper { 
+                tree: self.tree.clone(), 
+                crumbs: Zipper::left_append(Crumb::RightCrumb(s.increase_ratio(-0.05), r.clone()), rest)
+            }),
+            _ => self.go_up().and_then(|x| x.expand_towards(dir))
+        }
+    }
+
+    pub fn shrink_from(&self, dir: Direction) -> Option<Zipper> {
+        if self.crumbs.is_empty() {
+            return Some(self.clone());
+        }
+
+        let head = self.crumbs[0].clone();
+
+        match (dir, head) {
+            (Direction::Right, Crumb::LeftCrumb(ref s, _))  if s.axis == Axis::Vertical   => self.go_sibling().and_then(|x| x.expand_towards(Direction::Left)),
+            (Direction::Left,  Crumb::RightCrumb(ref s, _)) if s.axis == Axis::Vertical   => self.go_sibling().and_then(|x| x.expand_towards(Direction::Right)),
+            (Direction::Down,  Crumb::LeftCrumb(ref s, _))  if s.axis == Axis::Horizontal => self.go_sibling().and_then(|x| x.expand_towards(Direction::Up)),
+            (Direction::Up,    Crumb::RightCrumb(ref s, _)) if s.axis == Axis::Horizontal => self.go_sibling().and_then(|x| x.expand_towards(Direction::Down)),
+            _ => self.go_up().and_then(|x| x.shrink_from(dir))
+        }
+    }
 
     pub fn top(&self) -> Zipper {
         self.go_up().map_or(self.clone(), |x| x.top())
@@ -991,6 +1099,43 @@ impl BinarySpacePartition {
             }
         }
     }
+    
+    pub fn swap_nth(&self, n: usize) -> BinarySpacePartition {
+        match self.tree {
+            None => BinarySpacePartition::empty(),
+            Some(ref tree) => {
+                match tree {
+                    &Tree::Leaf => self.clone(),
+                    _           => self.do_to_nth(n, |x| x.swap_current_leaf())
+                }
+            }
+        }
+    }
+
+    pub fn grow_nth_towards(&self, dir: Direction, n: usize) -> BinarySpacePartition {
+        match self.tree {
+            None => BinarySpacePartition::empty(),
+            Some(ref tree) => {
+                match tree {
+                    &Tree::Leaf => self.clone(),
+                    _           => self.do_to_nth(n, |x| x.expand_towards(dir))
+                }
+            }
+        }
+    }
+    
+    pub fn shrink_nth_from(&self, dir: Direction, n: usize) -> BinarySpacePartition {
+        match self.tree {
+            None => BinarySpacePartition::empty(),
+            Some(ref tree) => {
+                match tree {
+                    &Tree::Leaf => self.clone(),
+                    _           => self.do_to_nth(n, |x| x.shrink_from(dir))
+                }
+            }
+        }
+
+    }
 
     fn to_index<T: Clone + Eq>(s: Option<Stack<T>>) -> (Vec<T>, Option<usize>) {
         match s {
@@ -1053,6 +1198,38 @@ impl Layout for BinarySpacePartition {
                     } else {
                         false
                     }
+                },
+                LayoutMessage::TreeSwap => {
+                    if let &Some(ref s) = stack {
+                        let index = BinarySpacePartition::stack_index(s);
+                        let r = self.swap_nth(index);
+                        self.tree = r.tree.clone();
+                        true
+                    } else {
+                        false
+                    }
+                },
+                LayoutMessage::TreeExpandTowards(dir) => {
+                    if let &Some(ref s) = stack {
+                        let index = BinarySpacePartition::stack_index(s);
+                        let r = self.grow_nth_towards(dir, index);
+                        self.tree = r.tree.clone();
+                        true
+                    } else {
+                        false
+                    }
+
+                },
+                LayoutMessage::TreeShrinkFrom(dir) => {
+                    if let &Some(ref s) = stack {
+                        let index = BinarySpacePartition::stack_index(s);
+                        let r = self.shrink_nth_from(dir, index);
+                        self.tree = r.tree.clone();
+                        true
+                    } else {
+                        false
+                    }
+
                 },
                 _ => false
             }
