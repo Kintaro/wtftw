@@ -7,32 +7,35 @@
 extern crate log;
 #[macro_use]
 #[plugin]
-extern crate wtftw_core;
+extern crate wtftw;
 
-use std::io::fs::PathExtensions;
+use std::old_io::fs::PathExtensions;
 use std::os::homedir;
 use std::ffi::CString;
-use wtftw_core::window_system::*;
-use wtftw_core::window_manager::*;
-use wtftw_core::handlers::default::*;
-use wtftw_core::config::*;
-use wtftw_core::util::*;
-use wtftw_core::layout::*;
-use wtftw_core::layout::Direction::*;
-use wtftw_core::layout::LayoutMessage::*;
+use wtftw::window_system::*;
+use wtftw::window_manager::*;
+use wtftw::handlers::default::*;
+use wtftw::config::*;
+use wtftw::util::*;
+use wtftw::layout::*;
+use wtftw::layout::Direction::*;
+use wtftw::layout::LayoutMessage::*;
 
 #[no_mangle]
 pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Config) {
     let modm = MOD1MASK;
 
     config.general.mod_mask = modm;
-    config.general.border_color = 0x3f3f4c;
-    config.general.focus_border_color = 0x525263;
+    config.general.border_color = 0x20242c;
+    config.general.focus_border_color = 0xb3b8c4;
+    config.general.border_width = 1;
     config.general.terminal = (String::from_str("urxvt"), String::from_str(""));
     config.general.layout = LayoutCollection::new(vec!(
-        GapLayout::new(10, AvoidStrutsLayout::new(vec!(Direction::Up), ResizableTallLayout::new())),
-        GapLayout::new(10, AvoidStrutsLayout::new(vec!(Direction::Up), MirrorLayout::new(ResizableTallLayout::new()))),
-        GapLayout::new(10, AvoidStrutsLayout::new(vec!(Direction::Up), CenterLayout::new(ResizableTallLayout::new()))),
+        GapLayout::new(10, AvoidStrutsLayout::new(vec!(Direction::Up, Direction::Down), ResizableTallLayout::new())),
+        GapLayout::new(10, AvoidStrutsLayout::new(vec!(Direction::Up, Direction::Down), MirrorLayout::new(ResizableTallLayout::new()))),
+        GapLayout::new(10, AvoidStrutsLayout::new(vec!(Direction::Up, Direction::Down), CenterLayout::new(ResizableTallLayout::new()))),
+        GapLayout::new(10, AvoidStrutsLayout::new(vec!(Direction::Up, Direction::Down), BinarySpacePartition::new())),
+        GapLayout::new(10, AvoidStrutsLayout::new(vec!(Direction::Up, Direction::Down), MirrorLayout::new(BinarySpacePartition::new()))),
         NoBordersLayout::new(box FullLayout)));
 
     config.general.tags = (vec!("一: ターミナル", "二: ウェブ", "三: コード",
@@ -68,10 +71,23 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
     add_key_handler_str!(config, w, "l",      modm,             send_layout_message!(LayoutMessage::Increase));
     add_key_handler_str!(config, w, "z",      modm,             send_layout_message!(LayoutMessage::DecreaseSlave));
     add_key_handler_str!(config, w, "a",      modm,             send_layout_message!(LayoutMessage::IncreaseSlave));
+    add_key_handler_str!(config, w, "x",      modm | SHIFTMASK, send_layout_message!(LayoutMessage::IncreaseGap));
+    add_key_handler_str!(config, w, "s",      modm | SHIFTMASK, send_layout_message!(LayoutMessage::DecreaseGap));
     add_key_handler_str!(config, w, "comma",  modm,             send_layout_message!(LayoutMessage::IncreaseMaster));
     add_key_handler_str!(config, w, "period", modm,             send_layout_message!(LayoutMessage::DecreaseMaster));
     add_key_handler_str!(config, w, "space",  modm,             send_layout_message!(LayoutMessage::Next));
     add_key_handler_str!(config, w, "space",  modm | SHIFTMASK, send_layout_message!(LayoutMessage::Prev));
+    add_key_handler_str!(config, w, "r",      modm,             send_layout_message!(LayoutMessage::TreeRotate));
+    add_key_handler_str!(config, w, "s",      modm,             send_layout_message!(LayoutMessage::TreeSwap));
+    add_key_handler_str!(config, w, "u",      modm | SHIFTMASK, send_layout_message!(LayoutMessage::TreeExpandTowards(Direction::Left)));
+    add_key_handler_str!(config, w, "p",      modm | SHIFTMASK, send_layout_message!(LayoutMessage::TreeExpandTowards(Direction::Right)));
+    add_key_handler_str!(config, w, "i",      modm | SHIFTMASK, send_layout_message!(LayoutMessage::TreeExpandTowards(Direction::Down)));
+    add_key_handler_str!(config, w, "o",      modm | SHIFTMASK, send_layout_message!(LayoutMessage::TreeExpandTowards(Direction::Up)));
+    add_key_handler_str!(config, w, "u",      modm | CONTROLMASK, send_layout_message!(LayoutMessage::TreeShrinkFrom(Direction::Left)));
+    add_key_handler_str!(config, w, "p",      modm | CONTROLMASK, send_layout_message!(LayoutMessage::TreeShrinkFrom(Direction::Right)));
+    add_key_handler_str!(config, w, "i",      modm | CONTROLMASK, send_layout_message!(LayoutMessage::TreeShrinkFrom(Direction::Down)));
+    add_key_handler_str!(config, w, "o",      modm | CONTROLMASK, send_layout_message!(LayoutMessage::TreeShrinkFrom(Direction::Up)));
+
 
     // Workspace switching and moving
     for i in range(1u, 10) {
@@ -118,17 +134,17 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
         let mut xmobar = spawn_pipe(config, "xmobar",
                                     vec!(xmobar_config));
         let tags = config.general.tags.clone();
-        config.set_log_hook(box move |&mut: m, _| {
+        config.set_log_hook(box move |&mut: m, w| {
             let p = &mut xmobar;
             let tags = &tags;
             let workspaces = tags.clone().iter()
                 .enumerate()
                 .map(|(i, x)| if i as u32 == m.workspaces.current.workspace.id {
-                    format!("[<fc=#cee318>{}</fc>] ", x)
+                    format!("<fc=#d17b49>■</fc>")
                 } else if m.workspaces.visible.iter().any(|w| w.workspace.id == i as u32) {
-                    format!("[<fc=#8aa004>{}</fc>] ", x)
+                    format!("<fc=#535c5c>■</fc>")
                 } else {
-                    format!("[{}] ", x)
+                    format!("■")
                 })
                 .fold(String::from_str(""), |a, x| {
                     let mut r = a.clone();
@@ -136,7 +152,11 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
                     r
                 });
 
-            let content = format!("{} {}", workspaces, m.workspaces.current.workspace.layout.description());
+            let name = match m.workspaces.peek() {
+                None => String::from_str(""),
+                Some(window) => w.get_window_name(window)
+            };
+            let content = format!("{} {} {}", workspaces, m.workspaces.current.workspace.layout.description(), name);
             match p.write().unwrap().stdin.as_mut() {
                 Some(pin) => match pin.write_line(content.as_slice()) {
                     _ => ()
