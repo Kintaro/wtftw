@@ -336,13 +336,12 @@ impl WindowSystem for XlibWindowSystem {
     fn get_window_name(&self, window: Window) -> String {
         if window == self.root { return String::from_str("root"); }
         unsafe {
-            //let mut name : *mut c_char = uninitialized();
-            //if XFetchName(self.display, window as c_ulong, &mut name) == BADWINDOW || name.is_null() {
+            let mut name : *mut c_char = uninitialized();
+            if XFetchName(self.display, window as c_ulong, &mut name) == BADWINDOW || name.is_null() {
                 String::from_str("Unknown")
-            //} else {
-                //debug!("getting window name");
-                //String::from_str(str::from_utf8_unchecked(ffi::c_str_to_bytes(&(name as *const c_char))))
-            //}
+            } else {
+                String::from_str(str::from_utf8_unchecked(ffi::c_str_to_bytes(&(name as *const c_char))))
+            }
         }
     }
 
