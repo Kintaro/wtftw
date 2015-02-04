@@ -1,4 +1,6 @@
 extern crate libc;
+//extern crate "rustc-serialize" as rustc_serialize;
+extern crate serialize;
 
 use core::Workspaces;
 use window_manager::WindowManager;
@@ -22,8 +24,7 @@ pub mod default {
     use std::ptr::null;
     use std::old_io::process::Command;
     use std::thread::Thread;
-    use std::path::BytesContainer;
-    use serialize::json;
+    use handlers::serialize::json;
     use core::Workspaces;
     use window_manager::WindowManager;
     use window_system::WindowSystem;
@@ -95,7 +96,7 @@ pub mod default {
         let program_name = os::args()[0].clone();
         let resume = &"--resume";
         let windows = window_ids;
-        let filename_c = CString::from_slice(filename.container_as_str().unwrap().as_bytes());
+        let filename_c = CString::from_slice(filename.as_str().unwrap().as_bytes());
 
         for ref p in c.pipes.iter() {
             match p.write().unwrap().wait() {

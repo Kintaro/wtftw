@@ -21,7 +21,7 @@ use std::old_io::process::{ Command, Process, ExitStatus };
 use std::dynamic_lib::DynamicLibrary;
 use std::rc::Rc;
 use std::sync::RwLock;
-use std::path::BytesContainer;
+use std::thread::Thread;
 
 pub struct GeneralConfig<'a> {
     /// Whether focus follows mouse movements or
@@ -175,15 +175,14 @@ impl<'a> Config<'a> {
         }
 
         let config_source = format!("{}/src/config.rs", self.internal.wtftw_dir.clone());
-        if Path::new(config_source).exists() {
-            self.compile();
+        if Path::new(config_source).exists() && self.compile() {
             self.call(m, w)
         } else {
             self.default_configuration(w);
         }
     }
 
-    pub fn compile(&self) {
+    pub fn compile(&self) -> bool {
         info!("updating dependencies");
         Command::new("cargo")
             .cwd(&Path::new(self.internal.wtftw_dir.clone()))
@@ -195,13 +194,29 @@ impl<'a> Config<'a> {
             .cwd(&Path::new(self.internal.wtftw_dir.clone()))
             .arg("build")//.arg("--release")
             .env("RUST_LOG", "none")
-            .output().unwrap();
+            .output();
 
-        if output.status == ExitStatus(0) {
-            info!("config module compiled");
-        } else {
-            error!("error compiling config module");
-            Command::new("xmessage").arg("\"error compiling config module\"").output().unwrap();
+        match output {
+            Ok(o) => {
+                if o.status == ExitStatus(0) {
+                    info!("config module compiled");
+                    true
+                } else {
+                    error!("error compiling config module");
+                    
+                    Thread::scoped(move || {
+                        Command::new("xmessage").arg("\"error compiling config module. run 'cargo build' in ~/.wtftw to get more info.\"").detached().spawn();
+                    }).detach();
+                    false
+                }
+            },
+            Err(err) => {
+                error!("error compiling config module");
+                Thread::scoped(move || {
+                    Command::new("xmessage").arg(err.desc).detached().spawn();
+                }).detach();
+                false
+            }
         }
     }
 
