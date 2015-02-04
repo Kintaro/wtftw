@@ -90,7 +90,6 @@ use std::str::from_c_str;
 use std::slice::from_raw_buf;
 use std::ffi::CString;
 use std::ffi::c_str_to_bytes_with_nul;
-use std::path::BytesContainer;
 
 use wtftw_core::window_system::*;
 use wtftw_core::window_manager::*;

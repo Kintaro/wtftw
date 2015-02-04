@@ -5,6 +5,7 @@
 #[plugin]
 extern crate log;
 extern crate getopts;
+//extern crate "rustc-serialize" as rustc_serialize;
 extern crate serialize;
 extern crate wtftw_core;
 extern crate wtftw_xlib;

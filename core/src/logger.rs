@@ -1,7 +1,6 @@
 use log::Logger;
 use log::LogRecord;
 use std::old_io::{ LineBufferedWriter, File, Writer };
-use std::path::BytesContainer;
 
 pub struct FileLogger {
     file: Option<LineBufferedWriter<File>>,
@@ -29,8 +28,7 @@ impl Logger for FileLogger {
             f.write_line(format!("{}:{}: {}",
                                 record.level,
                                 record.module_path,
-                                record.args)
-                .container_as_str().unwrap()).unwrap();;
+                                record.args).as_slice()).unwrap();;
         }
     }
 }
