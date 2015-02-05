@@ -12,6 +12,7 @@ use window_system::WindowSystem;
 
 use std::rc::Rc;
 use std::collections::BTreeMap;
+use std::collections::BTreeSet;
 
 pub type ScreenDetail = Rectangle;
 pub type MouseDrag<'a> = Box<Fn(u32, u32, WindowManager<'a>, &WindowSystem) -> WindowManager<'a> + 'a>;
@@ -217,24 +218,10 @@ impl<'a> WindowManager<'a> {
 
     pub fn windows<F>(&self, window_system: &WindowSystem, config: &GeneralConfig<'a>,
                    f: F) -> WindowManager<'a> where F : Fn(&Workspaces<'a>) -> Workspaces<'a> {
-        let ws = f(&self.workspaces);
-
-        // Collect all visible and new windows
-        let old_visible_vecs : Vec<Vec<Window>> = (vec!(self.workspaces.current.clone())).iter()
-            .chain(self.workspaces.visible.iter())
-            .filter_map(|x| x.workspace.stack.clone())
-            .map(|x| x.integrate())
-            .collect();
-
-        let new_windows : Vec<Window> = ws.all_windows().iter()
-            .filter(|&x| !self.workspaces.all_windows().contains(x))
-            .map(|x| x.clone())
-            .collect();
-
-        let old_visible : Vec<Window> = old_visible_vecs.iter()
-            .flat_map(|x| x.iter())
-            .map(|x| x.clone())
-            .collect();
+        let mut ws = f(&self.workspaces);
+        let old_visible = self.workspaces.visible_windows().into_iter().collect::<BTreeSet<_>>();
+        let new_windows = ws.visible_windows().into_iter().collect::<BTreeSet<_>>()
+            .difference(&old_visible).map(|&x| x).collect::<Vec<Window>>();
 
         // Initialize all new windows
         for &window in new_windows.iter() {
@@ -243,23 +230,47 @@ impl<'a> WindowManager<'a> {
         }
 
         // Apply the layout to the current workspace
-        let modified = self.modify_workspaces(|x| f(x)).update_layouts(window_system, config);
         let result   = self.modify_workspaces(f).reapply_layout(window_system, config);
 
-        old_visible.iter()
-            .fold((),|_, &x| window_system.set_window_border_color(x, config.border_color.clone()));
+        let all_screens = ws.screens();
+        let summed_visible = all_screens.iter().flat_map(|x| x.workspace.windows().into_iter()).collect::<BTreeSet<_>>();
 
-        old_visible.iter()
-            .chain(new_windows.iter())
-            .filter(|&&x| !result.iter().any(|&(y, _)| x == y))
-            .fold((), |_, &x| window_system.hide_window(x));
+        let rects = all_screens.iter().flat_map(|w| {
+            let mut wsp = w.workspace.clone();
+            let this = ws.view(wsp.id);
+            let tiled = this.clone().current.workspace.stack.map_or(None, |x| 
+                                                      x.filter(|win| !ws.floating.contains_key(win)));  
+                                                               // !summed_visible.contains(win)));
+            let view_rect = w.screen_detail;
 
-        for &(window, rect) in result.iter() {
+            let rs = wsp.layout.apply_layout(window_system, view_rect, &tiled);
+
+            let ref m = ws.floating;
+            let flt = this.with(Vec::new(), |x| x.integrate()).into_iter()
+                .filter(|x| self.workspaces.floating.contains_key(x))
+                .map(|x| (x, WindowManager::scale_rational_rect(view_rect, self.workspaces.floating[x])))
+                .collect::<Vec<_>>();
+
+            let vs : Vec<(Window, Rectangle)> = flt.into_iter().chain(rs.into_iter()).collect();
+            window_system.restack_windows(vs.iter().map(|x| x.0).collect());
+
+            vs.into_iter()
+        }).collect::<Vec<_>>();
+
+        let visible = rects.iter().map(|x| x.0).collect::<Vec<_>>();
+
+        for &(window, rect) in rects.iter() {
             WindowManager::tile_window(window_system, config, window, rect);
         }
 
-        //
-        match modified.workspaces.peek() {
+        visible.iter().fold((),|_, &x| window_system.set_window_border_color(x, config.border_color.clone()));
+
+        for &win in visible.iter() {
+            error!("SHOWING WINDOW {}", win);
+            window_system.show_window(win);
+        }
+        
+        match ws.peek() {
             Some(focused_window) => {
                 window_system.set_window_border_color(focused_window, config.focus_border_color.clone());
                 window_system.focus_window(focused_window, self);
@@ -267,14 +278,21 @@ impl<'a> WindowManager<'a> {
             None => window_system.focus_window(window_system.get_root(), self)
         }
 
+        let to_hide = (old_visible.union(&new_windows.into_iter().collect::<BTreeSet<_>>())).map(|&x| x).collect::<BTreeSet<_>>()
+                                  .difference(&visible.into_iter().collect::<BTreeSet<_>>()).map(|&x| x).collect::<Vec<_>>();
+
+        for &win in to_hide.iter() {
+            error!("HIDING WINDOW {}", win);
+            window_system.hide_window(win);
+        }
+
         if config.focus_follows_mouse {
             window_system.remove_enter_events();
         }
 
-        old_visible.iter()
-            .chain(new_windows.iter())
-            .filter(|&&x| !result.iter().any(|&(y, _)| x == y))
-            .fold(modified, |a, &x| a.insert_or_update_unmap(x))
+        let modified = self.modify_workspaces(|x| ws.clone()).update_layouts(window_system, config);
+
+        to_hide.into_iter().fold(modified, |a, x| a.insert_or_update_unmap(x))
     }
 
     /// Send the given message to the current layout
@@ -304,13 +322,13 @@ impl<'a> WindowManager<'a> {
     }
 
     pub fn float_location(&self, window_system: &WindowSystem, window: Window) -> RationalRect {
-        let Rectangle(_, _, sw, sh)   = self.workspaces.current.screen_detail;
+        let Rectangle(sx, sy, sw, sh)   = self.workspaces.current.screen_detail;
         let Rectangle(rx, ry, rw, rh) = window_system.get_geometry(window);
 
-        RationalRect(rx as f32 / sw as f32,
-                     ry as f32 / sh as f32,
-                     rw as f32 / sw as f32,
-                     rh as f32 / sh as f32)
+        RationalRect((rx as f32 - sx as f32) / sw as f32, 
+                     (ry as f32 - sy as f32) / sh as f32, 
+                      rw as f32 / sw as f32, 
+                      rh as f32 / sh as f32)
     }
 
     pub fn float(&self, window_system: &WindowSystem, config: &GeneralConfig<'a>,
@@ -355,6 +373,7 @@ impl<'a> WindowManager<'a> {
         window_system.warp_pointer(window, w, h);
         debug!("warping to {}, {}", w, h);
         self.mouse_drag(window_system, box move |&: ex: u32, ey: u32, m: WindowManager<'a>, w: &WindowSystem| {
+            debug!("resizing to {}x{} at ({}, {})", ex - x, ey - y, x, y);
             w.resize_window(window, ex - x, ey - y);
             m.modify_workspaces(|wsp| wsp.update_floating_rect(window, m.float_location(w, window)))
         }).float(window_system, config, window)

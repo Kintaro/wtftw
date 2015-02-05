@@ -100,12 +100,16 @@ fn main() {
                     window_manager = window_manager.rescreen(&window_system);
                 }
             },
-            // A window asked to be reconfig.generalured (i.e. resized, border change, etc.)
+            // A window asked to be reconfigured (i.e. resized, border change, etc.)
             WindowSystemEvent::ConfigurationRequest(window, window_changes, mask) => {
                 let floating = window_manager.workspaces.floating.iter().any(|(&x, _)| x == window) ||
                     !window_manager.workspaces.contains(window);
                 window_system.configure_window(window, window_changes, mask, floating);
                 window_manager = window_manager.windows(&window_system, &config.general, |x| x.clone());
+
+                //if window_manager.workspaces.contains(window) {
+                    //window_manager = window_manager.float(&window_system, &config.general, window);
+                //}
             },
             // A new window was created, so we need to manage
             // it unless it is already managed by us.
@@ -159,7 +163,7 @@ fn main() {
                     None => {
                         // Otherwise just clock to focus
                         if !is_root {
-                            window_manager.focus(window, &window_system, &config.general);
+                            window_manager = window_manager.focus(window, &window_system, &config.general);
                         }
                     }
                 }
