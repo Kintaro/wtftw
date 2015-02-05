@@ -464,21 +464,18 @@ impl WindowSystem for XlibWindowSystem {
                 let mut attributes : XWindowAttributes = uninitialized();
                 XGetWindowAttributes(self.display, window as c_ulong, &mut attributes);
 
-                let mut event = XConfigureEvent {
-                    _type: CONFIGURENOTIFY as i32,
-                    display: self.display,
-                    serial: 0,
-                    send_event: 1,
-                    x: x as i32,
-                    y: y as i32,
-                    width: w as i32,
-                    height: h as i32,
-                    border_width: 1,
-                    event: window as c_ulong,
-                    window: window as c_ulong,
-                    above: 0,
-                    override_redirect: attributes.override_redirect
-                };
+                let mut event : XConfigureEvent = uninitialized();
+                
+                
+                event._type = CONFIGURENOTIFY as i32;
+                event.x = attributes.x;
+                event.y = attributes.y;
+                event.width = attributes.width;
+                event.height = attributes.height;
+                event.border_width = attributes.border_width;
+                event.above = 0;
+                event.override_redirect = attributes.override_redirect;
+
                 debug!("sending configure notification for window {}: ({}, {}) {}x{} redirect: {}",
                        window, x, y, w, h, attributes.override_redirect);
                 let event_ptr : *mut XConfigureEvent = &mut event;
@@ -659,15 +656,19 @@ impl WindowSystem for XlibWindowSystem {
 
     fn get_geometry(&self, window: Window) -> Rectangle {
         unsafe {
-            let mut root = 0;
-            let mut x = 0;
-            let mut y = 0;
-            let mut width = 0;
-            let mut height = 0;
-            let mut tmp = 0;
-            XGetGeometry(self.display, window as c_ulong, &mut root, &mut x, &mut y, &mut width, &mut height, &mut tmp, &mut tmp);
+            //let mut root = 0;
+            //let mut x = 0;
+            //let mut y = 0;
+            //let mut width = 0;
+            //let mut height = 0;
+            //let mut tmp = 0;
+            //XGetGeometry(self.display, window as c_ulong, &mut root, &mut x, &mut y, &mut width, &mut height, &mut tmp, &mut tmp);
+            
+            //Rectangle(x as u32, y as u32, width, height)
+            let mut attributes : XWindowAttributes = uninitialized();
+            XGetWindowAttributes(self.display, window as c_ulong, &mut attributes);
 
-            Rectangle(x as u32, y as u32, width, height)
+            Rectangle(attributes.x as u32, attributes.y as u32, attributes.width as u32, attributes.height as u32) 
         }
     }
 
