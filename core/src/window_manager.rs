@@ -11,6 +11,7 @@ use window_system::Window;
 use window_system::WindowSystem;
 
 use std::rc::Rc;
+use std::collections::BTreeMap;
 
 pub type ScreenDetail = Rectangle;
 pub type MouseDrag<'a> = Box<Fn(u32, u32, WindowManager<'a>, &WindowSystem) -> WindowManager<'a> + 'a>;
@@ -19,7 +20,8 @@ pub type MouseDrag<'a> = Box<Fn(u32, u32, WindowManager<'a>, &WindowSystem) -> W
 pub struct WindowManager<'a> {
     pub running: bool,
     pub dragging: Option<Rc<MouseDrag<'a>>>,
-    pub workspaces: Workspaces<'a>
+    pub workspaces: Workspaces<'a>,
+    pub waiting_unmap: BTreeMap<Window, Window>
 }
 
 impl<'a> WindowManager<'a> {
@@ -30,7 +32,8 @@ impl<'a> WindowManager<'a> {
             dragging: None,
             workspaces: Workspaces::new(config.layout.copy(),
                                         config.tags.clone(),
-                                        window_system.get_screen_infos())
+                                        window_system.get_screen_infos()),
+            waiting_unmap: BTreeMap::new()
         }
     }
 
@@ -122,7 +125,8 @@ impl<'a> WindowManager<'a> {
         WindowManager {
             running: self.running,
             dragging: self.dragging.clone(),
-            workspaces: self.workspaces.from_current(screens[0].clone()).from_visible(screens.into_iter().skip(1).collect())
+            workspaces: self.workspaces.from_current(screens[0].clone()).from_visible(screens.into_iter().skip(1).collect()),
+            waiting_unmap: self.waiting_unmap.clone()
         }
     }
 
@@ -201,7 +205,8 @@ impl<'a> WindowManager<'a> {
         WindowManager {
             running: self.running,
             dragging: self.dragging.clone(),
-            workspaces: f(&self.workspaces)
+            workspaces: f(&self.workspaces),
+            waiting_unmap: self.waiting_unmap.clone()
         }
     }
 
@@ -266,7 +271,10 @@ impl<'a> WindowManager<'a> {
             window_system.remove_enter_events();
         }
 
-        modified
+        old_visible.iter()
+            .chain(new_windows.iter())
+            .filter(|&&x| !result.iter().any(|&(y, _)| x == y))
+            .fold(modified, |a, &x| a.insert_or_update_unmap(x))
     }
 
     /// Send the given message to the current layout
@@ -324,7 +332,8 @@ impl<'a> WindowManager<'a> {
         WindowManager {
             running: self.running,
             dragging: Some(motion),
-            workspaces: self.workspaces.clone()
+            workspaces: self.workspaces.clone(),
+            waiting_unmap: self.waiting_unmap.clone()
         }
     }
 
@@ -349,5 +358,61 @@ impl<'a> WindowManager<'a> {
             w.resize_window(window, ex - x, ey - y);
             m.modify_workspaces(|wsp| wsp.update_floating_rect(window, m.float_location(w, window)))
         }).float(window_system, config, window)
+    }
+
+    pub fn is_waiting_unmap(&self, window: Window) -> bool {
+        self.waiting_unmap.contains_key(&window)
+    }
+
+    pub fn update_unmap(&self, window: Window) -> WindowManager<'a> {
+        if !self.waiting_unmap.contains_key(&window) {
+            return self.clone();
+        }
+
+        let val = self.waiting_unmap[window];
+        let mut new_map = self.waiting_unmap.clone();
+
+        if val == 1 {
+            new_map.remove(&window);
+        } else {
+            new_map[window] = val - 1;
+        }
+
+        WindowManager {
+            running: self.running,
+            dragging: self.dragging.clone(),
+            workspaces: self.workspaces.clone(),
+            waiting_unmap: new_map
+        }
+    }
+
+    pub fn insert_or_update_unmap(&self, window: Window) -> WindowManager<'a> {
+        let mut new_map = self.waiting_unmap.clone();
+
+        if new_map.contains_key(&window) {
+            new_map[window] += 1;
+        } else {
+            new_map.insert(window, 1);
+        }
+
+        WindowManager {
+            running: self.running,
+            dragging: self.dragging.clone(),
+            workspaces: self.workspaces.clone(),
+            waiting_unmap: new_map
+        }
+    }
+
+    pub fn remove_from_unmap(&self, window: Window) -> WindowManager<'a> {
+        let mut new_map = self.waiting_unmap.clone();
+        if new_map.contains_key(&window) {
+            new_map.remove(&window);
+        }
+        WindowManager {
+            running: self.running,
+            dragging: self.dragging.clone(),
+            workspaces: self.workspaces.clone(),
+            waiting_unmap: new_map
+        }
     }
 }

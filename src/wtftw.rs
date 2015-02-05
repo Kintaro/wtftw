@@ -110,7 +110,7 @@ fn main() {
             // A new window was created, so we need to manage
             // it unless it is already managed by us.
             WindowSystemEvent::WindowCreated(window) => {
-                if window_manager.is_window_managed(window) {
+                if window_manager.is_window_managed(window) || window_system.overrides_redirect(window) {
                     continue;
                 }
 
@@ -121,13 +121,17 @@ fn main() {
             },
             WindowSystemEvent::WindowUnmapped(window, synthetic) => {
                 if synthetic && window_manager.is_window_managed(window) {
-                    window_manager.unmanage(&window_system, window, &config.general);
-                    // TODO: remove from mapped stack and from waitingUnmap stack
+                    window_manager = if synthetic || !window_manager.is_waiting_unmap(window) {
+                        window_manager.unmanage(&window_system, window, &config.general)
+                    } else {
+                        window_manager.update_unmap(window)
+                    }
                 }
             },
             WindowSystemEvent::WindowDestroyed(window) => {
                 if window_manager.is_window_managed(window) {
-                    window_manager = window_manager.unmanage(&window_system, window, &config.general);
+                    window_manager = window_manager.unmanage(&window_system, window, &config.general)
+                        .remove_from_unmap(window);
                 }
             },
             // The mouse pointer entered a window's region. If focus following
