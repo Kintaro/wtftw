@@ -119,7 +119,7 @@ pub mod default {
 
     /// Stop the window manager
     pub fn exit<'a>(w: WindowManager<'a>, _: &WindowSystem, _: &GeneralConfig<'a>) -> WindowManager<'a> {
-        WindowManager { running: false, dragging: None, workspaces: w.workspaces }
+        WindowManager { running: false, dragging: None, workspaces: w.workspaces, waiting_unmap: w.waiting_unmap.clone() }
     }
 
     pub fn shift<'a>(index: u32, workspace: Workspaces<'a>, window: Window) -> Workspaces<'a> {

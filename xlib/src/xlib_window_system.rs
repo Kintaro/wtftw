@@ -747,4 +747,12 @@ impl WindowSystem for XlibWindowSystem {
             XWarpPointer(self.display, 0, window, 0, 0, 0, 0, x as i32, y as i32);
         }
     }
+
+    fn overrides_redirect(&self, window: Window) -> bool {
+        unsafe {
+            let mut attributes : XWindowAttributes = uninitialized();
+            XGetWindowAttributes(self.display, window as c_ulong, &mut attributes);
+            attributes.override_redirect != 0
+        }
+    }
 }
