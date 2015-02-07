@@ -379,11 +379,11 @@ impl Direction {
 }
 
 impl CLike for Direction {
-    fn to_uint(&self) -> usize {
+    fn to_usize(&self) -> usize {
         *self as usize
     }
 
-    fn from_uint(v: usize) -> Direction {
+    fn from_usize(v: usize) -> Direction {
         match v {
             0 => Direction::Up,
             1 => Direction::Down,
