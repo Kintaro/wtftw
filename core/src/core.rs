@@ -240,7 +240,8 @@ impl<'a> Workspace<'a> {
         Some(self.stack.clone().map_or(default, |x| f(x))))
     }
 
-    pub fn send_layout_message<'b>(&self, message: LayoutMessage, window_system: &WindowSystem, config: &GeneralConfig<'b>) -> Workspace<'a> {
+    pub fn send_layout_message<'b>(&self, message: LayoutMessage, window_system: &WindowSystem, 
+                                   config: &GeneralConfig<'b>) -> Workspace<'a> {
         let mut layout = self.layout.copy();
         layout.apply_message(message, window_system, &self.stack, config);
         Workspace::new(self.id, self.tag.clone(), layout, self.stack.clone())

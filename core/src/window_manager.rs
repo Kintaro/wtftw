@@ -70,16 +70,10 @@ impl<'a> WindowManager<'a> {
             .chain(self.workspaces.visible.iter())
             .map(|x| x.workspace.clone())
             .collect();
-        let ws : Vec<Workspace<'a>> = visible.iter()
+        let sc : Vec<Screen<'a>> = visible.iter()
             .chain(self.workspaces.hidden.iter())
+            .take(screens.len())
             .map(|x| x.clone())
-            .collect();
-
-        let xs : Vec<Workspace<'a>> = ws.iter()
-            .take(screens.len()).map(|x| x.clone())
-            .collect();
-
-        let sc : Vec<Screen<'a>> = xs.iter()
             .enumerate()
             .zip(screens.iter())
             .map(|((a, b), &c)| Screen::new(b.clone(), a as u32, c))
@@ -93,31 +87,11 @@ impl<'a> WindowManager<'a> {
         })
     }
 
-    /// Reapply the layout to the whole workspace.
-    pub fn reapply_layout(&self, window_system: &WindowSystem,
-                          _: &GeneralConfig<'a>) -> Vec<(Window, Rectangle)> {
-        self.workspaces.screens().into_iter().map(|s| {
-            let mut ms = s.clone();
-            let vs : Vec<(Window, Rectangle)> = self.workspaces.view(s.workspace.id)
-                .with(Vec::new(), |x| x.integrate()).into_iter()
-                .filter(|x| self.workspaces.floating.contains_key(x))
-                .map(|x| (x, WindowManager::scale_rational_rect(s.screen_detail, self.workspaces.floating[x])))
-                .chain(ms.workspace.layout.apply_layout(window_system, ms.screen_detail,
-                    &self.workspaces.view(ms.workspace.id).current.workspace.stack
-                        .map_or(None, |x| x.filter(|w| !self.workspaces.floating.contains_key(w)))).into_iter())
-                .collect();
-
-            window_system.restack_windows(vs.iter().map(|x| x.0).collect());
-
-            vs
-        }).flat_map(|x| x.into_iter()).collect()
-    }
-
     pub fn update_layouts(&self, window_system: &WindowSystem,
-                          _: &GeneralConfig<'a>) -> WindowManager<'a> {
+                          config: &GeneralConfig<'a>) -> WindowManager<'a> {
         let screens : Vec<Screen> = self.workspaces.screens().into_iter().map(|s| {
             let mut ms = s.clone();
-            ms.workspace.layout.apply_layout(window_system, ms.screen_detail,
+            ms.workspace.layout.apply_layout(window_system, ms.screen_detail, config, 
                     &self.workspaces.view(ms.workspace.id).current.workspace.stack
                         .map_or(None, |x| x.filter(|w| !self.workspaces.floating.contains_key(w))));
             ms
@@ -229,21 +203,26 @@ impl<'a> WindowManager<'a> {
             window_system.set_window_border_width(window, config.border_width);
         }
 
-        // Apply the layout to the current workspace
-        let result   = self.modify_workspaces(f).reapply_layout(window_system, config);
-
         let all_screens = ws.screens();
-        let summed_visible = all_screens.iter().flat_map(|x| x.workspace.windows().into_iter()).collect::<BTreeSet<_>>();
+        let summed_visible = (vec!(BTreeSet::new())).into_iter().chain(all_screens.iter().scan(Vec::new(), |acc, x| {
+            acc.push_all(x.workspace.windows().as_slice());
+            Some(acc.clone())
+        })
+        .map(|x| x.into_iter().collect::<BTreeSet<_>>()))
+        .collect::<Vec<_>>();
+        error!("{:?}", summed_visible);
 
-        let rects = all_screens.iter().flat_map(|w| {
+        //let rects = all_screens.iter().flat_map(|w| {
+        let rects = all_screens.iter().zip(summed_visible.iter()).flat_map(|(w, vis)| {
             let mut wsp = w.workspace.clone();
             let this = ws.view(wsp.id);
             let tiled = this.clone().current.workspace.stack.map_or(None, |x| 
-                                                      x.filter(|win| !ws.floating.contains_key(win)));  
-                                                               // !summed_visible.contains(win)));
+                                                      x.filter(|win| !ws.floating.contains_key(win))).map_or(None, |x|
+                                                      x .filter(|win| !vis.contains(win)));
+                                                               //&& !vis.contains(win)));
             let view_rect = w.screen_detail;
 
-            let rs = wsp.layout.apply_layout(window_system, view_rect, &tiled);
+            let rs = wsp.layout.apply_layout(window_system, view_rect, config, &tiled);
 
             let ref m = ws.floating;
             let flt = this.with(Vec::new(), |x| x.integrate()).into_iter()
@@ -266,7 +245,6 @@ impl<'a> WindowManager<'a> {
         visible.iter().fold((),|_, &x| window_system.set_window_border_color(x, config.border_color.clone()));
 
         for &win in visible.iter() {
-            error!("SHOWING WINDOW {}", win);
             window_system.show_window(win);
         }
         
@@ -282,7 +260,6 @@ impl<'a> WindowManager<'a> {
                                   .difference(&visible.into_iter().collect::<BTreeSet<_>>()).map(|&x| x).collect::<Vec<_>>();
 
         for &win in to_hide.iter() {
-            error!("HIDING WINDOW {}", win);
             window_system.hide_window(win);
         }
 
@@ -315,8 +292,8 @@ impl<'a> WindowManager<'a> {
 
     fn tile_window(window_system: &WindowSystem, config: &GeneralConfig,
                    window: Window, Rectangle(x, y, w, h): Rectangle) {
-        window_system.resize_window(window, w - config.border_width,
-                                            h - config.border_width);
+        window_system.resize_window(window, w - 2 * config.border_width,
+                                            h - 2 * config.border_width);
         window_system.move_window(window, x, y);
         window_system.show_window(window);
     }

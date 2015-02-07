@@ -146,6 +146,7 @@ pub trait WindowSystem {
     fn get_windows(&self) -> Vec<Window>;
     /// Set the given window's border width
     fn set_window_border_width(&self, window: Window, border_width: u32);
+    fn get_window_border_width(&self, window: Window) -> u32;
     /// Set the given window's border color
     fn set_window_border_color(&self, window: Window, border_color: u32);
     /// Resize the window to the given dimensions
