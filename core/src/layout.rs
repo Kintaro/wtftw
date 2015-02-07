@@ -70,7 +70,7 @@ pub fn split_horizontally_by(ratio: f32, screen: ScreenDetail) -> (Rectangle, Re
 }
 
 pub trait Layout {
-    fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle,
+    fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle, config: &GeneralConfig,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)>;
     fn apply_message<'b>(&mut self, _: LayoutMessage, _: &WindowSystem,
                          _: &Option<Stack<Window>>, _: &GeneralConfig<'b>) -> bool { true }
@@ -97,7 +97,7 @@ impl TallLayout {
 }
 
 impl Layout for TallLayout {
-    fn apply_layout(&mut self, _: &WindowSystem, screen: Rectangle,
+    fn apply_layout(&mut self, _: &WindowSystem, screen: Rectangle, config: &GeneralConfig,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
         match stack {
             &Some(ref s) => {
@@ -146,12 +146,12 @@ impl<'a> CenterLayout<'a> {
 }
 
 impl<'a> Layout for CenterLayout <'a> {
-    fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle,
+    fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle, config: &GeneralConfig,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
         match stack {
             &Some(ref s) => {
                 if s.len() == 1 {
-                    self.layout.apply_layout(window_system, screen, &Some(s.clone()))
+                    self.layout.apply_layout(window_system, screen, config, &Some(s.clone()))
                 } else {
                     let new_stack = if s.up.len() > 0 {
                         Stack::<Window>::new(s.up[0], s.up.as_slice().tail().to_vec(), s.down.clone())
@@ -164,7 +164,7 @@ impl<'a> Layout for CenterLayout <'a> {
                         let w = (screen.2 as f32 * 0.8) as u32;
                         let h = (screen.3 as f32 * 0.8) as u32;
                         (s.focus, Rectangle(x, y, w, h))
-                    }).into_iter()).chain(self.layout.apply_layout(window_system, screen,
+                    }).into_iter()).chain(self.layout.apply_layout(window_system, screen, config,
                                                                    &Some(new_stack)).into_iter()).collect()
                 }
             },
@@ -270,7 +270,7 @@ impl ResizableTallLayout {
 }
 
 impl Layout for ResizableTallLayout {
-    fn apply_layout(&mut self, _: &WindowSystem, screen: Rectangle,
+    fn apply_layout(&mut self, _: &WindowSystem, screen: Rectangle, config: &GeneralConfig,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
         match stack {
             &Some(ref s) => {
@@ -327,10 +327,10 @@ impl<'a> MirrorLayout<'a> {
 }
 
 impl<'a> Layout for MirrorLayout<'a> {
-    fn apply_layout(&mut self, w: &WindowSystem, screen: Rectangle,
+    fn apply_layout(&mut self, w: &WindowSystem, screen: Rectangle, config: &GeneralConfig,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
         // Rotate the screen, apply the layout, ...
-        self.layout.apply_layout(w, mirror_rect(&screen), stack).iter()
+        self.layout.apply_layout(w, mirror_rect(&screen), config, stack).iter()
             // and then rotate all resulting windows by 90° clockwise
             .map(|&(w, r)| (w, mirror_rect(&r))).collect()
     }
@@ -456,7 +456,7 @@ impl<'a> AvoidStrutsLayout<'a> {
 }
 
 impl<'a> Layout for AvoidStrutsLayout<'a> {
-    fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle,
+    fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle, config: &GeneralConfig,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
 
         let new_screen = stack.clone().map_or(screen, |_| {
@@ -476,7 +476,7 @@ impl<'a> Layout for AvoidStrutsLayout<'a> {
                 })
         });
 
-        self.layout.apply_layout(window_system, new_screen, stack)
+        self.layout.apply_layout(window_system, new_screen, config, stack)
     }
 
     fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
@@ -511,9 +511,9 @@ impl<'a> GapLayout<'a> {
 }
 
 impl<'a> Layout for GapLayout<'a> {
-    fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle,
+    fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle, config: &GeneralConfig,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
-        let layout = self.layout.apply_layout(window_system, screen, stack);
+        let layout = self.layout.apply_layout(window_system, screen, config, stack);
 
         let g = self.gap;
         layout.iter().map(|&(win, Rectangle(x, y, w, h))| (win, Rectangle(x + g, y + g, w - 2 * g, h - 2 * g))).collect()
@@ -555,14 +555,14 @@ impl<'a> WithBordersLayout<'a> {
 }
 
 impl<'a> Layout for WithBordersLayout<'a> {
-    fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle,
+    fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle, config: &GeneralConfig,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
         if let &Some(ref s) = stack {
             for window in s.integrate().into_iter() {
                 window_system.set_window_border_width(window, self.border);
             }
         }
-        self.layout.apply_layout(window_system, screen, stack)
+        self.layout.apply_layout(window_system, screen, config, stack)
     }
 
     fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
@@ -600,48 +600,18 @@ impl<'a> NoBordersLayout<'a> {
     }
 }
 
-#[derive(Clone)]
-pub enum SplitBox {
-    Horizontal(Box<SplitBox>, Box<SplitBox>, Window, Window),
-    Vertical(Box<SplitBox>, Box<SplitBox>, Window, Window),
-    Single(Window),
-    None
-}
-
-#[derive(Clone)]
-pub struct SplitLayout {
-    pub root: SplitBox
-}
-
-impl SplitLayout {
-    pub fn new<'a>() -> Box<Layout + 'a> {
-        box SplitLayout { root: SplitBox::None }
-    }
-}
-
-impl Layout for SplitLayout {
-    fn apply_layout(&mut self, _: &WindowSystem, _: Rectangle,
-                    _: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
-        Vec::new()
-    }
-
-    fn description(&self) -> String {
-        String::from_str("Split")
-    }
-
-    fn copy<'b>(&self) -> Box<Layout + 'b> {
-        box self.clone()
-    }
-}
-
 #[derive(Copy, Clone)]
 pub struct FullLayout;
 
 impl Layout for FullLayout {
-    fn apply_layout(&mut self, _: &WindowSystem, screen: Rectangle,
+    fn apply_layout(&mut self, w: &WindowSystem, screen: Rectangle, config: &GeneralConfig,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
         match *stack {
-            Some(ref st) => vec!((st.focus, screen)),
+            Some(ref st) => {
+                let bw = 2 * config.border_width;
+                let Rectangle(x, y, sw, sh) = screen;
+                vec!((st.focus, Rectangle(x, y, sw + bw, sh + bw)))
+            }
             None     => Vec::new()
         }
     }
@@ -670,9 +640,9 @@ impl<'a> LayoutCollection<'a> {
 }
 
 impl<'a> Layout for LayoutCollection<'a> {
-    fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle,
+    fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle, config: &GeneralConfig,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
-        self.layouts[self.current].apply_layout(window_system, screen, stack)
+        self.layouts[self.current].apply_layout(window_system, screen, config, stack)
     }
 
     fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
@@ -1153,7 +1123,7 @@ impl BinarySpacePartition {
 }
 
 impl Layout for BinarySpacePartition {
-    fn apply_layout(&mut self, _: &WindowSystem, screen: Rectangle,
+    fn apply_layout(&mut self, _: &WindowSystem, screen: Rectangle, config: &GeneralConfig,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
         match *stack {
             Some(ref st) => {

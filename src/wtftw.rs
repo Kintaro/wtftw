@@ -106,10 +106,6 @@ fn main() {
                     !window_manager.workspaces.contains(window);
                 window_system.configure_window(window, window_changes, mask, floating);
                 window_manager = window_manager.windows(&window_system, &config.general, |x| x.clone());
-
-                //if window_manager.workspaces.contains(window) {
-                    //window_manager = window_manager.float(&window_system, &config.general, window);
-                //}
             },
             // A new window was created, so we need to manage
             // it unless it is already managed by us.

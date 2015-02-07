@@ -150,10 +150,10 @@ impl XlibWindowSystem {
 
             XUngrabButton(display, 0, 0x8000, root);
 
-            //let name_str = "wtftw";
-            //let name_c = CString::from_slice(name_str.as_bytes());
-            //let name = name_c.as_slice_with_nul().as_ptr();
-            //XStoreName(display, root, name as *mut i8);
+            let name_str = "wtftw";
+            let name_c = CString::from_slice(name_str.as_bytes());
+            let name = name_c.as_slice_with_nul().as_ptr();
+            XStoreName(display, root, name as *mut i8);
 
             //XGrabButton(display, 0, 0, root, 0, 4, 1, 1, 0, 0);
 
@@ -382,6 +382,14 @@ impl WindowSystem for XlibWindowSystem {
         }
     }
 
+    fn get_window_border_width(&self, window: Window) -> u32 {
+        unsafe {
+            let mut attributes : XWindowAttributes = uninitialized();
+            XGetWindowAttributes(self.display, window as c_ulong, &mut attributes);
+            attributes.border_width as u32
+        }
+    }
+
     fn set_window_border_color(&self, window: Window, border_color: u32) {
         if window == self.root { return; }
         unsafe {
@@ -465,8 +473,8 @@ impl WindowSystem for XlibWindowSystem {
                 XGetWindowAttributes(self.display, window as c_ulong, &mut attributes);
 
                 let mut event : XConfigureEvent = uninitialized();
-                
-                
+
+
                 event._type = CONFIGURENOTIFY as i32;
                 event.x = attributes.x;
                 event.y = attributes.y;
@@ -656,19 +664,10 @@ impl WindowSystem for XlibWindowSystem {
 
     fn get_geometry(&self, window: Window) -> Rectangle {
         unsafe {
-            //let mut root = 0;
-            //let mut x = 0;
-            //let mut y = 0;
-            //let mut width = 0;
-            //let mut height = 0;
-            //let mut tmp = 0;
-            //XGetGeometry(self.display, window as c_ulong, &mut root, &mut x, &mut y, &mut width, &mut height, &mut tmp, &mut tmp);
-            
-            //Rectangle(x as u32, y as u32, width, height)
             let mut attributes : XWindowAttributes = uninitialized();
             XGetWindowAttributes(self.display, window as c_ulong, &mut attributes);
 
-            Rectangle(attributes.x as u32, attributes.y as u32, attributes.width as u32, attributes.height as u32) 
+            Rectangle(attributes.x as u32, attributes.y as u32, attributes.width as u32, attributes.height as u32)
         }
     }
 
