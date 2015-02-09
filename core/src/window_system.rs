@@ -1,11 +1,11 @@
 extern crate libc;
 
-use std::fmt::{ Error, Formatter, Show };
+use std::fmt::{ Error, Formatter, Debug };
 use window_manager::WindowManager;
 
 pub type Window = u64;
 
-#[derive(Show, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Rectangle(pub u32, pub u32, pub u32, pub u32);
 
 impl Rectangle {
@@ -24,7 +24,7 @@ impl Rectangle {
     }
 }
 
-#[derive(Clone, Copy, Show)]
+#[derive(Clone, Copy, Debug)]
 pub struct WindowChanges {
     pub x: u32,
     pub y: u32,
@@ -38,7 +38,7 @@ pub struct WindowChanges {
 /// Represents a keyboard input
 /// with an abstracted modifier mask
 /// and the key represented as a string
-#[derive(Show, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct KeyCommand {
     pub mask: KeyModifiers,
     pub key: u64
@@ -50,7 +50,7 @@ impl KeyCommand {
     }
 }
 
-#[derive(Show, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct MouseCommand {
     pub mask: KeyModifiers,
     pub button: MouseButton
@@ -83,9 +83,9 @@ pub const BUTTON3 : MouseButton = 3;
 pub const BUTTON4 : MouseButton = 4;
 pub const BUTTON5 : MouseButton = 5;
 
-impl Show for KeyModifiers {
+impl Debug for KeyModifiers {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        f.write_str(format!("{:X}", self.get_mask()).as_slice()).unwrap();
+        f.write_str(&format!("{:X}", self.get_mask())).unwrap();
         Ok(())
     }
 }
@@ -102,7 +102,7 @@ pub struct SizeHint {
     pub max_size: Option<(u32, u32)>
 }
 
-#[derive(Clone, Copy, Show)]
+#[derive(Clone, Copy, Debug)]
 pub enum WindowSystemEvent {
     ConfigurationNotification(Window),
     ConfigurationRequest(Window, WindowChanges, u64),

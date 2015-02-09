@@ -97,7 +97,7 @@ impl TallLayout {
 }
 
 impl Layout for TallLayout {
-    fn apply_layout(&mut self, _: &WindowSystem, screen: Rectangle, config: &GeneralConfig,
+    fn apply_layout(&mut self, _: &WindowSystem, screen: Rectangle, _: &GeneralConfig,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
         match stack {
             &Some(ref s) => {
@@ -270,7 +270,7 @@ impl ResizableTallLayout {
 }
 
 impl Layout for ResizableTallLayout {
-    fn apply_layout(&mut self, _: &WindowSystem, screen: Rectangle, config: &GeneralConfig,
+    fn apply_layout(&mut self, _: &WindowSystem, screen: Rectangle, _: &GeneralConfig,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
         match stack {
             &Some(ref s) => {
@@ -604,7 +604,7 @@ impl<'a> NoBordersLayout<'a> {
 pub struct FullLayout;
 
 impl Layout for FullLayout {
-    fn apply_layout(&mut self, w: &WindowSystem, screen: Rectangle, config: &GeneralConfig,
+    fn apply_layout(&mut self, _: &WindowSystem, screen: Rectangle, config: &GeneralConfig,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
         match *stack {
             Some(ref st) => {
@@ -1123,7 +1123,7 @@ impl BinarySpacePartition {
 }
 
 impl Layout for BinarySpacePartition {
-    fn apply_layout(&mut self, _: &WindowSystem, screen: Rectangle, config: &GeneralConfig,
+    fn apply_layout(&mut self, _: &WindowSystem, screen: Rectangle, _: &GeneralConfig,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
         match *stack {
             Some(ref st) => {
@@ -1156,8 +1156,8 @@ impl Layout for BinarySpacePartition {
         }
     }
 
-    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
-        stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
+    fn apply_message<'b>(&mut self, message: LayoutMessage, _: &WindowSystem,
+        stack: &Option<Stack<Window>>, _: &GeneralConfig<'b>) -> bool {
             match message {
                 LayoutMessage::TreeRotate => {
                     if let &Some(ref s) = stack {

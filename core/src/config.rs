@@ -1,10 +1,10 @@
-extern crate serialize;
 extern crate rustc;
 extern crate rustc_trans;
 extern crate syntax;
 extern crate libc;
+extern crate "rustc-serialize" as rustc_serialize;
 
-use std::os::homedir;
+use std::env;
 use std::collections::BTreeMap;
 use core::Workspaces;
 use window_system::*;
@@ -84,7 +84,7 @@ pub struct Config<'a> {
 impl<'a> Config<'a> {
     /// Create the Config from a json file
     pub fn initialize<'b>() -> Config<'b> {
-        let home = String::from_str(homedir().unwrap_or(Path::new("./")).as_str().unwrap());
+        let home = String::from_str(env::home_dir().unwrap_or(Path::new("./")).as_str().unwrap());
         // Default version of the config, for fallback
         Config {
             general: GeneralConfig {
@@ -205,7 +205,7 @@ impl<'a> Config<'a> {
                     error!("error compiling config module");
                     
                     Thread::scoped(move || {
-                        Command::new("xmessage").arg("\"error compiling config module. run 'cargo build' in ~/.wtftw to get more info.\"").detached().spawn();
+                        Command::new("xmessage").arg("\"error compiling config module. run 'cargo build' in ~/.wtftw to get more info.\"").detached().spawn().unwrap();
                     }).detach();
                     false
                 }
@@ -213,7 +213,7 @@ impl<'a> Config<'a> {
             Err(err) => {
                 error!("error compiling config module");
                 Thread::scoped(move || {
-                    Command::new("xmessage").arg(err.desc).detached().spawn();
+                    Command::new("xmessage").arg(err.desc).detached().spawn().unwrap();
                 }).detach();
                 false
             }

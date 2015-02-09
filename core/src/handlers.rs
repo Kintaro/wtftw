@@ -1,6 +1,5 @@
 extern crate libc;
-//extern crate "rustc-serialize" as rustc_serialize;
-extern crate serialize;
+extern crate "rustc-serialize" as rustc_serialize;
 
 use core::Workspaces;
 use window_manager::WindowManager;
@@ -20,11 +19,11 @@ extern {
 
 /// Some default handlers for easier config scripts
 pub mod default {
-    use std::os;
+    use std::env;
     use std::ptr::null;
     use std::old_io::process::Command;
     use std::thread::Thread;
-    use handlers::serialize::json;
+    use handlers::rustc_serialize::json;
     use core::Workspaces;
     use window_manager::WindowManager;
     use window_system::WindowSystem;
@@ -88,12 +87,11 @@ pub mod default {
     /// so it may resume work as usual.
     pub fn restart<'a>(window_manager: WindowManager<'a>, _: &WindowSystem, c: &GeneralConfig<'a>) -> WindowManager<'a> {
         // Get absolute path to binary
-        let filename = os::make_absolute(&Path::new(os::args()[0].clone())).unwrap();
+        let filename = env::current_dir().unwrap().join(env::current_exe().unwrap());
         // Collect all managed windows
         let window_ids : String = json::encode(&window_manager.workspaces.all_windows_with_workspaces()).unwrap();
 
         // Create arguments
-        let program_name = os::args()[0].clone();
         let resume = &"--resume";
         let windows = window_ids;
         let filename_c = CString::from_slice(filename.as_str().unwrap().as_bytes());
@@ -106,7 +104,7 @@ pub mod default {
 
         unsafe {
             let mut slice : &mut [*const i8; 4] = &mut [
-                CString::from_slice(program_name.as_bytes()).as_ptr(),
+                filename_c.as_ptr(),
                 CString::from_slice(resume.as_bytes()).as_ptr(),
                 CString::from_slice(windows.as_bytes()).as_ptr(),
                 null()

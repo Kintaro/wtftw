@@ -43,14 +43,14 @@ macro_rules! run(
 
 pub fn run(program: &str, args: Vec<String>) {
     debug!("trying to run {}", program);
-    match Command::new(String::from_str(program)).args(args.as_slice()).detached().spawn() {
+    match Command::new(String::from_str(program)).args(&args).detached().spawn() {
         _ => ()
     }
 }
 
 pub fn spawn_pipe(config: &mut Config, program: &str, args: Vec<String>) -> Rc<RwLock<Process>> {
     let result = Command::new(String::from_str(program))
-        .args(args.as_slice()).detached().spawn().unwrap();
+        .args(&args).detached().spawn().unwrap();
     debug!("Created pipe with id {}", result.id());
     let rc = Rc::new(RwLock::new(result));
     config.general.pipes.push(rc.clone());

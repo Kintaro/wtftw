@@ -192,7 +192,7 @@ impl<'a> WindowManager<'a> {
 
     pub fn windows<F>(&self, window_system: &WindowSystem, config: &GeneralConfig<'a>,
                    f: F) -> WindowManager<'a> where F : Fn(&Workspaces<'a>) -> Workspaces<'a> {
-        let mut ws = f(&self.workspaces);
+        let ws = f(&self.workspaces);
         let old_visible = self.workspaces.visible_windows().into_iter().collect::<BTreeSet<_>>();
         let new_windows = ws.visible_windows().into_iter().collect::<BTreeSet<_>>()
             .difference(&old_visible).map(|&x| x).collect::<Vec<Window>>();
@@ -205,7 +205,7 @@ impl<'a> WindowManager<'a> {
 
         let all_screens = ws.screens();
         let summed_visible = (vec!(BTreeSet::new())).into_iter().chain(all_screens.iter().scan(Vec::new(), |acc, x| {
-            acc.push_all(x.workspace.windows().as_slice());
+            acc.extend(x.workspace.windows().into_iter());
             Some(acc.clone())
         })
         .map(|x| x.into_iter().collect::<BTreeSet<_>>()))
@@ -224,7 +224,6 @@ impl<'a> WindowManager<'a> {
 
             let rs = wsp.layout.apply_layout(window_system, view_rect, config, &tiled);
 
-            let ref m = ws.floating;
             let flt = this.with(Vec::new(), |x| x.integrate()).into_iter()
                 .filter(|x| self.workspaces.floating.contains_key(x))
                 .map(|x| (x, WindowManager::scale_rational_rect(view_rect, self.workspaces.floating[x])))
@@ -267,7 +266,7 @@ impl<'a> WindowManager<'a> {
             window_system.remove_enter_events();
         }
 
-        let modified = self.modify_workspaces(|x| ws.clone()).update_layouts(window_system, config);
+        let modified = self.modify_workspaces(|_| ws.clone()).update_layouts(window_system, config);
 
         to_hide.into_iter().fold(modified, |a, x| a.insert_or_update_unmap(x))
     }
@@ -319,7 +318,7 @@ impl<'a> WindowManager<'a> {
         window_system.grab_pointer();
 
         let motion = Rc::new((box move |&: x, y, window_manager, w| {
-            let z = f.call((x, y, window_manager, w));
+            let z = f(x, y, window_manager, w);
             w.remove_motion_events();
             z
         }) as MouseDrag<'a>);

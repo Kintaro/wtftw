@@ -150,18 +150,30 @@ impl XlibWindowSystem {
 
             XUngrabButton(display, 0, 0x8000, root);
 
-            let name_str = "wtftw";
-            let name_c = CString::from_slice(name_str.as_bytes());
-            let name = name_c.as_slice_with_nul().as_ptr();
-            XStoreName(display, root, name as *mut i8);
-
+            
             //XGrabButton(display, 0, 0, root, 0, 4, 1, 1, 0, 0);
 
-            XlibWindowSystem {
+            let res = XlibWindowSystem {
                 display: display,
                 root:    root as u64,
                 event:   malloc(256),
-            }
+            };
+
+            let name_str = "wtftw";
+            let name_c = CString::from_slice(name_str.as_bytes());
+            let name = name_c.as_slice_with_nul().as_ptr();
+
+            let wmcheck = res.get_atom("_NET_SUPPORTING_WM_CHECK");
+            let wmname = res.get_atom("_NET_WM_NAME");
+            let utf8 = res.get_atom("UTF8_STRING");
+            let xa_window = res.get_atom("XA_WINDOW");
+
+            let mut root_cpy = root;
+            let root_ptr : *mut Window = &mut root_cpy;
+            XChangeProperty(display, root, wmcheck, xa_window, 32, 0, root_ptr as *mut c_uchar, 1);
+            XChangeProperty(display, root, wmname, utf8, 8, 0, name as *mut c_uchar, name_str.len() as i32); 
+
+            res
         }
     }
 
