@@ -1,21 +1,20 @@
 #![feature(unboxed_closures)]
 #![feature(plugin)]
 #![feature(box_syntax)]
+#![feature(env)]
+#![feature(os)]
 #[macro_use]
 #[plugin]
 extern crate log;
 extern crate getopts;
-//extern crate "rustc-serialize" as rustc_serialize;
-extern crate serialize;
+extern crate "rustc-serialize" as rustc_serialize;
 extern crate wtftw_core;
 extern crate wtftw_xlib;
 
-use std::ops::Fn;
-use std::os;
-use getopts::{ optopt, getopts };
-use serialize::json;
+use std::env;
+use getopts::Options;
+use rustc_serialize::json;
 use wtftw_core::config::Config;
-use wtftw_core::logger::FileLogger;
 use wtftw_core::window_manager::WindowManager;
 use wtftw_core::window_system::*;
 use wtftw_xlib::XlibWindowSystem;
@@ -26,20 +25,17 @@ pub fn parse_window_ids(ids: &str) -> Vec<(Window, u32)> {
 
 fn main() {
     // Parse command line arguments
-    let args : Vec<String> = os::args();
+    let args : Vec<String> = env::args().map(|x| x.into_string().unwrap()).collect();
 
-    let opts = [
-        optopt("r", "resume", "list of window IDs to capture in resume", "WINDOW")
-    ];
-
-    let matches = match getopts(args.tail(), &opts) {
+    let mut options = Options::new();
+    options.optopt("r", "resume", "list of window IDs to capture in resume", "WINDOW");
+    let matches = match options.parse(args.into_iter().skip(1).collect::<Vec<_>>()) {
         Ok(m)  => m,
         Err(f) => panic!(f.to_string())
     };
 
     // Create a default config.generaluration
     let mut config = Config::initialize();
-    log::set_logger(box FileLogger::new(&config.general.logfile, false));
     // Initialize window system. Use xlib here for now
     debug!("initialize window system");
     let window_system = XlibWindowSystem::new();
@@ -74,12 +70,12 @@ fn main() {
     let window_ids = if matches.opt_present("r") {
         debug!("trying to manage pre-existing windows");
         debug!("found {}", matches.opt_str("r").unwrap());
-        parse_window_ids(matches.opt_str("r").unwrap().as_slice())
+        parse_window_ids(&matches.opt_str("r").unwrap())
     } else {
         Vec::new()
     };
 
-    for &(window, workspace) in window_ids.iter() {
+    for (window, workspace) in window_ids {
         debug!("re-inserting window {}", window);
         window_manager = window_manager.view(&window_system, workspace, &config.general)
             .manage(&window_system, window, &config.general);
@@ -116,8 +112,8 @@ fn main() {
 
                 window_manager = window_manager.manage(&window_system, window, &config.general)
                                                .windows(&window_system, &config.general,
-                                                        |x| config.internal.manage_hook.call((x.clone(),
-                                                        &window_system, window)));
+                                                        |x| (config.internal.manage_hook)(x.clone(),
+                                                        &window_system, window));
             },
             WindowSystemEvent::WindowUnmapped(window, synthetic) => {
                 if synthetic && window_manager.is_window_managed(window) {
@@ -152,8 +148,8 @@ fn main() {
                         // If it's a root window, then it's an event we grabbed
                         if is_root && !is_sub_root {
                             let local_window_manager = window_manager.clone();
-                            window_manager = action.call((local_window_manager, &window_system,
-                                                          &config.general, subwindow));
+                            window_manager = action(local_window_manager, &window_system,
+                                                          &config.general, subwindow);
                         }
                     }
                     None => {
@@ -175,15 +171,15 @@ fn main() {
             WindowSystemEvent::KeyPressed(_, key) => {
                 if config.internal.key_handlers.contains_key(&key) {
                     let local_window_manager = window_manager.clone();
-                    window_manager = config.internal.key_handlers[key].call((local_window_manager,
-                        &window_system, &config.general));
+                    window_manager = config.internal.key_handlers[key](local_window_manager,
+                        &window_system, &config.general);
                 }
             },
             WindowSystemEvent::MouseMotion(x, y) => {
                 let local_window_manager = window_manager.clone();
                 if let Some(drag) = window_manager.dragging {
                     debug!("dragging: {} {}", x, y);
-                    window_manager = drag.call((x, y, local_window_manager, &window_system));
+                    window_manager = drag(x, y, local_window_manager, &window_system);
                     window_system.remove_motion_events();
                 }
             },
@@ -192,7 +188,7 @@ fn main() {
         debug!("processed {:?}", event);
 
         if let Some(ref mut loghook) = config.internal.loghook {
-            loghook.call_mut((window_manager.clone(), &window_system));
+            loghook(window_manager.clone(), &window_system);
         }
     }
 }

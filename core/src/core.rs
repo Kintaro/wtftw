@@ -6,7 +6,7 @@ use window_manager::ScreenDetail;
 use window_system::{ Window, WindowSystem };
 use layout::{Layout, LayoutMessage};
 
-#[derive(Clone, Copy, Show)]
+#[derive(Clone, Copy, Debug)]
 pub struct RationalRect(pub f32, pub f32, pub f32, pub f32);
 
 /// Handles focus tracking on a workspace.

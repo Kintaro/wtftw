@@ -6,7 +6,9 @@ authors = ["Simon Wollwage"]
 
 [dependencies]
 bitflags = "0.1"
-#rustc-serialize = "*"
+rustc-serialize = "*"
+getopts = "*"
+log = "*"
 
 [dependencies.wtftw_core]
 path = "core"
