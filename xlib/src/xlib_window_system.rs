@@ -1,6 +1,5 @@
 #![feature(plugin)]
 #[macro_use]
-#[plugin]
 
 extern crate log;
 extern crate libc;
@@ -150,18 +149,13 @@ impl XlibWindowSystem {
 
             XUngrabButton(display, 0, 0x8000, root);
 
-            
-            //XGrabButton(display, 0, 0, root, 0, 4, 1, 1, 0, 0);
-
             let res = XlibWindowSystem {
                 display: display,
                 root:    root as u64,
                 event:   malloc(256),
             };
 
-            let name_str = "wtftw";
-            let name_c = CString::from_slice(name_str.as_bytes());
-            let name = name_c.as_slice_with_nul().as_ptr();
+            let name = CString::from_slice("wtftw".as_bytes()).as_slice_with_nul().as_ptr();
 
             let wmcheck = res.get_atom("_NET_SUPPORTING_WM_CHECK");
             let wmname = res.get_atom("_NET_WM_NAME");
@@ -171,7 +165,7 @@ impl XlibWindowSystem {
             let mut root_cpy = root;
             let root_ptr : *mut Window = &mut root_cpy;
             XChangeProperty(display, root, wmcheck, xa_window, 32, 0, root_ptr as *mut c_uchar, 1);
-            XChangeProperty(display, root, wmname, utf8, 8, 0, name as *mut c_uchar, name_str.len() as i32); 
+            XChangeProperty(display, root, wmname, utf8, 8, 0, name as *mut c_uchar, 5); 
 
             res
         }

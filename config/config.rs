@@ -3,10 +3,7 @@
 #![feature(plugin)]
 #![feature(box_syntax)]
 #[macro_use]
-#[plugin]
-extern crate log;
 #[macro_use]
-#[plugin]
 extern crate wtftw;
 
 use std::old_io::fs::PathExtensions;
@@ -26,16 +23,13 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
     let modm = MOD1MASK;
 
     config.general.mod_mask = modm;
-    config.general.border_color = 0x20242c;
-    config.general.focus_border_color = 0xb3b8c4;
+    config.general.border_color = 0x666666;
+    config.general.focus_border_color = 0xebebeb;
     config.general.border_width = 1;
     config.general.terminal = (String::from_str("urxvt"), String::from_str(""));
     config.general.layout = LayoutCollection::new(vec!(
-        GapLayout::new(10, AvoidStrutsLayout::new(vec!(Direction::Up, Direction::Down), ResizableTallLayout::new())),
-        GapLayout::new(10, AvoidStrutsLayout::new(vec!(Direction::Up, Direction::Down), MirrorLayout::new(ResizableTallLayout::new()))),
-        GapLayout::new(10, AvoidStrutsLayout::new(vec!(Direction::Up, Direction::Down), CenterLayout::new(ResizableTallLayout::new()))),
-        GapLayout::new(10, AvoidStrutsLayout::new(vec!(Direction::Up, Direction::Down), BinarySpacePartition::new())),
-        GapLayout::new(10, AvoidStrutsLayout::new(vec!(Direction::Up, Direction::Down), MirrorLayout::new(BinarySpacePartition::new()))),
+        GapLayout::new(8, AvoidStrutsLayout::new(vec!(Direction::Up, Direction::Down), BinarySpacePartition::new())),
+        GapLayout::new(8, AvoidStrutsLayout::new(vec!(Direction::Up, Direction::Down), MirrorLayout::new(BinarySpacePartition::new()))),
         NoBordersLayout::new(box FullLayout)));
 
     config.general.tags = (vec!("一: ターミナル", "二: ウェブ", "三: コード",
@@ -134,15 +128,15 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
         let mut xmobar = spawn_pipe(config, "xmobar",
                                     vec!(xmobar_config));
         let tags = config.general.tags.clone();
-        config.set_log_hook(box move |&mut: m, w| {
+        config.set_log_hook(box move |&: m, w| {
             let p = &mut xmobar;
             let tags = &tags;
             let workspaces = tags.clone().iter()
                 .enumerate()
                 .map(|(i, x)| if i as u32 == m.workspaces.current.workspace.id {
-                    format!("<fc=#d17b49>■</fc>")
+                    format!("<fc=#bf1e2d>■</fc>")
                 } else if m.workspaces.visible.iter().any(|w| w.workspace.id == i as u32) {
-                    format!("<fc=#535c5c>■</fc>")
+                    format!("<fc=#666666>■</fc>")
                 } else {
                     format!("■")
                 })

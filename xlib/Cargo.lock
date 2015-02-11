@@ -1,27 +1,16 @@
 [root]
-name = "wtftw"
+name = "wtftw_xlib"
 version = "0.2.0"
 dependencies = [
- "bitflags 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "getopts 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustc-serialize 0.2.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "wtftw_core 0.2.0",
- "wtftw_xlib 0.2.0",
+ "xinerama 0.0.1 (git+https://github.com/Kintaro/rust-xinerama.git)",
+ "xlib 0.1.0 (git+https://github.com/Kintaro/rust-xlib.git?branch=wtftw)",
 ]
 
 [[package]]
 name = "bitflags"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-
-[[package]]
-name = "getopts"
-version = "0.2.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "log 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
-]
 
 [[package]]
 name = "log"
@@ -40,15 +29,6 @@ dependencies = [
  "bitflags 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.2.12 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "wtftw_xlib"
-version = "0.2.0"
-dependencies = [
- "wtftw_core 0.2.0",
- "xinerama 0.0.1 (git+https://github.com/Kintaro/rust-xinerama.git)",
- "xlib 0.1.0 (git+https://github.com/Kintaro/rust-xlib.git?branch=wtftw)",
 ]
 
 [[package]]
