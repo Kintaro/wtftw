@@ -4,7 +4,6 @@
 #![feature(env)]
 #![feature(os)]
 #[macro_use]
-#[plugin]
 extern crate log;
 extern crate getopts;
 extern crate "rustc-serialize" as rustc_serialize;
