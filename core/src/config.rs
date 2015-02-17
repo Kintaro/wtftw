@@ -108,7 +108,7 @@ impl<'a> Config<'a> {
                 library:      None,
                 key_handlers: BTreeMap::new(),
                 mouse_handlers: BTreeMap::new(),
-                manage_hook:  box move |&: m: Workspaces<'b>, _: &WindowSystem, _: Window| -> Workspaces<'b> {
+                manage_hook:  box move |m: Workspaces<'b>, _: &WindowSystem, _: Window| -> Workspaces<'b> {
                     m.clone()
                 },
                 startup_hook: box move |&: m: WindowManager<'b>, _: &WindowSystem, _: &Config| -> WindowManager<'b> {
