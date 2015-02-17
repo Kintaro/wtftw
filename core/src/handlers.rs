@@ -9,8 +9,8 @@ use config::{ GeneralConfig, Config };
 
 pub type KeyHandler<'a> = Box<Fn(WindowManager<'a>, &(WindowSystem + 'a), &'a GeneralConfig<'a>) -> WindowManager<'a> + 'a>;
 pub type MouseHandler<'a> = Box<Fn(WindowManager<'a>, &WindowSystem, &'a GeneralConfig<'a>, Window) -> WindowManager<'a> + 'a>;
-pub type ManageHook<'a> = Box<Fn(Workspaces<'a>, &(WindowSystem + 'a), Window) -> Workspaces<'a> + 'a>;
-pub type StartupHook<'a> = Box<Fn(WindowManager<'a>, &(WindowSystem + 'a), &'a Config<'a>) -> WindowManager<'a> + 'a>;
+pub type ManageHook<'a> = Box<Fn(Workspaces<'a>, &WindowSystem, Window) -> Workspaces<'a> + 'a>;
+pub type StartupHook<'a> = Box<Fn(WindowManager<'a>, &WindowSystem, &'a Config<'a>) -> WindowManager<'a> + 'a>;
 pub type LogHook<'a> = Box<FnMut(WindowManager<'a>, &(WindowSystem + 'a)) + 'a>;
 
 extern {
