@@ -7,11 +7,11 @@ use window_system::WindowSystem;
 use window_system::Window;
 use config::{ GeneralConfig, Config };
 
-pub type KeyHandler<'a> = Box<Fn(WindowManager<'a>, &(WindowSystem + 'a), &'a GeneralConfig<'a>) -> WindowManager<'a> + 'a>;
+pub type KeyHandler<'a> = Box<Fn(WindowManager<'a>, &WindowSystem, &'a GeneralConfig<'a>) -> WindowManager<'a> + 'a>;
 pub type MouseHandler<'a> = Box<Fn(WindowManager<'a>, &WindowSystem, &'a GeneralConfig<'a>, Window) -> WindowManager<'a> + 'a>;
 pub type ManageHook<'a> = Box<Fn(Workspaces<'a>, &WindowSystem, Window) -> Workspaces<'a> + 'a>;
 pub type StartupHook<'a> = Box<Fn(WindowManager<'a>, &WindowSystem, &'a Config<'a>) -> WindowManager<'a> + 'a>;
-pub type LogHook<'a> = Box<FnMut(WindowManager<'a>, &(WindowSystem + 'a)) + 'a>;
+pub type LogHook<'a> = Box<FnMut(WindowManager<'a>, &WindowSystem) + 'a>;
 
 extern {
     pub fn waitpid(fd: libc::pid_t, status: *mut libc::c_int, options: libc::c_int) -> libc::pid_t;
