@@ -594,7 +594,7 @@ impl<'a> Layout for WithBordersLayout<'a> {
 
 pub struct NoBordersLayout;
 
-impl<'a> NoBordersLayout {
+impl NoBordersLayout {
     pub fn new<'a>(layout: Box<Layout + 'a>) -> Box<Layout + 'a> {
         WithBordersLayout::new(0, layout)
     }
