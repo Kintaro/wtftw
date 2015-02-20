@@ -22,6 +22,7 @@ use std::dynamic_lib::DynamicLibrary;
 use std::rc::Rc;
 use std::sync::RwLock;
 use std::thread::Thread;
+use std::thread::scoped;
 
 pub struct GeneralConfig<'a> {
     /// Whether focus follows mouse movements or
@@ -212,7 +213,7 @@ impl<'a> Config<'a> {
             },
             Err(err) => {
                 error!("error compiling config module");
-                Thread::scoped(move || {
+                scoped(move || {
                     Command::new("xmessage").arg(err.desc).detached().spawn().unwrap();
                 }).detach();
                 false
