@@ -592,10 +592,10 @@ impl<'a> Layout for WithBordersLayout<'a> {
     }
 }
 
-pub struct NoBordersLayout<'a>;
+pub struct NoBordersLayout;
 
-impl<'a> NoBordersLayout<'a> {
-    pub fn new(layout: Box<Layout + 'a>) -> Box<Layout + 'a> {
+impl<'a> NoBordersLayout {
+    pub fn new<'a>(layout: Box<Layout + 'a>) -> Box<Layout + 'a> {
         WithBordersLayout::new(0, layout)
     }
 }
