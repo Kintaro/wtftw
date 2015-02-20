@@ -12,6 +12,7 @@ use window_system::Rectangle;
 use window_system::WindowSystem;
 use window_manager::ScreenDetail;
 use config::GeneralConfig;
+use std::marker::PhantomData;
 
 #[derive(Clone, Copy)]
 pub enum LayoutMessage {
@@ -592,7 +593,7 @@ impl<'a> Layout for WithBordersLayout<'a> {
     }
 }
 
-pub struct NoBordersLayout<'a>;
+pub struct NoBordersLayout<'a>(PhantomData<&'a ()>);
 
 impl<'a> NoBordersLayout<'a> {
     pub fn new(layout: Box<Layout + 'a>) -> Box<Layout + 'a> {
