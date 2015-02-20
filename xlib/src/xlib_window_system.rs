@@ -29,8 +29,6 @@ use xlib::{
     XErrorEvent,
     XFetchName,
     XFlush,
-    XGetClassHint,
-    XGetGeometry,
     XGetInputFocus,
     XGetWindowAttributes,
     XGetWindowProperty,
@@ -66,7 +64,6 @@ use xlib::{
     XSetWindowBorder,
     XSetWindowBorderWidth,
     XSizeHints,
-    XStoreName,
     XStringToKeysym,
     XSync,
     XUngrabButton,
@@ -88,7 +85,6 @@ use std::mem::uninitialized;
 use std::str::from_c_str;
 use std::slice::from_raw_buf;
 use std::ffi::CString;
-use std::ffi::c_str_to_bytes_with_nul;
 
 use wtftw_core::window_system::*;
 use wtftw_core::window_manager::*;
@@ -207,14 +203,14 @@ impl XlibWindowSystem {
 
     fn get_property_from_string(&self, s: &str, window: Window) -> Option<Vec<u64>> {
         unsafe {
-            let atom = XInternAtom(self.display, CString::from_slice(s.as_bytes()).as_ptr() as *mut i8, 0);
+            let atom = XInternAtom(self.display, CString::new(s.as_bytes()).unwrap().as_ptr() as *mut i8, 0);
             self.get_property(atom as u64, window)
         }
     }
 
     fn get_atom(&self, s: &str) -> u64 {
         unsafe {
-            XInternAtom(self.display, CString::from_slice(s.as_bytes()).as_ptr() as *mut i8, 0) as u64
+            XInternAtom(self.display, CString::new(s.as_bytes()).unwrap().as_ptr() as *mut i8, 0) as u64
         }
     }
 

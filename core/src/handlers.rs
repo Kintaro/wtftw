@@ -23,6 +23,7 @@ pub mod default {
     use std::ptr::null;
     use std::old_io::process::Command;
     use std::thread::Thread;
+    use std::thread::spawn;
     use handlers::rustc_serialize::json;
     use core::Workspaces;
     use window_manager::WindowManager;
@@ -41,7 +42,7 @@ pub mod default {
             args.split(' ').map(String::from_str).collect()
         };
 
-        Thread::scoped(move || {
+        spawn(move || {
             debug!("spawning terminal");
             let command = if arguments.is_empty() {
                 Command::new(terminal).detached().spawn()
@@ -52,7 +53,7 @@ pub mod default {
             if let Err(_) = command {
                 panic!("unable to start terminal")
             }
-        }).detach();
+        });
 
         window_manager.clone()
     }
@@ -60,13 +61,13 @@ pub mod default {
     pub fn start_launcher<'a>(window_manager: WindowManager<'a>, _: &WindowSystem,
                           config: &GeneralConfig) -> WindowManager<'a> {
         let launcher = config.launcher.clone();
-        Thread::scoped(move || {
+        spawn(move || {
             debug!("spawning launcher");
             match Command::new(launcher).detached().spawn() {
                 Ok(_) => (),
                 _     => panic!("unable to start launcher")
             }
-        }).detach();
+        });
 
         window_manager.clone()
     }
@@ -94,7 +95,7 @@ pub mod default {
         // Create arguments
         let resume = &"--resume";
         let windows = window_ids;
-        let filename_c = CString::from_slice(filename.as_str().unwrap().as_bytes());
+        let filename_c = CString::new(filename.as_str().unwrap().as_bytes()).unwrap();
 
         for ref p in c.pipes.iter() {
             match p.write().unwrap().wait() {
@@ -105,8 +106,8 @@ pub mod default {
         unsafe {
             let mut slice : &mut [*const i8; 4] = &mut [
                 filename_c.as_ptr(),
-                CString::from_slice(resume.as_bytes()).as_ptr(),
-                CString::from_slice(windows.as_bytes()).as_ptr(),
+                CString::new(resume.as_bytes()).unwrap().as_ptr(),
+                CString::new(windows.as_bytes()).unwrap().as_ptr(),
                 null()
             ];
             execvp(filename_c.as_ptr(), slice.as_mut_ptr());

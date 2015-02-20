@@ -4,6 +4,7 @@
 #![feature(io)]
 #![feature(core)]
 #![feature(collections)]
+#[deny(warnings)]
 #[macro_use]
 #[link]
 extern crate log;

@@ -21,8 +21,7 @@ use std::old_io::process::{ Command, Process, ExitStatus };
 use std::dynamic_lib::DynamicLibrary;
 use std::rc::Rc;
 use std::sync::RwLock;
-use std::thread::Thread;
-use std::thread::scoped;
+use std::thread::spawn;
 
 pub struct GeneralConfig<'a> {
     /// Whether focus follows mouse movements or
@@ -205,17 +204,17 @@ impl<'a> Config<'a> {
                 } else {
                     error!("error compiling config module");
                     
-                    Thread::scoped(move || {
+                    spawn(move || {
                         Command::new("xmessage").arg("\"error compiling config module. run 'cargo build' in ~/.wtftw to get more info.\"").detached().spawn().unwrap();
-                    }).detach();
+                    });
                     false
                 }
             },
             Err(err) => {
                 error!("error compiling config module");
-                scoped(move || {
+                spawn(move || {
                     Command::new("xmessage").arg(err.desc).detached().spawn().unwrap();
-                }).detach();
+                });
                 false
             }
         }
