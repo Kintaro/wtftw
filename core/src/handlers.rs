@@ -22,7 +22,6 @@ pub mod default {
     use std::env;
     use std::ptr::null;
     use std::old_io::process::Command;
-    use std::thread::Thread;
     use std::thread::spawn;
     use handlers::rustc_serialize::json;
     use core::Workspaces;
@@ -88,14 +87,14 @@ pub mod default {
     /// so it may resume work as usual.
     pub fn restart<'a>(window_manager: WindowManager<'a>, _: &WindowSystem, c: &GeneralConfig<'a>) -> WindowManager<'a> {
         // Get absolute path to binary
-        let filename = env::current_dir().unwrap().join(env::current_exe().unwrap());
+        let filename = env::current_dir().unwrap().join(&env::current_exe().unwrap());
         // Collect all managed windows
         let window_ids : String = json::encode(&window_manager.workspaces.all_windows_with_workspaces()).unwrap();
 
         // Create arguments
         let resume = &"--resume";
         let windows = window_ids;
-        let filename_c = CString::new(filename.as_str().unwrap().as_bytes()).unwrap();
+        let filename_c = CString::new(filename.into_os_string().into_string().unwrap().as_bytes()).unwrap();
 
         for ref p in c.pipes.iter() {
             match p.write().unwrap().wait() {
