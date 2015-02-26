@@ -22,6 +22,7 @@ use std::dynamic_lib::DynamicLibrary;
 use std::rc::Rc;
 use std::sync::RwLock;
 use std::thread::spawn;
+use std::path::PathBuf;
 
 pub struct GeneralConfig<'a> {
     /// Whether focus follows mouse movements or
@@ -84,7 +85,7 @@ pub struct Config<'a> {
 impl<'a> Config<'a> {
     /// Create the Config from a json file
     pub fn initialize<'b>() -> Config<'b> {
-        let home = String::from_str(env::home_dir().unwrap_or(Path::new("./")).as_str().unwrap());
+        let home = env::home_dir().unwrap_or(PathBuf::new("./")).into_os_string().into_string().unwrap();
         // Default version of the config, for fallback
         Config {
             general: GeneralConfig {
