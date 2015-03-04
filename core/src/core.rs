@@ -652,11 +652,11 @@ impl<'a> Workspaces<'a> {
 
     /// Shift the given window to the given workspace
     pub fn shift_window(&self, index: u32, window: Window) -> Workspaces<'a> {
-        let first_closure = (box move |&: w: Workspaces<'a>| {
+        let first_closure = (box move |w: Workspaces<'a>| {
             w.delete(window)
         }) as Box<Fn(Workspaces<'a>,) -> Workspaces<'a> + 'static>;
 
-        let second_closure = (box move |&: w: Workspaces<'a>| {
+        let second_closure = (box move |w: Workspaces<'a>| {
             w.insert_up(window)
         }) as Box<Fn(Workspaces<'a>,) -> Workspaces<'a> + 'static>;
 
@@ -675,7 +675,7 @@ impl<'a> Workspaces<'a> {
     /// Apply the given function to the given workspace
     pub fn on_workspace(&self, index: u32, f: Box<Fn(Workspaces<'a>,) -> Workspaces<'a> + 'static>)
         -> Box<Fn(Workspaces<'a>,) -> Workspaces<'a> + 'static> {
-            (box move |&: x: Workspaces<'a>| {
+            (box move |x: Workspaces<'a>| {
                 let current_tag = x.current_tag();
                 (*f).call((x.view(index),)).view(current_tag)
             }) as Box<Fn(Workspaces<'a>,) -> Workspaces<'a> + 'static>
