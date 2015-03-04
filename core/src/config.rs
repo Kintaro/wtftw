@@ -112,7 +112,7 @@ impl<'a> Config<'a> {
                 manage_hook:  box move |m: Workspaces<'b>, _: &WindowSystem, _: Window| -> Workspaces<'b> {
                     m.clone()
                 },
-                startup_hook: box move |&: m: WindowManager<'b>, _: &WindowSystem, _: &Config| -> WindowManager<'b> {
+                startup_hook: box move |m: WindowManager<'b>, _: &WindowSystem, _: &Config| -> WindowManager<'b> {
                     m.clone()
                 },
                 loghook:      None,
@@ -124,11 +124,11 @@ impl<'a> Config<'a> {
     pub fn default_configuration(&mut self, w: &WindowSystem) {
         let mod_mask = self.general.mod_mask.clone();
         self.add_key_handler(w.get_keycode_from_string("Return"), mod_mask | SHIFTMASK,
-            box |&: m, w, c| start_terminal(m, w, c));
+            box |m, w, c| start_terminal(m, w, c));
         self.add_key_handler(w.get_keycode_from_string("q"), mod_mask,
-            box |&: m, w, c| restart(m, w, c));
+            box |m, w, c| restart(m, w, c));
         self.add_key_handler(w.get_keycode_from_string("q"), mod_mask | SHIFTMASK,
-            box |&: m, w, c| exit(m, w, c));
+            box |m, w, c| exit(m, w, c));
     }
 
     pub fn get_mod_mask(&self) -> KeyModifiers {

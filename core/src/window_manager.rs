@@ -317,7 +317,7 @@ impl<'a> WindowManager<'a> {
     pub fn mouse_drag(&self, window_system: &WindowSystem, f: Box<Fn(u32, u32, WindowManager<'a>, &WindowSystem) -> WindowManager<'a> + 'a>) -> WindowManager<'a> {
         window_system.grab_pointer();
 
-        let motion = Rc::new((box move |&: x, y, window_manager, w| {
+        let motion = Rc::new((box move |x, y, window_manager, w| {
             let z = f(x, y, window_manager, w);
             w.remove_motion_events();
             z
@@ -336,7 +336,7 @@ impl<'a> WindowManager<'a> {
         let (ox, oy) = window_system.get_pointer(window);
         let Rectangle(x, y, _, _) = window_system.get_geometry(window);
 
-        self.mouse_drag(window_system, box move |&: ex: u32, ey: u32, m: WindowManager<'a>, w: &WindowSystem| {
+        self.mouse_drag(window_system, box move |ex: u32, ey: u32, m: WindowManager<'a>, w: &WindowSystem| {
             w.move_window(window, x + (ex - ox), y + (ey - oy));
             m.modify_workspaces(|wsp| wsp.update_floating_rect(window, m.float_location(w, window)))
         }).float(window_system, config, window)
@@ -348,7 +348,7 @@ impl<'a> WindowManager<'a> {
 
         window_system.warp_pointer(window, w, h);
         debug!("warping to {}, {}", w, h);
-        self.mouse_drag(window_system, box move |&: ex: u32, ey: u32, m: WindowManager<'a>, w: &WindowSystem| {
+        self.mouse_drag(window_system, box move |ex: u32, ey: u32, m: WindowManager<'a>, w: &WindowSystem| {
             debug!("resizing to {}x{} at ({}, {})", ex - x, ey - y, x, y);
             w.resize_window(window, ex - x, ey - y);
             m.modify_workspaces(|wsp| wsp.update_floating_rect(window, m.float_location(w, window)))
