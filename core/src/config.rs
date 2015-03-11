@@ -18,6 +18,7 @@ use std::old_io::{ USER_DIR, File };
 use std::old_io::fs;
 use std::old_io::fs::PathExtensions;
 use std::old_io::process::{ Command, Process, ExitStatus };
+use std::process::Child;
 use std::dynamic_lib::DynamicLibrary;
 use std::rc::Rc;
 use std::sync::RwLock;
@@ -44,7 +45,7 @@ pub struct GeneralConfig<'a> {
     /// Default launcher application
     pub launcher: String,
     pub mod_mask: KeyModifiers,
-    pub pipes: Vec<Rc<RwLock<Process>>>,
+    pub pipes: Vec<Rc<RwLock<Child>>>,
     pub layout: Box<Layout + 'a>
 }
 
