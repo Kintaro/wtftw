@@ -1,7 +1,8 @@
-use std::old_io::process::Command;
-use std::old_io::process::Process;
+use std::process::Command;
+use std::process::Child;
 use std::rc::Rc;
 use std::sync::RwLock;
+use std::ffi::AsOsStr;
 use core::Workspaces;
 use config::Config;
 use window_system::*;
@@ -41,17 +42,15 @@ macro_rules! run(
     )
 );
 
-pub fn run(program: &str, args: Vec<String>) {
-    debug!("trying to run {}", program);
-    match Command::new(String::from_str(program)).args(&args).detached().spawn() {
+pub fn run<S: AsOsStr + ?Sized>(program: &S, args: Vec<String>) {
+    match Command::new(program).args(&args).spawn() {
         _ => ()
     }
 }
 
-pub fn spawn_pipe(config: &mut Config, program: &str, args: Vec<String>) -> Rc<RwLock<Process>> {
-    let result = Command::new(String::from_str(program))
-        .args(&args).detached().spawn().unwrap();
-    debug!("Created pipe with id {}", result.id());
+pub fn spawn_pipe<S: AsOsStr + ?Sized>(config: &mut Config, program: &S, args: Vec<String>) -> Rc<RwLock<Child>> {
+    let result = Command::new(program)
+        .args(&args).spawn().unwrap();
     let rc = Rc::new(RwLock::new(result));
     config.general.pipes.push(rc.clone());
     rc
