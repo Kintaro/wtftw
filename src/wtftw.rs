@@ -187,7 +187,12 @@ fn main() {
         debug!("processed {:?}", event);
 
         if let Some(ref mut loghook) = config.internal.loghook {
+            println!("calling loghook!");
+            debug!("calling loghook");
             loghook(window_manager.clone(), &window_system);
+        } else {
+            println!("there is no loghook!");
+            debug!("no loghook!");
         }
     }
 }

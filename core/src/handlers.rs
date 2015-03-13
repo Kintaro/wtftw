@@ -21,7 +21,7 @@ extern {
 pub mod default {
     use std::env;
     use std::ptr::null;
-    use std::old_io::process::Command;
+    use std::process::Command;
     use std::thread::spawn;
     use handlers::rustc_serialize::json;
     use core::Workspaces;
@@ -44,9 +44,9 @@ pub mod default {
         spawn(move || {
             debug!("spawning terminal");
             let command = if arguments.is_empty() {
-                Command::new(terminal).detached().spawn()
+                Command::new(&terminal).spawn()
             } else {
-                Command::new(terminal).args(arguments.as_slice()).detached().spawn()
+                Command::new(&terminal).args(arguments.as_slice()).spawn()
             };
 
             if let Err(_) = command {
@@ -62,7 +62,7 @@ pub mod default {
         let launcher = config.launcher.clone();
         spawn(move || {
             debug!("spawning launcher");
-            match Command::new(launcher).detached().spawn() {
+            match Command::new(&launcher).spawn() {
                 Ok(_) => (),
                 _     => panic!("unable to start launcher")
             }
