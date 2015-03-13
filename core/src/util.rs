@@ -1,5 +1,6 @@
 use std::process::Command;
 use std::process::Child;
+use std::process::Stdio;
 use std::rc::Rc;
 use std::sync::RwLock;
 use std::ffi::AsOsStr;
@@ -50,7 +51,7 @@ pub fn run<S: AsOsStr + ?Sized>(program: &S, args: Vec<String>) {
 
 pub fn spawn_pipe<S: AsOsStr + ?Sized>(config: &mut Config, program: &S, args: Vec<String>) -> Rc<RwLock<Child>> {
     let result = Command::new(program)
-        .args(&args).spawn().unwrap();
+        .args(&args).stdin(Stdio::piped()).spawn().unwrap();
     let rc = Rc::new(RwLock::new(result));
     config.general.pipes.push(rc.clone());
     rc

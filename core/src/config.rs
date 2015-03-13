@@ -14,16 +14,21 @@ use handlers::default::{ exit, restart, start_terminal };
 use layout::{ Layout, TallLayout };
 
 use std::mem;
-use std::old_io::{ USER_DIR, File };
+use std::fs::File;
+use std::io::Write;
 use std::old_io::fs;
-use std::old_io::fs::PathExtensions;
-use std::old_io::process::{ Command, Process, ExitStatus };
+use std::old_path::posix;
+use std::fs::PathExt;
+use std::fs::{ read_dir, create_dir_all };
+use std::process::Command;
 use std::process::Child;
 use std::dynamic_lib::DynamicLibrary;
 use std::rc::Rc;
 use std::sync::RwLock;
 use std::thread::spawn;
 use std::path::PathBuf;
+use std::path::Path;
+use std::ffi::AsOsStr;
 
 pub struct GeneralConfig<'a> {
     /// Whether focus follows mouse movements or
@@ -140,7 +145,7 @@ impl<'a> Config<'a> {
         self.internal.key_handlers.insert(KeyCommand::new(key, mask), keyhandler);
     }
 
-    pub fn add_mouse_handler(&mut self, button: MouseButton, mask: KeyModifiers, 
+    pub fn add_mouse_handler(&mut self, button: MouseButton, mask: KeyModifiers,
                              mousehandler: MouseHandler<'a>) {
         self.internal.mouse_handlers.insert(MouseCommand::new(button, mask), mousehandler);
     }
@@ -156,16 +161,16 @@ impl<'a> Config<'a> {
     pub fn compile_and_call(&mut self, m: &mut WindowManager, w: &WindowSystem) {
         let toml = format!("{}/Cargo.toml", self.internal.wtftw_dir.clone());
 
-        if !Path::new(self.internal.wtftw_dir.clone()).exists() {
-            match fs::mkdir(&Path::new(self.internal.wtftw_dir.clone()), USER_DIR) {
+        if !Path::new(&self.internal.wtftw_dir.clone()).exists() {
+            match create_dir_all(Path::new(&self.internal.wtftw_dir.clone())) {
                 Ok(()) => (),
                 Err(e) => panic!(format!("mkdir: {} failed with error {}", self.internal.wtftw_dir.clone(), e))
             }
         }
 
-        if !Path::new(toml.clone()).exists() {
-            let file = File::create(&Path::new(toml));
-            file.unwrap().write_line("[project]\n\
+        if !Path::new(&toml.clone()).exists() {
+            let file = File::create(Path::new(&toml).as_os_str());
+            file.unwrap().write("[project]\n\
                                      name = \"config\"\n\
                                      version = \"0.0.0\"\n\
                                      authors = [\"wtftw\"]\n\n\
@@ -173,11 +178,11 @@ impl<'a> Config<'a> {
                                      git = \"https://github.com/Kintaro/wtftw.git\"\n\n\
                                      [lib]\n\
                                      name = \"config\"\n\
-                                     crate-type = [\"dylib\"]").unwrap();
+                                     crate-type = [\"dylib\"]".as_bytes()).unwrap();
         }
 
         let config_source = format!("{}/src/config.rs", self.internal.wtftw_dir.clone());
-        if Path::new(config_source).exists() && self.compile() {
+        if Path::new(&config_source).exists() && self.compile() {
             self.call(m, w)
         } else {
             self.default_configuration(w);
@@ -187,27 +192,27 @@ impl<'a> Config<'a> {
     pub fn compile(&self) -> bool {
         info!("updating dependencies");
         Command::new("cargo")
-            .cwd(&Path::new(self.internal.wtftw_dir.clone()))
+            .current_dir(&Path::new(&self.internal.wtftw_dir.clone()))
             .arg("update")
             .env("RUST_LOG", "none")
             .output().unwrap();
         info!("compiling config module");
         let output = Command::new("cargo")
-            .cwd(&Path::new(self.internal.wtftw_dir.clone()))
+            .current_dir(&Path::new(&self.internal.wtftw_dir.clone()))
             .arg("build")//.arg("--release")
             .env("RUST_LOG", "none")
             .output();
 
         match output {
             Ok(o) => {
-                if o.status == ExitStatus(0) {
+                if o.status.success() {
                     info!("config module compiled");
                     true
                 } else {
                     error!("error compiling config module");
-                    
+
                     spawn(move || {
-                        Command::new("xmessage").arg("\"error compiling config module. run 'cargo build' in ~/.wtftw to get more info.\"").detached().spawn().unwrap();
+                        Command::new("xmessage").arg("\"error compiling config module. run 'cargo build' in ~/.wtftw to get more info.\"").spawn().unwrap();
                     });
                     false
                 }
@@ -215,7 +220,7 @@ impl<'a> Config<'a> {
             Err(err) => {
                 error!("error compiling config module");
                 spawn(move || {
-                    Command::new("xmessage").arg(err.desc).detached().spawn().unwrap();
+                    Command::new("xmessage").arg(err.description()).spawn().unwrap();
                 });
                 false
             }
@@ -224,13 +229,15 @@ impl<'a> Config<'a> {
 
     pub fn call(&mut self, m: &mut WindowManager, w: &WindowSystem) {
         debug!("looking for config module");
-        let contents = fs::readdir(&Path::new(format!("{}/target", self.internal.wtftw_dir.clone()))).unwrap();
-        let libname = contents.iter().find(|&x|
-                             x.is_file() &&
-                             x.filename_str().unwrap().contains("libconfig") &&
-                             x.extension_str().unwrap().contains("so")).unwrap();
+        let mut contents = read_dir(&Path::new(&format!("{}/target/debug", self.internal.wtftw_dir.clone()))).unwrap();
+        let libname = contents.find(|x| {
+                            match x {
+                                &Ok(ref y) => y.path().into_os_string().as_os_str().to_str().unwrap().contains("libconfig"),
+                                &Err(_) => false
+                            }
+        });
 
-        if let Ok(lib) = DynamicLibrary::open(Some(libname)) {
+        if let Ok(lib) = DynamicLibrary::open(Some(&posix::Path::new(&libname.unwrap().unwrap().path().as_os_str().to_str().unwrap()))) {
             unsafe {
                 if let Ok(symbol) = lib.symbol("configure") {
                     let result = mem::transmute::<*mut u8, extern fn(&mut WindowManager,

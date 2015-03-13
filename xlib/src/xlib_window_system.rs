@@ -1,4 +1,5 @@
 #![feature(plugin)]
+#![feature(libc)]
 #[macro_use]
 
 extern crate log;
@@ -16,7 +17,6 @@ use xlib::{
     XButtonEvent,
     XChangeProperty,
     XCheckMaskEvent,
-    XClassHint,
     XClientMessageEvent,
     XConfigureEvent,
     XConfigureRequestEvent,
@@ -76,15 +76,15 @@ use xlib::{
 };
 use xinerama::XineramaQueryScreens;
 
-use std::os::env;
-use std::ffi;
+use std::env::vars;
 use std::str;
 use std::ptr::null_mut;
 use std::mem::transmute;
 use std::mem::uninitialized;
-use std::str::from_c_str;
-use std::slice::from_raw_buf;
+use std::str::from_utf8;
+use std::slice::from_raw_parts;
 use std::ffi::CString;
+use std::ffi::CStr;
 
 use wtftw_core::window_system::*;
 use wtftw_core::window_manager::*;
@@ -128,9 +128,9 @@ impl XlibWindowSystem {
 
             if display == null_mut() {
                 error!("No display found at {}",
-                    env().iter()
-                       .find(|&&(ref d, _)| *d == String::from_str("DISPLAY"))
-                       .map(|&(_, ref v)| v.clone())
+                    vars()
+                       .find(|&(ref d, _)| *d == String::from_str("DISPLAY"))
+                       .map(|(_, v)| v)
                        .unwrap());
                 panic!("Exiting");
             }
@@ -193,7 +193,7 @@ impl XlibWindowSystem {
                 if actual_format_return == 0 {
                     None
                 } else {
-                    Some(from_raw_buf(&(prop_return as *const c_ulong), nitems_return as usize).iter()
+                    Some(from_raw_parts(&(prop_return as *const c_ulong), nitems_return as usize).iter()
                                 .map(|&c| c as u64)
                                 .collect())
                 }
@@ -219,7 +219,7 @@ impl XlibWindowSystem {
             let mut protocols : *mut c_ulong = uninitialized();
             let mut num = 0;
             XGetWMProtocols(self.display, window as c_ulong, &mut protocols, &mut num);
-            from_raw_buf(&(protocols as *const c_ulong), num as usize).iter()
+            from_raw_parts(&(protocols as *const c_ulong), num as usize).iter()
                 .map(|&c| c as u64)
                 .collect::<Vec<_>>()
         }
@@ -279,13 +279,13 @@ impl WindowSystem for XlibWindowSystem {
         unsafe {
             let keysym = XKeycodeToKeysym(self.display, key as u8, 0);
             let keyname : *mut c_char = XKeysymToString(keysym);
-            String::from_str(from_c_str(transmute(keyname)))
+            String::from_str(from_utf8(CStr::from_ptr(transmute(keyname)).to_bytes()).unwrap())
         }
     }
 
     fn get_keycode_from_string(&self, key: &str) -> u64 {
         unsafe {
-            XStringToKeysym(CString::from_slice(key.as_bytes()).as_ptr() as *mut i8) as u64
+            XStringToKeysym(CString::new(key.as_bytes()).unwrap().as_ptr() as *mut i8) as u64
         }
     }
 
@@ -306,13 +306,14 @@ impl WindowSystem for XlibWindowSystem {
                                       self.get_display_height(0)));
             }
 
-            from_raw_buf(&screen_ptr, num as usize).iter().map(
-                |ref screen_info|
+            from_raw_parts(&screen_ptr, num as usize).iter().map(
+                |&screen_info| {
+                    let ref s = *screen_info;
                     Rectangle(
-                        screen_info.x_org as u32,
-                        screen_info.y_org as u32,
-                        screen_info.width as u32,
-                        screen_info.height as u32)).collect()
+                        s.x_org as u32,
+                        s.y_org as u32,
+                        s.width as u32,
+                        s.height as u32)}).collect()
         }
     }
 
@@ -341,14 +342,14 @@ impl WindowSystem for XlibWindowSystem {
             if XFetchName(self.display, window as c_ulong, &mut name) == BADWINDOW || name.is_null() {
                 String::from_str("Unknown")
             } else {
-                String::from_str(str::from_utf8_unchecked(ffi::c_str_to_bytes(&(name as *const c_char))))
+                String::from_str(str::from_utf8_unchecked(CStr::from_ptr(name as *const c_char).to_bytes()))
             }
         }
     }
 
-    fn get_class_name(&self, window: Window) -> String {
-        unsafe {
-            let mut class_hint : XClassHint = uninitialized();
+    fn get_class_name(&self, _: Window) -> String {
+        //unsafe {
+            //let mut class_hint : XClassHint = uninitialized();
             //let result = if XGetClassHint(self.display, window as c_ulong, &mut class_hint) != 0 || class_hint.res_class.is_null() {
                 String::from_str("unknown")
             //} else {
@@ -359,7 +360,7 @@ impl WindowSystem for XlibWindowSystem {
             //debug!("class name is {}", result);
 
             //result
-        }
+        //}
     }
 
     fn get_windows(&self) -> Vec<Window> {
@@ -370,9 +371,9 @@ impl WindowSystem for XlibWindowSystem {
             let mut num_children : c_uint = 0;
             XQueryTree(self.display, self.root as c_ulong, &mut unused, &mut unused, children_ptr, &mut num_children);
             let const_children : *const u64 = children as *const u64;
-            from_raw_buf(&const_children, num_children as usize).iter()
-                            .filter(|&&c| c != self.root)
-                            .map(|&c| c)
+            from_raw_parts(&const_children, num_children as usize).iter()
+                            .filter(|&&c| *c != self.root)
+                            .map(|&c| *c)
                             .collect()
         }
     }
