@@ -16,7 +16,6 @@ use layout::{ Layout, TallLayout };
 use std::mem;
 use std::fs::File;
 use std::io::Write;
-use std::old_io::fs;
 use std::old_path::posix;
 use std::fs::PathExt;
 use std::fs::{ read_dir, create_dir_all };
