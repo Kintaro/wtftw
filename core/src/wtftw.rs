@@ -1,4 +1,6 @@
 #![feature(unboxed_closures)]
+#![feature(old_path)]
+#![feature(path)]
 #![feature(box_syntax)]
 #![feature(libc)]
 #![feature(io)]
