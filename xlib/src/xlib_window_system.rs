@@ -1,5 +1,7 @@
 #![feature(plugin)]
 #![feature(libc)]
+#![feature(core)]
+#![feature(collections)]
 #[macro_use]
 
 extern crate log;
