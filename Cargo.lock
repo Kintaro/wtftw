@@ -46,6 +46,7 @@ dependencies = [
 name = "wtftw_xlib"
 version = "0.2.0"
 dependencies = [
+ "log 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "wtftw_core 0.2.0",
  "xinerama 0.0.1 (git+https://github.com/Kintaro/rust-xinerama.git)",
  "xlib 0.1.0 (git+https://github.com/Kintaro/rust-xlib.git?branch=wtftw)",
