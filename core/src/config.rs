@@ -14,6 +14,7 @@ use handlers::default::{ exit, restart, start_terminal };
 use layout::{ Layout, TallLayout };
 
 use std::mem;
+use std::error::Error;
 use std::fs::File;
 use std::io::Write;
 use std::old_path::posix;
