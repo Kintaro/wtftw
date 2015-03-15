@@ -4,6 +4,9 @@ name = "wtftw_xlib"
 version = "0.2.0"
 authors = ["Simon Wollwage"]
 
+[dependencies]
+log = "*"
+
 [dependencies.xlib]
 git = "https://github.com/Kintaro/rust-xlib.git"
 branch = "wtftw"
