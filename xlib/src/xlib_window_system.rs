@@ -77,6 +77,7 @@ use xlib::{
     XWindowChanges,
 };
 use xinerama::XineramaQueryScreens;
+use xinerama::XineramaScreenInfo;
 
 use std::env::vars;
 use std::str;
@@ -298,7 +299,7 @@ impl WindowSystem for XlibWindowSystem {
     fn get_screen_infos(&self) -> Vec<Rectangle> {
         unsafe {
             let mut num : c_int = 0;
-            let screen_ptr = XineramaQueryScreens(self.display, &mut num);
+            let screen_ptr : *const XineramaScreenInfo = XineramaQueryScreens(self.display, &mut num);
 
             // If xinerama is not active, just return the default display
             // dimensions and "emulate" xinerama.
@@ -308,9 +309,9 @@ impl WindowSystem for XlibWindowSystem {
                                       self.get_display_height(0)));
             }
 
-            from_raw_parts(&screen_ptr, num as usize).iter().map(
-                |&screen_info| {
-                    let ref s = *screen_info;
+            let screens = from_raw_parts(screen_ptr, num as usize).to_vec();
+            screens.into_iter().map(
+                |s| {
                     Rectangle(
                         s.x_org as u32,
                         s.y_org as u32,
