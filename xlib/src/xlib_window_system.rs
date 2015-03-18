@@ -196,7 +196,7 @@ impl XlibWindowSystem {
                 if actual_format_return == 0 {
                     None
                 } else {
-                    Some(from_raw_parts(&(prop_return as *const c_ulong), nitems_return as usize).iter()
+                    Some(from_raw_parts(prop_return as *const c_ulong, nitems_return as usize).iter()
                                 .map(|&c| c as u64)
                                 .collect())
                 }
@@ -374,9 +374,9 @@ impl WindowSystem for XlibWindowSystem {
             let mut num_children : c_uint = 0;
             XQueryTree(self.display, self.root as c_ulong, &mut unused, &mut unused, children_ptr, &mut num_children);
             let const_children : *const u64 = children as *const u64;
-            from_raw_parts(&const_children, num_children as usize).iter()
-                            .filter(|&&c| *c != self.root)
-                            .map(|&c| *c)
+            from_raw_parts(const_children, num_children as usize).iter()
+                            .filter(|&&c| c != self.root)
+                            .map(|c| *c)
                             .collect()
         }
     }
