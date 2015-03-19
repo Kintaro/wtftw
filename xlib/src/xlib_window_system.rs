@@ -313,8 +313,8 @@ impl WindowSystem for XlibWindowSystem {
             screens.into_iter().map(
                 |s| {
                     Rectangle(
-                        s.x_org as u32,
-                        s.y_org as u32,
+                        s.x_org as i32,
+                        s.y_org as i32,
                         s.width as u32,
                         s.height as u32)}).collect()
         }
@@ -409,9 +409,9 @@ impl WindowSystem for XlibWindowSystem {
         }
     }
 
-    fn move_window(&self, window: Window, x: u32, y: u32) {
+    fn move_window(&self, window: Window, x: i32, y: i32) {
         unsafe {
-            XMoveWindow(self.display, window as c_ulong, x as i32, y as i32);
+            XMoveWindow(self.display, window as c_ulong, x, y);
         }
     }
 
@@ -673,7 +673,7 @@ impl WindowSystem for XlibWindowSystem {
             let mut attributes : XWindowAttributes = uninitialized();
             XGetWindowAttributes(self.display, window as c_ulong, &mut attributes);
 
-            Rectangle(attributes.x as u32, attributes.y as u32, attributes.width as u32, attributes.height as u32)
+            Rectangle(attributes.x as i32, attributes.y as i32, attributes.width as u32, attributes.height as u32)
         }
     }
 

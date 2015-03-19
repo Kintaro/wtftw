@@ -57,7 +57,7 @@ pub fn split_vertically(num: u32, screen: ScreenDetail) -> Vec<Rectangle> {
     let Rectangle(sx, sy, sw, sh) = screen;
     let smallh = sh / num;
     (vec!(Rectangle(sx, sy, sw, smallh))).iter()
-        .chain(split_vertically(num - 1, Rectangle(sx, sy + smallh, sw, sh - smallh)).iter())
+        .chain(split_vertically(num - 1, Rectangle(sx, sy + smallh as i32, sw, sh - smallh)).iter())
         .map(|&x| x)
         .collect()
 }
@@ -66,7 +66,7 @@ pub fn split_horizontally_by(ratio: f32, screen: ScreenDetail) -> (Rectangle, Re
     let Rectangle(sx, sy, sw, sh) = screen;
     let leftw = (sw as f32 * ratio).floor() as u32;
 
-    (Rectangle(sx, sy, leftw, sh), Rectangle(sx + leftw, sy, sw - leftw, sh))
+    (Rectangle(sx, sy, leftw, sh), Rectangle(sx + leftw as i32, sy, sw - leftw, sh))
 }
 
 pub trait Layout {
@@ -159,8 +159,8 @@ impl<'a> Layout for CenterLayout <'a> {
                         Stack::<Window>::new(s.down[0], Vec::new(), s.down.as_slice().tail().to_vec())
                     };
                     (vec!({
-                        let x = screen.0 + ((screen.2 as f32 * 0.2) as u32 / 2);
-                        let y = screen.1 + ((screen.3 as f32 * 0.2) as u32 / 2);
+                        let x = screen.0 + ((screen.2 as f32 * 0.2) as i32 / 2);
+                        let y = screen.1 + ((screen.3 as f32 * 0.2) as i32 / 2);
                         let w = (screen.2 as f32 * 0.8) as u32;
                         let h = (screen.3 as f32 * 0.8) as u32;
                         (s.focus, Rectangle(x, y, w, h))
@@ -233,7 +233,7 @@ impl ResizableTallLayout {
         let smallh = ((sh / num) as f32 * f) as u32;
         (vec!(Rectangle(sx, sy, sw, smallh))).iter()
             .chain(ResizableTallLayout::split_vertically(fxv.into_iter().skip(1), num - 1,
-                                                         Rectangle(sx, sy + smallh, sw, sh - smallh)).iter())
+                                                         Rectangle(sx, sy + smallh as i32, sw, sh - smallh)).iter())
             .map(|&x| x)
             .collect()
     }
@@ -242,7 +242,7 @@ impl ResizableTallLayout {
         let Rectangle(sx, sy, sw, sh) = screen;
         let leftw = (sw as f32 * ratio).floor() as u32;
 
-        (Rectangle(sx, sy, leftw, sh), Rectangle(sx + leftw, sy, sw - leftw, sh))
+        (Rectangle(sx, sy, leftw, sh), Rectangle(sx + leftw as i32, sy, sw - leftw, sh))
     }
 
     fn resize(&mut self, stack: &Option<Stack<Window>>, d: f32) {
@@ -468,9 +468,9 @@ impl<'a> Layout for AvoidStrutsLayout<'a> {
                 .fold(screen, |Rectangle(x, y, w, h), Strut(d, sw, _, _)| {
                     let s = sw as u32;
                     match d {
-                        Direction::Up    => Rectangle(x, y + s, w, h - s),
+                        Direction::Up    => Rectangle(x, y + s as i32, w, h - s),
                         Direction::Down  => Rectangle(x, y, w, h - s),
-                        Direction::Left  => Rectangle(x + s, y, w - s, h),
+                        Direction::Left  => Rectangle(x + s as i32, y, w - s, h),
                         Direction::Right => Rectangle(x, y, w - s, h)
                     }
                 })
@@ -516,7 +516,7 @@ impl<'a> Layout for GapLayout<'a> {
         let layout = self.layout.apply_layout(window_system, screen, config, stack);
 
         let g = self.gap;
-        layout.iter().map(|&(win, Rectangle(x, y, w, h))| (win, Rectangle(x + g, y + g, w - 2 * g, h - 2 * g))).collect()
+        layout.iter().map(|&(win, Rectangle(x, y, w, h))| (win, Rectangle(x + g as i32, y + g as i32, w - 2 * g, h - 2 * g))).collect()
     }
 
     fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
@@ -719,11 +719,11 @@ impl Split {
         match self.axis {
             Axis::Horizontal => {
                 let hr = (h as f32 * self.ratio) as u32;
-                (Rectangle(x, y, w, hr), Rectangle(x, y + hr, w, h - hr))
+                (Rectangle(x, y, w, hr), Rectangle(x, y + hr as i32, w, h - hr))
             },
             Axis::Vertical => {
                 let wr = (w as f32 * self.ratio) as u32;
-                (Rectangle(x, y, wr, h), Rectangle(x + wr, y, w - wr, h))
+                (Rectangle(x, y, wr, h), Rectangle(x + wr as i32, y, w - wr, h))
             }
         }
     }
