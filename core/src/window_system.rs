@@ -6,21 +6,21 @@ use window_manager::WindowManager;
 pub type Window = u64;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Rectangle(pub u32, pub u32, pub u32, pub u32);
+pub struct Rectangle(pub i32, pub i32, pub u32, pub u32);
 
 impl Rectangle {
-    pub fn is_inside(&self, x: u32, y: u32) -> bool {
+    pub fn is_inside(&self, x: i32, y: i32) -> bool {
         let &Rectangle(rx, ry, rw, rh) = self;
 
-        x >= rx && x <= rx + rw && y >= ry && y <= ry + rh
+        x >= rx && x <= rx + rw as i32 && y >= ry && y <= ry + rh as i32
     }
 
     pub fn overlaps(&self, &Rectangle(bx, by, bw, bh): &Rectangle) -> bool {
         let &Rectangle(ax, ay, aw, ah) = self;
-        !(bx      >= ax + aw ||
-          bx + bw <= ax ||
-          by      >= ay + ah ||
-          by + bh <= ay)
+        !(bx             >= ax + aw as i32 ||
+          bx + bw as i32 <= ax ||
+          by             >= ay + ah as i32 ||
+          by + bh as i32 <= ay)
     }
 }
 
@@ -152,7 +152,7 @@ pub trait WindowSystem {
     /// Resize the window to the given dimensions
     fn resize_window(&self, window: Window, width: u32, height: u32);
     /// Move the window's top left corner to the given coordinates
-    fn move_window(&self, window: Window, x: u32, height: u32);
+    fn move_window(&self, window: Window, x: i32, y: i32);
     /// Map the window to the screen and show it
     fn show_window(&self, window: Window);
     fn hide_window(&self, window: Window);

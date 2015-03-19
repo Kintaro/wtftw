@@ -13,6 +13,7 @@ use window_system::WindowSystem;
 use std::rc::Rc;
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
+use std::cmp;
 
 pub type ScreenDetail = Rectangle;
 pub type MouseDrag<'a> = Box<Fn(u32, u32, WindowManager<'a>, &WindowSystem) -> WindowManager<'a> + 'a>;
@@ -286,7 +287,7 @@ impl<'a> WindowManager<'a> {
     fn scale_rational_rect(Rectangle(sx, sy, sw, sh): Rectangle,
                            RationalRect(rx, ry, rw, rh): RationalRect) -> Rectangle {
         fn scale(s: u32, r: f32) -> u32 { ((s as f32) * r) as u32 }
-        Rectangle(sx + scale(sw, rx), sy + scale(sh, ry), scale(sw, rw), scale(sh, rh))
+        Rectangle(sx + scale(sw, rx) as i32, sy + scale(sh, ry) as i32, scale(sw, rw), scale(sh, rh))
     }
 
     fn tile_window(window_system: &WindowSystem, config: &GeneralConfig,
@@ -337,7 +338,7 @@ impl<'a> WindowManager<'a> {
         let Rectangle(x, y, _, _) = window_system.get_geometry(window);
 
         self.mouse_drag(window_system, box move |ex: u32, ey: u32, m: WindowManager<'a>, w: &WindowSystem| {
-            w.move_window(window, x + (ex - ox), y + (ey - oy));
+            w.move_window(window, x + (ex as i32 - ox as i32), y + (ey as i32 - oy as i32));
             m.modify_workspaces(|wsp| wsp.update_floating_rect(window, m.float_location(w, window)))
         }).float(window_system, config, window)
     }
@@ -349,8 +350,10 @@ impl<'a> WindowManager<'a> {
         window_system.warp_pointer(window, w, h);
         debug!("warping to {}, {}", w, h);
         self.mouse_drag(window_system, box move |ex: u32, ey: u32, m: WindowManager<'a>, w: &WindowSystem| {
-            debug!("resizing to {}x{} at ({}, {})", ex - x, ey - y, x, y);
-            w.resize_window(window, ex - x, ey - y);
+            debug!("resizing to {}x{} at ({}, {})", ex - x as u32, ey - y as u32, x, y);
+            let nx = cmp::max(0, ex as i32 - x) as u32;
+            let ny = cmp::max(0, ey as i32 - y) as u32;
+            w.resize_window(window, nx, ny);
             m.modify_workspaces(|wsp| wsp.update_floating_rect(window, m.float_location(w, window)))
         }).float(window_system, config, window)
     }
