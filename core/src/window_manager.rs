@@ -92,7 +92,7 @@ impl<'a> WindowManager<'a> {
                           config: &GeneralConfig<'a>) -> WindowManager<'a> {
         let screens : Vec<Screen> = self.workspaces.screens().into_iter().map(|s| {
             let mut ms = s.clone();
-            ms.workspace.layout.apply_layout(window_system, ms.screen_detail, config, 
+            ms.workspace.layout.apply_layout(window_system, ms.screen_detail, config,
                     &self.workspaces.view(ms.workspace.id).current.workspace.stack
                         .map_or(None, |x| x.filter(|w| !self.workspaces.floating.contains_key(w))));
             ms
@@ -217,7 +217,7 @@ impl<'a> WindowManager<'a> {
         let rects = all_screens.iter().zip(summed_visible.iter()).flat_map(|(w, vis)| {
             let mut wsp = w.workspace.clone();
             let this = ws.view(wsp.id);
-            let tiled = this.clone().current.workspace.stack.map_or(None, |x| 
+            let tiled = this.clone().current.workspace.stack.map_or(None, |x|
                                                       x.filter(|win| !ws.floating.contains_key(win))).map_or(None, |x|
                                                       x .filter(|win| !vis.contains(win)));
                                                                //&& !vis.contains(win)));
@@ -247,7 +247,7 @@ impl<'a> WindowManager<'a> {
         for &win in visible.iter() {
             window_system.show_window(win);
         }
-        
+
         match ws.peek() {
             Some(focused_window) => {
                 window_system.set_window_border_color(focused_window, config.focus_border_color.clone());
@@ -302,9 +302,9 @@ impl<'a> WindowManager<'a> {
         let Rectangle(sx, sy, sw, sh)   = self.workspaces.current.screen_detail;
         let Rectangle(rx, ry, rw, rh) = window_system.get_geometry(window);
 
-        RationalRect((rx as f32 - sx as f32) / sw as f32, 
-                     (ry as f32 - sy as f32) / sh as f32, 
-                      rw as f32 / sw as f32, 
+        RationalRect((rx as f32 - sx as f32) / sw as f32,
+                     (ry as f32 - sy as f32) / sh as f32,
+                      rw as f32 / sw as f32,
                       rh as f32 / sh as f32)
     }
 
