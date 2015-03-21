@@ -27,10 +27,10 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
     let modm = MOD1MASK;
 
     config.general.mod_mask = modm;
-    config.general.border_color = 0x666666;
+    config.general.border_color = 0x586e75;
     config.general.focus_border_color = 0xebebeb;
-    config.general.border_width = 1;
-    config.general.terminal = (String::from_str("urxvt"), String::from_str(""));
+    config.general.border_width = 2;
+    config.general.terminal = (String::from_str("termite"), String::from_str(""));
     config.general.layout = LayoutCollection::new(vec!(
             GapLayout::new(8, AvoidStrutsLayout::new(vec!(Direction::Up, Direction::Down), BinarySpacePartition::new())),
             GapLayout::new(8, AvoidStrutsLayout::new(vec!(Direction::Up, Direction::Down), MirrorLayout::new(BinarySpacePartition::new()))),
@@ -155,16 +155,15 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
                 None => String::from_str(""),
                 Some(window) => w.get_window_name(window)
             };
-            let content = format!("{} {} {}", workspaces, m.workspaces.current.workspace.layout.description(), name);
+            let content = format!("{} {} {}\n", workspaces, m.workspaces.current.workspace.layout.description(), name);
             match p.write().unwrap().stdin.as_mut() {
                 Some(pin) => {
                     match pin.write(content.as_bytes()) {
-                        _ => ()
+                        _      => ()
                     };
                     pin.flush();
-                    println!("Wrote {}", content);
                 },
-                _ => println!("Stdin is none")
+                _ => ()
             }
         });
     };
