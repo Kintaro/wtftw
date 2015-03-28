@@ -1,3 +1,5 @@
+#![feature(collections)]
+
 use wtftw_core::core::*;
 use wtftw_core::layout::FullLayout;
 
