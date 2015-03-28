@@ -16,7 +16,7 @@ use std::collections::BTreeSet;
 use std::cmp;
 
 pub type ScreenDetail = Rectangle;
-pub type MouseDrag<'a> = Box<Fn(u32, u32, WindowManager<'a>, &WindowSystem) -> WindowManager<'a> + 'a>;
+pub type MouseDrag<'a> = Box<Fn(u32, u32, &'a mut WindowManager<'a>, &WindowSystem) -> &'a mut WindowManager<'a> + 'a>;
 
 #[derive(Clone)]
 pub struct WindowManager<'a> {
@@ -47,25 +47,25 @@ impl<'a> WindowManager<'a> {
     /// Switch to the workspace given by index. If index is out of bounds,
     /// just do nothing and return.
     /// Then, reapply the layout to show the changes.
-    pub fn view(&self, window_system: &WindowSystem, index: u32,
-                config: &GeneralConfig<'a>) -> WindowManager<'a> {
+    pub fn view(&mut self, window_system: &WindowSystem, index: u32,
+                config: &GeneralConfig<'a>) -> &mut Self {
         if index < self.workspaces.number_workspaces() {
             debug!("switching to workspace {}", config.tags[index as usize].clone());
             self.windows(window_system, config, |w| w.view(index))
         } else {
-            self.clone()
+            self
         }
     }
 
-    pub fn move_window_to_workspace(&self, window_system: &WindowSystem,
+    pub fn move_window_to_workspace(&mut self, window_system: &WindowSystem,
                                     config: &GeneralConfig<'a>,
-                                    index: u32) -> WindowManager<'a> {
+                                    index: u32) -> &mut Self {
         self.windows(window_system, config, |w| w.shift(index))
     }
 
     /// Rearrange the workspaces across the given screens.
     /// Needs to be called when the screen arrangement changes.
-    pub fn rescreen(&self, window_system: &WindowSystem) -> WindowManager<'a> {
+    pub fn rescreen(&mut self, window_system: &WindowSystem) -> &mut Self {
         let screens = window_system.get_screen_infos();
         let visible : Vec<Workspace<'a>> = (vec!(self.workspaces.current.clone())).iter()
             .chain(self.workspaces.visible.iter())
@@ -88,8 +88,8 @@ impl<'a> WindowManager<'a> {
         })
     }
 
-    pub fn update_layouts(&self, window_system: &WindowSystem,
-                          config: &GeneralConfig<'a>) -> WindowManager<'a> {
+    pub fn update_layouts(&mut self, window_system: &WindowSystem,
+                          config: &GeneralConfig<'a>) -> &mut Self {
         let screens : Vec<Screen> = self.workspaces.screens().into_iter().map(|s| {
             let mut ms = s.clone();
             ms.workspace.layout.apply_layout(window_system, ms.screen_detail, config,
@@ -98,12 +98,8 @@ impl<'a> WindowManager<'a> {
             ms
         }).collect();
 
-        WindowManager {
-            running: self.running,
-            dragging: self.dragging.clone(),
-            workspaces: self.workspaces.from_current(screens[0].clone()).from_visible(screens.into_iter().skip(1).collect()),
-            waiting_unmap: self.waiting_unmap.clone()
-        }
+        self.workspaces = self.workspaces.from_current(screens[0].clone()).from_visible(screens.into_iter().skip(1).collect());
+        self
     }
 
     pub fn unfocus_windows(&self, window_system: &WindowSystem, config: &GeneralConfig<'a>) {
@@ -114,8 +110,8 @@ impl<'a> WindowManager<'a> {
 
     /// Manage a new window that was either created just now or already present
     /// when the WM started.
-    pub fn manage(&self, window_system: &WindowSystem, window: Window,
-                  config: &GeneralConfig<'a>) -> WindowManager<'a> {
+    pub fn manage(&mut self, window_system: &WindowSystem, window: Window,
+                  config: &GeneralConfig<'a>) -> &mut Self {
         fn adjust(RationalRect(x, y, w, h): RationalRect) -> RationalRect {
             if x + w > 1.0 || y + h > 1.0 || x < 0.0 || y < 0.0 {
                 RationalRect(0.5 - w / 2.0, 0.5 - h / 2.0, w, h)
@@ -146,18 +142,18 @@ impl<'a> WindowManager<'a> {
     }
 
     /// Unmanage a window. This happens when a window is closed.
-    pub fn unmanage(&self, window_system: &WindowSystem, window: Window,
-                    config: &GeneralConfig<'a>) -> WindowManager<'a> {
+    pub fn unmanage(&mut self, window_system: &WindowSystem, window: Window,
+                    config: &GeneralConfig<'a>) -> &mut Self {
         if self.workspaces.contains(window) {
             debug!("unmanaging window {}", window);
             self.windows(window_system, config, |x| x.delete(window))
         } else {
-            self.clone()
+            self
         }
     }
 
-    pub fn focus(&self, window: Window, window_system: &WindowSystem,
-                 config: &GeneralConfig<'a>) -> WindowManager<'a> {
+    pub fn focus(&mut self, window: Window, window_system: &WindowSystem,
+                 config: &GeneralConfig<'a>) -> &mut Self {
         if let Some(screen) = self.workspaces.find_screen(window) {
             if screen.screen_id == self.workspaces.current.screen_id &&
                screen.workspace.peek() != Some(window) {
@@ -166,33 +162,30 @@ impl<'a> WindowManager<'a> {
                 return self.windows(window_system, config, |w| w.view(screen.workspace.id))
             }
         }
-        self.clone()
+        self
     }
 
-    pub fn focus_down(&self) -> WindowManager<'a> {
+    pub fn focus_down(&mut self) -> &mut Self {
         self.modify_workspaces(|x| x.focus_down())
     }
 
-    pub fn focus_up(&self) -> WindowManager<'a> {
+    pub fn focus_up(&mut self) -> &mut Self {
         self.modify_workspaces(|x| x.focus_up())
     }
 
-    pub fn modify_workspaces<F>(&self, f: F) -> WindowManager<'a> where F : Fn(&Workspaces<'a>) -> Workspaces<'a> {
-        WindowManager {
-            running: self.running,
-            dragging: self.dragging.clone(),
-            workspaces: f(&self.workspaces),
-            waiting_unmap: self.waiting_unmap.clone()
-        }
+    pub fn modify_workspaces<F>(&mut self, f: F) -> &mut Self where F : Fn(&Workspaces<'a>) -> Workspaces<'a> {
+        self.workspaces = f(&self.workspaces);
+        self
     }
 
-    pub fn reveal(&self, window_system: &WindowSystem, window: Window) -> WindowManager<'a> {
+    pub fn reveal(&mut self, window_system: &WindowSystem, window: Window) -> &mut Self {
         window_system.show_window(window);
-        self.clone()
+        self
     }
 
-    pub fn windows<F>(&self, window_system: &WindowSystem, config: &GeneralConfig<'a>,
-                   f: F) -> WindowManager<'a> where F : Fn(&Workspaces<'a>) -> Workspaces<'a> {
+    pub fn windows<F>(&mut self, window_system: &WindowSystem,
+                      config: &GeneralConfig<'a>, f: F) -> &mut Self
+            where F : Fn(&Workspaces<'a>) -> Workspaces<'a> {
         let ws = f(&self.workspaces);
         let old_visible = self.workspaces.visible_windows().into_iter().collect::<BTreeSet<_>>();
         let new_windows = ws.visible_windows().into_iter().collect::<BTreeSet<_>>()
@@ -227,7 +220,7 @@ impl<'a> WindowManager<'a> {
 
             let flt = this.with(Vec::new(), |x| x.integrate()).into_iter()
                 .filter(|x| self.workspaces.floating.contains_key(x))
-                .map(|x| (x, WindowManager::scale_rational_rect(view_rect, self.workspaces.floating[x])))
+                .map(|x| (x, WindowManager::scale_rational_rect(view_rect, self.workspaces.floating[&x])))
                 .collect::<Vec<_>>();
 
             let vs : Vec<(Window, Rectangle)> = flt.into_iter().chain(rs.into_iter()).collect();
@@ -273,15 +266,15 @@ impl<'a> WindowManager<'a> {
     }
 
     /// Send the given message to the current layout
-    pub fn send_layout_message(&self, message: LayoutMessage, window_system: &WindowSystem,
-                               config: &GeneralConfig) -> WindowManager<'a> {
+    pub fn send_layout_message(&mut self, message: LayoutMessage, window_system: &WindowSystem,
+                               config: &GeneralConfig) -> &mut Self {
         self.modify_workspaces(|w| w.send_layout_message(message, window_system, config))
     }
 
     /// Kill the currently focused window
-    pub fn kill_window(&self, window_system: &WindowSystem) -> WindowManager<'a> {
+    pub fn kill_window(&mut self, window_system: &WindowSystem) -> &mut Self {
         self.workspaces.with_focused(|w| window_system.kill_client(w));
-        self.clone()
+        self
     }
 
     fn scale_rational_rect(Rectangle(sx, sy, sw, sh): Rectangle,
@@ -308,14 +301,14 @@ impl<'a> WindowManager<'a> {
                       rh as f32 / sh as f32)
     }
 
-    pub fn float(&self, window_system: &WindowSystem, config: &GeneralConfig<'a>,
-                 window: Window) -> WindowManager<'a> {
+    pub fn float(&mut self, window_system: &WindowSystem, config: &GeneralConfig<'a>,
+                 window: Window) -> &mut Self {
         let rect = self.float_location(window_system, window);
         let result = self.windows(window_system, config, |w| w.float(window, rect));
         result
     }
 
-    pub fn mouse_drag(&self, window_system: &WindowSystem, f: Box<Fn(u32, u32, WindowManager<'a>, &WindowSystem) -> WindowManager<'a> + 'a>) -> WindowManager<'a> {
+    pub fn mouse_drag(&mut self, window_system: &WindowSystem, f: Box<Fn(u32, u32, &'a mut WindowManager<'a>, &WindowSystem) -> &'a mut WindowManager<'a> + 'a>) -> &mut Self {
         window_system.grab_pointer();
 
         let motion = Rc::new((box move |x, y, window_manager, w| {
@@ -324,37 +317,35 @@ impl<'a> WindowManager<'a> {
             z
         }) as MouseDrag<'a>);
 
-        WindowManager {
-            running: self.running,
-            dragging: Some(motion),
-            workspaces: self.workspaces.clone(),
-            waiting_unmap: self.waiting_unmap.clone()
-        }
+        self.dragging = Some(motion);
+        self
     }
 
-    pub fn mouse_move_window(&self, window_system: &WindowSystem, config: &GeneralConfig<'a>,
-                             window: Window) -> WindowManager<'a> {
+    pub fn mouse_move_window(&mut self, window_system: &WindowSystem, config: &GeneralConfig<'a>,
+                             window: Window) -> &mut Self {
         let (ox, oy) = window_system.get_pointer(window);
         let Rectangle(x, y, _, _) = window_system.get_geometry(window);
 
-        self.mouse_drag(window_system, box move |ex: u32, ey: u32, m: WindowManager<'a>, w: &WindowSystem| {
+        self.mouse_drag(window_system, box move |ex: u32, ey: u32, m: &'a mut WindowManager<'a>, w: &WindowSystem| {
             w.move_window(window, x + (ex as i32 - ox as i32), y + (ey as i32 - oy as i32));
-            m.modify_workspaces(|wsp| wsp.update_floating_rect(window, m.float_location(w, window)))
+            let location = m.float_location(w, window);
+            m.modify_workspaces(|wsp| wsp.update_floating_rect(window, location))
         }).float(window_system, config, window)
     }
 
-    pub fn mouse_resize_window(&self, window_system: &WindowSystem, config: &GeneralConfig<'a>,
-                             window: Window) -> WindowManager<'a> {
+    pub fn mouse_resize_window(&mut self, window_system: &WindowSystem, config: &GeneralConfig<'a>,
+                             window: Window) -> &mut Self {
         let Rectangle(x, y, w, h) = window_system.get_geometry(window);
 
         window_system.warp_pointer(window, w, h);
         debug!("warping to {}, {}", w, h);
-        self.mouse_drag(window_system, box move |ex: u32, ey: u32, m: WindowManager<'a>, w: &WindowSystem| {
+        self.mouse_drag(window_system, box move |ex: u32, ey: u32, m: &'a mut WindowManager<'a>, w: &WindowSystem| {
             debug!("resizing to {}x{} at ({}, {})", ex - x as u32, ey - y as u32, x, y);
             let nx = cmp::max(0, ex as i32 - x) as u32;
             let ny = cmp::max(0, ey as i32 - y) as u32;
             w.resize_window(window, nx, ny);
-            m.modify_workspaces(|wsp| wsp.update_floating_rect(window, m.float_location(w, window)))
+            let location = m.float_location(w, window);
+            m.modify_workspaces(|wsp| wsp.update_floating_rect(window, location))
         }).float(window_system, config, window)
     }
 
@@ -362,55 +353,27 @@ impl<'a> WindowManager<'a> {
         self.waiting_unmap.contains_key(&window)
     }
 
-    pub fn update_unmap(&self, window: Window) -> WindowManager<'a> {
-        if !self.waiting_unmap.contains_key(&window) {
-            return self.clone();
-        }
-
-        let val = self.waiting_unmap[window];
-        let mut new_map = self.waiting_unmap.clone();
-
-        if val == 1 {
-            new_map.remove(&window);
-        } else {
-            new_map[window] = val - 1;
-        }
-
-        WindowManager {
-            running: self.running,
-            dragging: self.dragging.clone(),
-            workspaces: self.workspaces.clone(),
-            waiting_unmap: new_map
-        }
+    pub fn update_unmap(&mut self, window: Window) -> &mut Self {
+        let remove = match self.waiting_unmap.get_mut(&window) {
+            Some(ref val) if **val < 2 => true,
+            Some(val) => { *val -= 1; false },
+            None => false
+        };
+        if remove { self.waiting_unmap.remove(&window); }
+        self
     }
 
-    pub fn insert_or_update_unmap(&self, window: Window) -> WindowManager<'a> {
-        let mut new_map = self.waiting_unmap.clone();
-
-        if new_map.contains_key(&window) {
-            new_map[window] += 1;
-        } else {
-            new_map.insert(window, 1);
-        }
-
-        WindowManager {
-            running: self.running,
-            dragging: self.dragging.clone(),
-            workspaces: self.workspaces.clone(),
-            waiting_unmap: new_map
-        }
+    pub fn insert_or_update_unmap(&mut self, window: Window) -> &mut Self {
+        let insert = match self.waiting_unmap.get_mut(&window) {
+            Some(val) => { *val += 1; false },
+            None => true
+        };
+        if insert { self.waiting_unmap.insert(window, 1); }
+        self
     }
 
-    pub fn remove_from_unmap(&self, window: Window) -> WindowManager<'a> {
-        let mut new_map = self.waiting_unmap.clone();
-        if new_map.contains_key(&window) {
-            new_map.remove(&window);
-        }
-        WindowManager {
-            running: self.running,
-            dragging: self.dragging.clone(),
-            workspaces: self.workspaces.clone(),
-            waiting_unmap: new_map
-        }
+    pub fn remove_from_unmap(&mut self, window: Window) -> &mut Self {
+        self.waiting_unmap.remove(&window);
+        self
     }
 }

@@ -2,7 +2,7 @@ extern crate rustc;
 extern crate rustc_trans;
 extern crate syntax;
 extern crate libc;
-extern crate "rustc-serialize" as rustc_serialize;
+extern crate rustc_serialize;
 
 use std::env;
 use std::collections::BTreeMap;
@@ -91,7 +91,7 @@ pub struct Config<'a> {
 impl<'a> Config<'a> {
     /// Create the Config from a json file
     pub fn initialize<'b>() -> Config<'b> {
-        let home = env::home_dir().unwrap_or(PathBuf::new("./")).into_os_string().into_string().unwrap();
+        let home = env::home_dir().unwrap_or(PathBuf::from("./")).into_os_string().into_string().unwrap();
         // Default version of the config, for fallback
         Config {
             general: GeneralConfig {
@@ -118,8 +118,8 @@ impl<'a> Config<'a> {
                 manage_hook:  box move |m: Workspaces<'b>, _: &WindowSystem, _: Window| -> Workspaces<'b> {
                     m.clone()
                 },
-                startup_hook: box move |m: WindowManager<'b>, _: &WindowSystem, _: &Config| -> WindowManager<'b> {
-                    m.clone()
+                startup_hook: box move |m: &'b mut WindowManager<'b>, _: &WindowSystem, _: &Config| -> &'b mut WindowManager<'b> {
+                    m
                 },
                 loghook:      None,
                 wtftw_dir:    format!("{}/.wtftw", home),

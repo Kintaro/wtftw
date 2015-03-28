@@ -6,12 +6,12 @@ authors = ["Simon Wollwage"]
 
 [dependencies]
 bitflags = "0.1"
-#rustc-serialize = "*"
+rustc-serialize = "*"
 log = "*"
 
-[dependencies.rustc-serialize]
-git = "https://github.com/Kintaro/rustc-serialize.git"
-branch = "slice"
+#[dependencies.rustc-serialize]
+#git = "https://github.com/Kintaro/rustc-serialize.git"
+#branch = "slice"
 
 [lib]
 name = "wtftw_core"

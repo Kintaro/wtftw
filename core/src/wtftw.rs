@@ -8,6 +8,7 @@
 #![feature(std_misc)]
 #![feature(rustc_private)]
 #![feature(path_ext)]
+#![feature(convert)]
 #[deny(warnings)]
 #[macro_use]
 #[link]
