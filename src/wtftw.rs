@@ -74,8 +74,8 @@ fn main() {
 
     for (window, workspace) in window_ids {
         debug!("re-inserting window {}", window);
-        window_manager.view(&window_system, workspace, &config.general)
-            .manage(&window_system, window, &config.general);
+        window_manager.view(&window_system, workspace, &config.general);
+        window_manager.manage(&window_system, window, &config.general);
     }
 
     // Enter the event loop and just listen for events
@@ -107,10 +107,9 @@ fn main() {
                     continue;
                 }
 
-                window_manager.manage(&window_system, window, &config.general)
-                                               .windows(&window_system, &config.general,
-                                                        |x| (config.internal.manage_hook)(x.clone(),
-                                                        &window_system, window));
+                window_manager.manage(&window_system, window, &config.general);
+                window_manager.windows(&window_system, &config.general,
+                                       |x| (config.internal.manage_hook)(x.clone(), &window_system, window));
             },
             WindowSystemEvent::WindowUnmapped(window, synthetic) => {
                 if synthetic && window_manager.is_window_managed(window) {
@@ -123,8 +122,8 @@ fn main() {
             },
             WindowSystemEvent::WindowDestroyed(window) => {
                 if window_manager.is_window_managed(window) {
-                    window_manager.unmanage(&window_system, window, &config.general)
-                        .remove_from_unmap(window);
+                    window_manager.unmanage(&window_system, window, &config.general);
+                    window_manager.remove_from_unmap(window);
                 }
             },
             // The mouse pointer entered a window's region. If focus following
@@ -169,7 +168,8 @@ fn main() {
                 }
             },
             WindowSystemEvent::MouseMotion(x, y) => {
-                if let Some(ref drag) = window_manager.dragging {
+                
+                if let Some(drag) = window_manager.dragging.clone() {
                     debug!("dragging: {} {}", x, y);
                     drag(x, y, &mut window_manager, &window_system);
                     window_system.remove_motion_events();
