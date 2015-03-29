@@ -1,9 +1,9 @@
 extern crate collections;
 
-use core::RationalRect;
-use core::Screen;
-use core::Workspace;
-use core::Workspaces;
+use core::rational_rect::RationalRect;
+use core::screen::Screen;
+use core::workspace::Workspace;
+use core::workspaces::Workspaces;
 use config::GeneralConfig;
 use layout::LayoutMessage;
 use window_system::Rectangle;

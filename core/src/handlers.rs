@@ -1,7 +1,7 @@
 extern crate libc;
 extern crate rustc_serialize;
 
-use core::Workspaces;
+use core::workspaces::Workspaces;
 use window_manager::WindowManager;
 use window_system::WindowSystem;
 use window_system::Window;
@@ -24,7 +24,7 @@ pub mod default {
     use std::process::Command;
     use std::thread::spawn;
     use handlers::rustc_serialize::json;
-    use core::Workspaces;
+    use core::workspaces::Workspaces;
     use window_manager::WindowManager;
     use window_system::WindowSystem;
     use window_system::Window;
@@ -32,7 +32,7 @@ pub mod default {
     use handlers::libc::funcs::posix88::unistd::execvp;
     use std::ffi::CString;
 
-    pub fn start_terminal(window_manager: &mut WindowManager, _: &WindowSystem,
+    pub fn start_terminal(_: &mut WindowManager, _: &WindowSystem,
                           config: &GeneralConfig) {
         let (terminal, args) = config.terminal.clone();
         let arguments : Vec<String> = if args.is_empty() {
@@ -55,7 +55,7 @@ pub mod default {
         });
     }
 
-    pub fn start_launcher(window_manager: &mut WindowManager, _: &WindowSystem,
+    pub fn start_launcher(_: &mut WindowManager, _: &WindowSystem,
                           config: &GeneralConfig) {
         let launcher = config.launcher.clone();
         spawn(move || {

@@ -6,7 +6,7 @@ extern crate rustc_serialize;
 
 use std::env;
 use std::collections::BTreeMap;
-use core::Workspaces;
+use core::workspaces::Workspaces;
 use window_system::*;
 use window_manager::WindowManager;
 use handlers::{ KeyHandler, MouseHandler, ManageHook, StartupHook, LogHook };
