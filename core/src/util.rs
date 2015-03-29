@@ -4,7 +4,7 @@ use std::process::Stdio;
 use std::rc::Rc;
 use std::sync::RwLock;
 use std::ffi::AsOsStr;
-use core::Workspaces;
+use core::workspaces::Workspaces;
 use config::Config;
 use window_system::*;
 

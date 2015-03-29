@@ -5,7 +5,7 @@ use std::num::Float;
 use std::ops::Deref;
 use self::collections::EnumSet;
 use self::collections::enum_set::CLike;
-use core::Stack;
+use core::stack::Stack;
 use std::num::Int;
 use window_system::Window;
 use window_system::Rectangle;

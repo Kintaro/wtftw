@@ -1,7 +1,7 @@
 extern crate libc;
 extern crate rustc_serialize;
 
-use core::Workspaces;
+use core::workspaces::Workspaces;
 use window_manager::WindowManager;
 use window_system::WindowSystem;
 use window_system::Window;
@@ -24,7 +24,7 @@ pub mod default {
     use std::process::Command;
     use std::thread::spawn;
     use handlers::rustc_serialize::json;
-    use core::Workspaces;
+    use core::workspaces::Workspaces;
     use window_manager::WindowManager;
     use window_system::WindowSystem;
     use window_system::Window;
