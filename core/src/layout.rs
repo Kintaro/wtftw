@@ -349,7 +349,7 @@ impl<'a> Layout for MirrorLayout<'a> {
     }
 }
 
-#[repr(uint)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum Direction {
     Up,

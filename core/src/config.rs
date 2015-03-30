@@ -15,19 +15,15 @@ use layout::{ Layout, TallLayout };
 
 use std::mem;
 use std::error::Error;
-use std::fs::File;
+use std::fs::{ File, PathExt};
 use std::io::Write;
-use std::old_path::posix;
-use std::fs::PathExt;
 use std::fs::{ read_dir, create_dir_all };
-use std::process::Command;
-use std::process::Child;
+use std::process::{ Command, Child};
 use std::dynamic_lib::DynamicLibrary;
 use std::rc::Rc;
 use std::sync::RwLock;
 use std::thread::spawn;
-use std::path::PathBuf;
-use std::path::Path;
+use std::path::{ Path, PathBuf};
 use std::ffi::AsOsStr;
 
 pub struct GeneralConfig {
@@ -235,7 +231,7 @@ impl Config {
                             }
         });
 
-        if let Ok(lib) = DynamicLibrary::open(Some(&posix::Path::new(&libname.unwrap().unwrap().path().as_os_str().to_str().unwrap()))) {
+        if let Ok(lib) = DynamicLibrary::open(Some(&Path::new(&libname.unwrap().unwrap().path().as_os_str().to_str().unwrap()))) {
             unsafe {
                 if let Ok(symbol) = lib.symbol("configure") {
                     let result = mem::transmute::<*mut u8, extern fn(&mut WindowManager,
