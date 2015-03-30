@@ -701,7 +701,7 @@ impl WindowSystem for XlibWindowSystem {
     fn restack_windows(&self, w: Vec<Window>) {
         unsafe {
             let mut windows = w.iter().map(|&x| x as c_ulong).collect::<Vec<_>>();
-            XRestackWindows(self.display, windows.as_mut_slice().as_mut_ptr(), windows.len() as i32);
+            XRestackWindows(self.display, (&mut windows[..]).as_mut_ptr(), windows.len() as i32);
         }
     }
 

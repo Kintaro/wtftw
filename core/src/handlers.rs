@@ -46,7 +46,7 @@ pub mod default {
             let command = if arguments.is_empty() {
                 Command::new(&terminal).spawn()
             } else {
-                Command::new(&terminal).args(arguments.as_slice()).spawn()
+                Command::new(&terminal).args(&arguments[..]).spawn()
             };
 
             if let Err(_) = command {

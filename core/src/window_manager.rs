@@ -192,22 +192,21 @@ impl WindowManager {
         }
 
         let all_screens = ws.screens();
-        let summed_visible = (vec!(BTreeSet::new())).into_iter().chain(all_screens.iter().scan(Vec::new(), |acc, x| {
-            acc.extend(x.workspace.windows().into_iter());
-            Some(acc.clone())
-        })
-        .map(|x| x.into_iter().collect::<BTreeSet<_>>()))
-        .collect::<Vec<_>>();
-        error!("{:?}", summed_visible);
+        let summed_visible = (vec!(BTreeSet::new()))
+            .into_iter()
+            .chain(all_screens.iter().scan(Vec::new(), |acc, x| {
+                acc.extend(x.workspace.windows().into_iter());
+                Some(acc.clone())
+            })
+            .map(|x| x.into_iter().collect::<BTreeSet<_>>()))
+            .collect::<Vec<_>>();
 
-        //let rects = all_screens.iter().flat_map(|w| {
         let rects = all_screens.iter().zip(summed_visible.iter()).flat_map(|(w, vis)| {
             let mut wsp = w.workspace.clone();
             let this = ws.view(wsp.id);
-            let tiled = this.clone().current.workspace.stack.map_or(None, |x|
-                                                      x.filter(|win| !ws.floating.contains_key(win))).map_or(None, |x|
-                                                      x .filter(|win| !vis.contains(win)));
-                                                               //&& !vis.contains(win)));
+            let tiled = this.clone().current.workspace.stack
+                .map_or(None, |x| x.filter(|win| !ws.floating.contains_key(win)))
+                .map_or(None, |x| x.filter(|win| !vis.contains(win)));
             let view_rect = w.screen_detail;
 
             let rs = wsp.layout.apply_layout(window_system, view_rect, config, &tiled);
@@ -332,9 +331,7 @@ impl WindowManager {
         let Rectangle(x, y, w, h) = window_system.get_geometry(window);
 
         window_system.warp_pointer(window, w, h);
-        debug!("warping to {}, {}", w, h);
         self.mouse_drag(window_system, box move |ex: u32, ey: u32, m: &mut WindowManager, w: &WindowSystem| {
-            debug!("resizing to {}x{} at ({}, {})", ex - x as u32, ey - y as u32, x, y);
             let nx = cmp::max(0, ex as i32 - x) as u32;
             let ny = cmp::max(0, ey as i32 - y) as u32;
             w.resize_window(window, nx, ny);
@@ -344,6 +341,7 @@ impl WindowManager {
         self.float(window_system, config, window)
     }
 
+    // Checks if the window is awaiting an unmap operation
     pub fn is_waiting_unmap(&self, window: Window) -> bool {
         self.waiting_unmap.contains_key(&window)
     }

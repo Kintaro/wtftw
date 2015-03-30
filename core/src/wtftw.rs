@@ -1,7 +1,4 @@
-#![allow(trivial_casts)]
-#![allow(deprecated)]
-#![feature(slice_patterns)]
-#![feature(unboxed_closures)]
+#![feature(unboxed_closures, convert, slice_patterns)]
 #![feature(box_syntax)]
 #![feature(libc)]
 #![feature(io)]
@@ -10,7 +7,6 @@
 #![feature(std_misc)]
 #![feature(rustc_private)]
 #![feature(path_ext)]
-#![feature(convert)]
 #[macro_use]
 #[link]
 extern crate log;
