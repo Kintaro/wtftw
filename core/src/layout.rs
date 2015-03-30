@@ -154,9 +154,9 @@ impl<'a> Layout for CenterLayout <'a> {
                     self.layout.apply_layout(window_system, screen, config, &Some(s.clone()))
                 } else {
                     let new_stack = if s.up.len() > 0 {
-                        Stack::<Window>::new(s.up[0], s.up.as_slice().tail().to_vec(), s.down.clone())
+                        Stack::<Window>::new(s.up[0], s.up.tail().to_vec(), s.down.clone())
                     } else {
-                        Stack::<Window>::new(s.down[0], Vec::new(), s.down.as_slice().tail().to_vec())
+                        Stack::<Window>::new(s.down[0], Vec::new(), s.down.tail().to_vec())
                     };
                     (vec!({
                         let x = screen.0 + ((screen.2 as f32 * 0.2) as i32 / 2);
@@ -349,7 +349,7 @@ impl<'a> Layout for MirrorLayout<'a> {
     }
 }
 
-#[repr(uint)]
+#[repr(usize)]
 #[derive(Clone, Copy)]
 pub enum Direction {
     Up,
@@ -397,7 +397,7 @@ impl CLike for Direction {
 pub struct Strut(Direction, u64, u64, u64);
 
 fn parse_strut_partial(x: Vec<u64>) -> Vec<Strut> {
-    match x.as_slice() {
+    match &x[..] {
         [l, r, t, b, ly1, ly2, ry1, ry2, tx1, tx2, bx1, bx2] => {
             (vec!(Strut(Direction::Left, l, ly1, ly2),
                   Strut(Direction::Right, r, ry1, ry2),
@@ -414,7 +414,7 @@ pub fn get_strut(window_system: &WindowSystem, window: Window) -> Vec<Strut> {
     let partial_strut = window_system.get_partial_strut(window);
 
     fn parse_strut(x: Vec<u64>) -> Vec<Strut> {
-        match x.as_slice() {
+        match &x[..] {
             [a, b, c, d] => {
                 let t = vec!(a, b, c, d);
                 let s = vec!(Int::min_value(), Int::max_value());

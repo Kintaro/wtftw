@@ -1,5 +1,5 @@
 extern crate libc;
-extern crate "rustc-serialize" as rustc_serialize;
+extern crate rustc_serialize;
 
 use core::Workspaces;
 use window_manager::WindowManager;
@@ -46,7 +46,7 @@ pub mod default {
             let command = if arguments.is_empty() {
                 Command::new(&terminal).spawn()
             } else {
-                Command::new(&terminal).args(arguments.as_slice()).spawn()
+                Command::new(&terminal).args(&arguments[..]).spawn()
             };
 
             if let Err(_) = command {

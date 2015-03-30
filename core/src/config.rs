@@ -2,7 +2,7 @@ extern crate rustc;
 extern crate rustc_trans;
 extern crate syntax;
 extern crate libc;
-extern crate "rustc-serialize" as rustc_serialize;
+extern crate rustc_serialize;
 
 use std::env;
 use std::collections::BTreeMap;
@@ -17,7 +17,6 @@ use std::mem;
 use std::error::Error;
 use std::fs::File;
 use std::io::Write;
-use std::old_path::posix;
 use std::fs::PathExt;
 use std::fs::{ read_dir, create_dir_all };
 use std::process::Command;
@@ -91,7 +90,7 @@ pub struct Config<'a> {
 impl<'a> Config<'a> {
     /// Create the Config from a json file
     pub fn initialize<'b>() -> Config<'b> {
-        let home = env::home_dir().unwrap_or(PathBuf::new("./")).into_os_string().into_string().unwrap();
+        let home = env::home_dir().unwrap_or(PathBuf::from("./")).into_os_string().into_string().unwrap();
         // Default version of the config, for fallback
         Config {
             general: GeneralConfig {
@@ -237,7 +236,7 @@ impl<'a> Config<'a> {
                             }
         });
 
-        if let Ok(lib) = DynamicLibrary::open(Some(&posix::Path::new(&libname.unwrap().unwrap().path().as_os_str().to_str().unwrap()))) {
+        if let Ok(lib) = DynamicLibrary::open(Some(&Path::new(&libname.unwrap().unwrap().path().as_os_str().to_str().unwrap()))) {
             unsafe {
                 if let Ok(symbol) = lib.symbol("configure") {
                     let result = mem::transmute::<*mut u8, extern fn(&mut WindowManager,
