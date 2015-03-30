@@ -4,7 +4,7 @@
 #[macro_use]
 extern crate log;
 extern crate getopts;
-extern crate "rustc-serialize" as rustc_serialize;
+extern crate rustc_serialize;
 extern crate wtftw_core;
 extern crate wtftw_xlib;
 
@@ -168,7 +168,7 @@ fn main() {
             WindowSystemEvent::KeyPressed(_, key) => {
                 if config.internal.key_handlers.contains_key(&key) {
                     let local_window_manager = window_manager.clone();
-                    window_manager = config.internal.key_handlers[key](local_window_manager,
+                    window_manager = config.internal.key_handlers[&key](local_window_manager,
                         &window_system, &config.general);
                 }
             },

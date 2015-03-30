@@ -1,5 +1,4 @@
-#![feature(unboxed_closures)]
-#![feature(old_path)]
+#![feature(unboxed_closures, convert, slice_patterns)]
 #![feature(box_syntax)]
 #![feature(libc)]
 #![feature(io)]

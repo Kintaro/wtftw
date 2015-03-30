@@ -46,7 +46,7 @@ impl<T: Clone + Eq> Stack<T> {
         Stack {
             focus: t,
             up: self.up.clone(),
-            down: self.down.clone() + (vec!(self.focus.clone()).as_slice())
+            down: self.down.clone() + (&vec!(self.focus.clone())[..])
         }
     }
 
@@ -63,7 +63,7 @@ impl<T: Clone + Eq> Stack<T> {
     /// Filter the stack to retain only windows
     /// that yield true in the given filter function
     pub fn filter<F>(&self, f: F) -> Option<Stack<T>> where F : Fn(&T) -> bool {
-        let lrs : Vec<T> = (vec!(self.focus.clone()) + self.down.as_slice()).iter()
+        let lrs : Vec<T> = (vec!(self.focus.clone()) + &self.down[..]).iter()
             .filter(|&x| f(x))
             .map(|x| x.clone())
             .collect();
@@ -94,7 +94,7 @@ impl<T: Clone + Eq> Stack<T> {
     /// Move the focus to the next element in the `up` list
     pub fn focus_up(&self) -> Stack<T> {
         if self.up.is_empty() {
-            let tmp : Vec<T> = (vec!(self.focus.clone()) + self.down.as_slice()).into_iter()
+            let tmp : Vec<T> = (vec!(self.focus.clone()) + &self.down[..]).into_iter()
                 .rev()
                 .collect();
             let xs : Vec<T> = tmp.iter()
@@ -104,7 +104,7 @@ impl<T: Clone + Eq> Stack<T> {
 
             Stack::<T>::new(tmp[0].clone(), xs, Vec::new())
         } else {
-            let down = (vec!(self.focus.clone())) + self.down.as_slice();
+            let down = (vec!(self.focus.clone())) + &self.down[..];
             let up   = self.up.iter().skip(1).map(|x| x.clone()).collect();
             Stack::<T>::new(self.up[0].clone(), up, down)
         }
@@ -121,7 +121,7 @@ impl<T: Clone + Eq> Stack<T> {
         } else {
             let x = self.up[0].clone();
             let xs = self.up.iter().skip(1).map(|x| x.clone()).collect();
-            let rs = vec!(x) + self.down.as_slice();
+            let rs = vec!(x) + &self.down[..];
             Stack::<T>::new(self.focus.clone(), xs, rs)
         }
     }
@@ -144,7 +144,7 @@ impl<T: Clone + Eq> Stack<T> {
             .skip(1)
             .map(|x| x.clone())
             .collect();
-        let rs : Vec<T> = xs + (vec!(x) + self.down.as_slice()).as_slice();
+        let rs : Vec<T> = xs + &(vec!(x) + &self.down[..])[..];
 
         Stack::<T>::new(self.focus.clone(), Vec::new(), rs)
     }
@@ -422,7 +422,7 @@ impl<'a> Workspaces<'a> {
                 .map(|(_, y)| y.clone())
                 .collect();
 
-            self.from_visible(visible + (vec!(self.current.clone())).as_slice())
+            self.from_visible(visible + &(vec!(self.current.clone()))[..])
                 .from_current(screen)
         // Desired workspace is hidden. Switch it with the current workspace
         } else if let Some(workspace_pos) = self.hidden.iter().position(|w| w.id == index) {
@@ -432,7 +432,7 @@ impl<'a> Workspaces<'a> {
                 .map(|(_, y)| y.clone())
                 .collect();
 
-            self.from_hidden(hidden + (vec!(self.current.workspace.clone())).as_slice())
+            self.from_hidden(hidden + &(vec!(self.current.workspace.clone()))[..])
                 .from_current(self.current.map_workspace(|_| self.hidden[workspace_pos].clone()))
         } else {
             self.clone()
@@ -454,7 +454,7 @@ impl<'a> Workspaces<'a> {
                 .from_visible(self.visible.iter()
                               .filter(|x| x.workspace.id != index)
                               .map(|x| x.clone())
-                              .collect::<Vec<_>>() + (vec!(screen)).as_slice())
+                              .collect::<Vec<_>>() + &(vec!(screen))[..])
         } else {
             self.clone()
         }
@@ -524,28 +524,34 @@ impl<'a> Workspaces<'a> {
         self.modify_stack(|x| x.swap_master())
     }
 
-    pub fn modify_stack<F>(&self, f: F) -> Workspaces<'a> where F : Fn(Stack<Window>) -> Stack<Window> {
+    pub fn modify_stack<F>(&self, f: F) -> Workspaces<'a>
+            where F : Fn(Stack<Window>) -> Stack<Window> {
         self.from_current(self.current.map(|s| f(s)))
     }
 
-    pub fn modify_stack_option<F>(&self, f: F) -> Workspaces<'a> where F : Fn(Stack<Window>) -> Option<Stack<Window>> {
+    pub fn modify_stack_option<F>(&self, f: F) -> Workspaces<'a>
+            where F : Fn(Stack<Window>) -> Option<Stack<Window>> {
         self.from_current(self.current.map_option(|s| f(s)))
     }
 
-    pub fn modify_hidden<F>(&self, f: F) -> Workspaces<'a> where F : Fn(Stack<Window>) -> Stack<Window> {
+    pub fn modify_hidden<F>(&self, f: F) -> Workspaces<'a>
+            where F : Fn(Stack<Window>) -> Stack<Window> {
         self.from_hidden(self.hidden.iter().map(|x| x.map(|s| f(s))).collect())
     }
 
-    pub fn modify_hidden_option<F>(&self, f: F) -> Workspaces<'a> where F : Fn(Stack<Window>) -> Option<Stack<Window>> {
+    pub fn modify_hidden_option<F>(&self, f: F) -> Workspaces<'a>
+            where F : Fn(Stack<Window>) -> Option<Stack<Window>> {
         self.from_hidden(self.hidden.iter().map(|x| x.map_option(|s| f(s))).collect())
     }
 
 
-    pub fn modify_visible<F>(&self, f: F) -> Workspaces<'a> where F : Fn(Stack<Window>) -> Stack<Window> {
+    pub fn modify_visible<F>(&self, f: F) -> Workspaces<'a>
+            where F : Fn(Stack<Window>) -> Stack<Window> {
         self.from_visible(self.visible.iter().map(|x| x.map(|s| f(s))).collect())
     }
 
-    pub fn modify_visible_option<F>(&self, f: F) -> Workspaces<'a> where F : Fn(Stack<Window>) -> Option<Stack<Window>> {
+    pub fn modify_visible_option<F>(&self, f: F) -> Workspaces<'a>
+            where F : Fn(Stack<Window>) -> Option<Stack<Window>> {
         self.from_visible(self.visible.iter().map(|x| x.map_option(|s| f(s))).collect())
     }
 
@@ -561,7 +567,8 @@ impl<'a> Workspaces<'a> {
 
     /// Apply the given function to the currently focused stack
     /// or return a default if the stack is empty
-    pub fn with<T, F>(&self, default: T, f: F) -> T where F : Fn(&Stack<Window>) -> T {
+    pub fn with<T, F>(&self, default: T, f: F) -> T
+            where F : Fn(&Stack<Window>) -> T {
         self.clone().current.workspace.stack.map_or(default, |x| f(&x))
     }
 
@@ -616,7 +623,7 @@ impl<'a> Workspaces<'a> {
         }
 
         self.from_current(self.current.map_or(Stack::from_element(window), |s| {
-            Stack::<Window>::new(window, s.up, (vec!(s.focus.clone())) + s.down.as_slice())
+            Stack::<Window>::new(window, s.up, (vec!(s.focus.clone())) + &s.down[..])
         }))
     }
 
@@ -647,7 +654,7 @@ impl<'a> Workspaces<'a> {
     /// Flatten all workspaces into a list
     pub fn workspaces(&self) -> Vec<Workspace<'a>> {
         let v : Vec<Workspace> = self.visible.iter().map(|x| x.workspace.clone()).collect();
-        (vec!(self.current.workspace.clone())) + v.as_slice() + self.hidden.as_slice()
+        (vec!(self.current.workspace.clone())) + &v[..] + &self.hidden[..]
     }
 
     /// Shift the given window to the given workspace
@@ -711,7 +718,7 @@ impl<'a> Workspaces<'a> {
     /// Return a list of all screens and their workspaces.
     /// Mostly used by layout.
     pub fn screens(&self) -> Vec<Screen<'a>> {
-        (vec!(self.current.clone())) + self.visible.as_slice()
+        (vec!(self.current.clone())) + &self.visible[..]
     }
 
     pub fn send_layout_message<'b>(&self, message: LayoutMessage, window_system: &WindowSystem,
