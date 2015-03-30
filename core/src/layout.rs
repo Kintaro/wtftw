@@ -5,7 +5,7 @@ use std::num::Float;
 use std::ops::Deref;
 use self::collections::EnumSet;
 use self::collections::enum_set::CLike;
-use core::Stack;
+use core::stack::Stack;
 use std::num::Int;
 use window_system::Window;
 use window_system::Rectangle;
@@ -72,11 +72,11 @@ pub fn split_horizontally_by(ratio: f32, screen: ScreenDetail) -> (Rectangle, Re
 pub trait Layout {
     fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle, config: &GeneralConfig,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)>;
-    fn apply_message<'b>(&mut self, _: LayoutMessage, _: &WindowSystem,
-                         _: &Option<Stack<Window>>, _: &GeneralConfig<'b>) -> bool { true }
+    fn apply_message(&mut self, _: LayoutMessage, _: &WindowSystem,
+                         _: &Option<Stack<Window>>, _: &GeneralConfig) -> bool { true }
     fn description(&self) -> String;
     fn copy<'a>(&self) -> Box<Layout + 'a> { panic!("") }
-    fn unhook<'b>(&self, _: &WindowSystem, _: &Option<Stack<Window>>, _: &GeneralConfig<'b>) { }
+    fn unhook(&self, _: &WindowSystem, _: &Option<Stack<Window>>, _: &GeneralConfig) { }
 }
 
 #[derive(Clone, Copy)]
@@ -111,8 +111,8 @@ impl Layout for TallLayout {
         }
     }
 
-    fn apply_message<'b>(&mut self, message: LayoutMessage, _: &WindowSystem,
-                         _: &Option<Stack<Window>>, _: &GeneralConfig<'b>) -> bool {
+    fn apply_message(&mut self, message: LayoutMessage, _: &WindowSystem,
+                         _: &Option<Stack<Window>>, _: &GeneralConfig) -> bool {
         match message {
             LayoutMessage::Increase => { self.ratio += 0.05; true }
             LayoutMessage::Decrease => { self.ratio -= 0.05; true }
@@ -172,8 +172,8 @@ impl<'a> Layout for CenterLayout <'a> {
         }
     }
 
-    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
-                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
+    fn apply_message(&mut self, message: LayoutMessage, window_system: &WindowSystem,
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig) -> bool {
         self.layout.apply_message(message, window_system, stack, config)
     }
 
@@ -181,7 +181,7 @@ impl<'a> Layout for CenterLayout <'a> {
         String::from_str("Center")
     }
 
-    fn copy<'b>(&self) -> Box<Layout + 'b> {
+    fn copy(&self) -> Box<Layout> {
         CenterLayout::new(self.layout.copy())
     }
 }
@@ -286,8 +286,8 @@ impl Layout for ResizableTallLayout {
         }
     }
 
-    fn apply_message<'b>(&mut self, message: LayoutMessage, _: &WindowSystem,
-                         stack: &Option<Stack<Window>>, _: &GeneralConfig<'b>) -> bool {
+    fn apply_message(&mut self, message: LayoutMessage, _: &WindowSystem,
+                         stack: &Option<Stack<Window>>, _: &GeneralConfig) -> bool {
         let d = self.increment_ratio;
         match message {
             LayoutMessage::Increase => { self.ratio += self.increment_ratio; true }
@@ -335,8 +335,8 @@ impl<'a> Layout for MirrorLayout<'a> {
             .map(|&(w, r)| (w, mirror_rect(&r))).collect()
     }
 
-    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
-                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
+    fn apply_message(&mut self, message: LayoutMessage, window_system: &WindowSystem,
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig) -> bool {
         self.layout.apply_message(message, window_system, stack, config)
     }
 
@@ -344,7 +344,7 @@ impl<'a> Layout for MirrorLayout<'a> {
         self.layout.description()
     }
 
-    fn copy<'b>(&self) -> Box<Layout + 'b> {
+    fn copy(&self) -> Box<Layout> {
         box MirrorLayout { layout: self.layout.copy() }
     }
 }
@@ -479,8 +479,8 @@ impl<'a> Layout for AvoidStrutsLayout<'a> {
         self.layout.apply_layout(window_system, new_screen, config, stack)
     }
 
-    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
-                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
+    fn apply_message(&mut self, message: LayoutMessage, window_system: &WindowSystem,
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig) -> bool {
         self.layout.apply_message(message, window_system, stack, config)
     }
 
@@ -488,7 +488,7 @@ impl<'a> Layout for AvoidStrutsLayout<'a> {
         self.layout.description()
     }
 
-    fn copy<'b>(&self) -> Box<Layout + 'b> {
+    fn copy(&self) -> Box<Layout> {
         box AvoidStrutsLayout {
             directions: self.directions.clone(),
             layout: self.layout.copy()
@@ -519,8 +519,8 @@ impl<'a> Layout for GapLayout<'a> {
         layout.iter().map(|&(win, Rectangle(x, y, w, h))| (win, Rectangle(x + g as i32, y + g as i32, w - 2 * g, h - 2 * g))).collect()
     }
 
-    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
-                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
+    fn apply_message(&mut self, message: LayoutMessage, window_system: &WindowSystem,
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig) -> bool {
         match message {
             LayoutMessage::IncreaseGap => { self.gap += 1; true }
             LayoutMessage::DecreaseGap => { self.gap -= 1; true }
@@ -532,7 +532,7 @@ impl<'a> Layout for GapLayout<'a> {
         self.layout.description()
     }
 
-    fn copy<'b>(&self) -> Box<Layout + 'b> {
+    fn copy(&self) -> Box<Layout> {
         box GapLayout {
             gap: self.gap,
             layout: self.layout.copy()
@@ -565,8 +565,8 @@ impl<'a> Layout for WithBordersLayout<'a> {
         self.layout.apply_layout(window_system, screen, config, stack)
     }
 
-    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
-                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
+    fn apply_message(&mut self, message: LayoutMessage, window_system: &WindowSystem,
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig) -> bool {
         self.layout.apply_message(message, window_system, stack, config)
     }
 
@@ -574,14 +574,14 @@ impl<'a> Layout for WithBordersLayout<'a> {
         self.layout.description()
     }
 
-    fn copy<'b>(&self) -> Box<Layout + 'b> {
+    fn copy(&self) -> Box<Layout> {
         box WithBordersLayout {
             border: self.border,
             layout: self.layout.copy()
         }
     }
 
-    fn unhook<'b>(&self, window_system: &WindowSystem, stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) {
+    fn unhook(&self, window_system: &WindowSystem, stack: &Option<Stack<Window>>, config: &GeneralConfig) {
         if let &Some(ref s) = stack {
             for window in s.integrate().into_iter() {
                 window_system.set_window_border_width(window, config.border_width);
@@ -645,8 +645,8 @@ impl<'a> Layout for LayoutCollection<'a> {
         self.layouts[self.current].apply_layout(window_system, screen, config, stack)
     }
 
-    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
-                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
+    fn apply_message(&mut self, message: LayoutMessage, window_system: &WindowSystem,
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig) -> bool {
         match message {
             LayoutMessage::Next => {
                 self.layouts[self.current].unhook(window_system, stack, config);
@@ -666,7 +666,7 @@ impl<'a> Layout for LayoutCollection<'a> {
         self.layouts[self.current].description()
     }
 
-    fn copy<'b>(&self) -> Box<Layout + 'b> {
+    fn copy(&self) -> Box<Layout> {
         box LayoutCollection {
             current: self.current,
             layouts: self.layouts.iter().map(|x| x.copy()).collect()
@@ -1156,8 +1156,8 @@ impl Layout for BinarySpacePartition {
         }
     }
 
-    fn apply_message<'b>(&mut self, message: LayoutMessage, _: &WindowSystem,
-        stack: &Option<Stack<Window>>, _: &GeneralConfig<'b>) -> bool {
+    fn apply_message(&mut self, message: LayoutMessage, _: &WindowSystem,
+        stack: &Option<Stack<Window>>, _: &GeneralConfig) -> bool {
             match message {
                 LayoutMessage::TreeRotate => {
                     if let &Some(ref s) = stack {

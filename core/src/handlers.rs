@@ -1,17 +1,17 @@
 extern crate libc;
 extern crate rustc_serialize;
 
-use core::Workspaces;
+use core::workspaces::Workspaces;
 use window_manager::WindowManager;
 use window_system::WindowSystem;
 use window_system::Window;
 use config::{ GeneralConfig, Config };
 
-pub type KeyHandler<'a> = Box<Fn(WindowManager<'a>, &WindowSystem, &'a GeneralConfig<'a>) -> WindowManager<'a> + 'a>;
-pub type MouseHandler<'a> = Box<Fn(WindowManager<'a>, &WindowSystem, &'a GeneralConfig<'a>, Window) -> WindowManager<'a> + 'a>;
-pub type ManageHook<'a> = Box<Fn(Workspaces<'a>, &WindowSystem, Window) -> Workspaces<'a> + 'a>;
-pub type StartupHook<'a> = Box<Fn(WindowManager<'a>, &WindowSystem, &'a Config<'a>) -> WindowManager<'a> + 'a>;
-pub type LogHook<'a> = Box<FnMut(WindowManager<'a>, &WindowSystem) + 'a>;
+pub type KeyHandler = Box<Fn(&mut WindowManager, &WindowSystem, &GeneralConfig)>;
+pub type MouseHandler = Box<Fn(&mut WindowManager, &WindowSystem, &GeneralConfig, Window)>;
+pub type ManageHook = Box<Fn(Workspaces, &WindowSystem, Window) -> Workspaces>;
+pub type StartupHook = Box<Fn(&mut WindowManager, &WindowSystem, &Config)>;
+pub type LogHook = Box<FnMut(WindowManager, &WindowSystem)>;
 
 extern {
     pub fn waitpid(fd: libc::pid_t, status: *mut libc::c_int, options: libc::c_int) -> libc::pid_t;
@@ -24,7 +24,7 @@ pub mod default {
     use std::process::Command;
     use std::thread::spawn;
     use handlers::rustc_serialize::json;
-    use core::Workspaces;
+    use core::workspaces::Workspaces;
     use window_manager::WindowManager;
     use window_system::WindowSystem;
     use window_system::Window;
@@ -32,8 +32,8 @@ pub mod default {
     use handlers::libc::funcs::posix88::unistd::execvp;
     use std::ffi::CString;
 
-    pub fn start_terminal<'a>(window_manager: WindowManager<'a>, _: &WindowSystem,
-                          config: &GeneralConfig) -> WindowManager<'a> {
+    pub fn start_terminal(_: &mut WindowManager, _: &WindowSystem,
+                          config: &GeneralConfig) {
         let (terminal, args) = config.terminal.clone();
         let arguments : Vec<String> = if args.is_empty() {
             Vec::new()
@@ -53,12 +53,10 @@ pub mod default {
                 panic!("unable to start terminal")
             }
         });
-
-        window_manager.clone()
     }
 
-    pub fn start_launcher<'a>(window_manager: WindowManager<'a>, _: &WindowSystem,
-                          config: &GeneralConfig) -> WindowManager<'a> {
+    pub fn start_launcher(_: &mut WindowManager, _: &WindowSystem,
+                          config: &GeneralConfig) {
         let launcher = config.launcher.clone();
         spawn(move || {
             debug!("spawning launcher");
@@ -67,17 +65,15 @@ pub mod default {
                 _     => panic!("unable to start launcher")
             }
         });
-
-        window_manager.clone()
     }
 
-    pub fn switch_to_workspace<'a>(window_manager: WindowManager<'a>, window_system: &WindowSystem,
-                               config: &GeneralConfig<'a>, index: usize) -> WindowManager<'a> {
+    pub fn switch_to_workspace(window_manager: &mut WindowManager, window_system: &WindowSystem,
+                               config: &GeneralConfig, index: usize) {
         window_manager.view(window_system, index as u32, config)
     }
 
-    pub fn move_window_to_workspace<'a>(window_manager: WindowManager<'a>, window_system: &WindowSystem,
-                                    config: &GeneralConfig<'a>, index: usize) -> WindowManager<'a> {
+    pub fn move_window_to_workspace(window_manager: &mut WindowManager, window_system: &WindowSystem,
+                                    config: &GeneralConfig, index: usize) {
         window_manager.move_window_to_workspace(window_system, config, index as u32)
     }
 
@@ -85,7 +81,7 @@ pub mod default {
     /// with the new one in memory.
     /// Pass a list of all windows to it via command line arguments
     /// so it may resume work as usual.
-    pub fn restart<'a>(window_manager: WindowManager<'a>, _: &WindowSystem, c: &GeneralConfig<'a>) -> WindowManager<'a> {
+    pub fn restart(window_manager: &mut WindowManager, _: &WindowSystem, c: &GeneralConfig) {
         // Get absolute path to binary
         let filename = env::current_dir().unwrap().join(&env::current_exe().unwrap());
         // Collect all managed windows
@@ -111,16 +107,12 @@ pub mod default {
             ];
             execvp(filename_c.as_ptr(), slice.as_mut_ptr());
         }
-
-        window_manager.clone()
     }
 
     /// Stop the window manager
-    pub fn exit<'a>(w: WindowManager<'a>, _: &WindowSystem, _: &GeneralConfig<'a>) -> WindowManager<'a> {
-        WindowManager { running: false, dragging: None, workspaces: w.workspaces, waiting_unmap: w.waiting_unmap.clone() }
-    }
+    pub fn exit(_: &mut WindowManager, _: &WindowSystem, _: &GeneralConfig) { }
 
-    pub fn shift<'a>(index: u32, workspace: Workspaces<'a>, window: Window) -> Workspaces<'a> {
+    pub fn shift(index: u32, workspace: Workspaces, window: Window) -> Workspaces {
         workspace.shift_window(index, window)
     }
 }

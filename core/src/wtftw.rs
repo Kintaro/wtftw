@@ -7,7 +7,6 @@
 #![feature(std_misc)]
 #![feature(rustc_private)]
 #![feature(path_ext)]
-#[deny(warnings)]
 #[macro_use]
 #[link]
 extern crate log;

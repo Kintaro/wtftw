@@ -4,7 +4,7 @@ use std::process::Stdio;
 use std::rc::Rc;
 use std::sync::RwLock;
 use std::ffi::AsOsStr;
-use core::Workspaces;
+use core::workspaces::Workspaces;
 use config::Config;
 use window_system::*;
 
@@ -57,7 +57,7 @@ pub fn spawn_pipe<S: AsOsStr + ?Sized>(config: &mut Config, program: &S, args: V
     rc
 }
 
-pub fn spawn_on<'a>(workspaces: Workspaces<'a>, _: &WindowSystem,
-                window: Window, workspace_id: u32) -> Workspaces<'a> {
+pub fn spawn_on(workspaces: Workspaces, _: &WindowSystem,
+                window: Window, workspace_id: u32) -> Workspaces {
     workspaces.focus_window(window).shift(workspace_id)
 }

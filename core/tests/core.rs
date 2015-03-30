@@ -1,7 +1,10 @@
-use wtftw_core::core::*;
-use wtftw_core::layout::FullLayout;
+#![feature(collections)]
 
 extern crate wtftw_core;
+
+use wtftw_core::layout::FullLayout;
+use wtftw_core::core::stack::Stack;
+use wtftw_core::core::workspace::Workspace;
 
 #[test]
 fn stack_add() {

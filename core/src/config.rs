@@ -6,7 +6,7 @@ extern crate rustc_serialize;
 
 use std::env;
 use std::collections::BTreeMap;
-use core::Workspaces;
+use core::workspaces::Workspaces;
 use window_system::*;
 use window_manager::WindowManager;
 use handlers::{ KeyHandler, MouseHandler, ManageHook, StartupHook, LogHook };
@@ -15,21 +15,18 @@ use layout::{ Layout, TallLayout };
 
 use std::mem;
 use std::error::Error;
-use std::fs::File;
+use std::fs::{ File, PathExt};
 use std::io::Write;
-use std::fs::PathExt;
 use std::fs::{ read_dir, create_dir_all };
-use std::process::Command;
-use std::process::Child;
+use std::process::{ Command, Child};
 use std::dynamic_lib::DynamicLibrary;
 use std::rc::Rc;
 use std::sync::RwLock;
 use std::thread::spawn;
-use std::path::PathBuf;
-use std::path::Path;
+use std::path::{ Path, PathBuf};
 use std::ffi::AsOsStr;
 
-pub struct GeneralConfig<'a> {
+pub struct GeneralConfig {
     /// Whether focus follows mouse movements or
     /// only click events and keyboard movements.
     pub focus_follows_mouse: bool,
@@ -50,11 +47,11 @@ pub struct GeneralConfig<'a> {
     pub launcher: String,
     pub mod_mask: KeyModifiers,
     pub pipes: Vec<Rc<RwLock<Child>>>,
-    pub layout: Box<Layout + 'a>
+    pub layout: Box<Layout>
 }
 
-impl<'a> Clone for GeneralConfig<'a> {
-    fn clone(&self) -> GeneralConfig<'a> {
+impl Clone for GeneralConfig {
+    fn clone(&self) -> GeneralConfig {
         GeneralConfig {
             focus_follows_mouse: self.focus_follows_mouse,
             focus_border_color: self.focus_border_color,
@@ -71,25 +68,25 @@ impl<'a> Clone for GeneralConfig<'a> {
     }
 }
 
-pub struct InternalConfig<'a> {
+pub struct InternalConfig {
     pub library: Option<DynamicLibrary>,
-    pub key_handlers: BTreeMap<KeyCommand, KeyHandler<'a>>,
-    pub mouse_handlers: BTreeMap<MouseCommand, MouseHandler<'a>>,
-    pub manage_hook: ManageHook<'a>,
-    pub startup_hook: StartupHook<'a>,
-    pub loghook: Option<LogHook<'a>>,
+    pub key_handlers: BTreeMap<KeyCommand, KeyHandler>,
+    pub mouse_handlers: BTreeMap<MouseCommand, MouseHandler>,
+    pub manage_hook: ManageHook,
+    pub startup_hook: StartupHook,
+    pub loghook: Option<LogHook>,
     pub wtftw_dir: String,
 }
 
 /// Common configuration options for the window manager.
-pub struct Config<'a> {
-    pub general: GeneralConfig<'a>,
-    pub internal: InternalConfig<'a>
+pub struct Config {
+    pub general: GeneralConfig,
+    pub internal: InternalConfig
 }
 
-impl<'a> Config<'a> {
+impl Config {
     /// Create the Config from a json file
-    pub fn initialize<'b>() -> Config<'b> {
+    pub fn initialize() -> Config {
         let home = env::home_dir().unwrap_or(PathBuf::from("./")).into_os_string().into_string().unwrap();
         // Default version of the config, for fallback
         Config {
@@ -114,12 +111,10 @@ impl<'a> Config<'a> {
                 library:      None,
                 key_handlers: BTreeMap::new(),
                 mouse_handlers: BTreeMap::new(),
-                manage_hook:  box move |m: Workspaces<'b>, _: &WindowSystem, _: Window| -> Workspaces<'b> {
+                manage_hook:  box move |m: Workspaces, _: &WindowSystem, _: Window| -> Workspaces {
                     m.clone()
                 },
-                startup_hook: box move |m: WindowManager<'b>, _: &WindowSystem, _: &Config| -> WindowManager<'b> {
-                    m.clone()
-                },
+                startup_hook: box move |_: &mut WindowManager, _: &WindowSystem, _: &Config| { },
                 loghook:      None,
                 wtftw_dir:    format!("{}/.wtftw", home),
             }
@@ -140,20 +135,20 @@ impl<'a> Config<'a> {
         self.general.mod_mask.clone()
     }
 
-    pub fn add_key_handler(&mut self, key: u64, mask: KeyModifiers, keyhandler: KeyHandler<'a>) {
+    pub fn add_key_handler(&mut self, key: u64, mask: KeyModifiers, keyhandler: KeyHandler) {
         self.internal.key_handlers.insert(KeyCommand::new(key, mask), keyhandler);
     }
 
     pub fn add_mouse_handler(&mut self, button: MouseButton, mask: KeyModifiers,
-                             mousehandler: MouseHandler<'a>) {
+                             mousehandler: MouseHandler) {
         self.internal.mouse_handlers.insert(MouseCommand::new(button, mask), mousehandler);
     }
 
-    pub fn set_manage_hook(&mut self, hook: ManageHook<'a>) {
+    pub fn set_manage_hook(&mut self, hook: ManageHook) {
         self.internal.manage_hook = hook;
     }
 
-    pub fn set_log_hook(&mut self, hook: LogHook<'a>) {
+    pub fn set_log_hook(&mut self, hook: LogHook) {
         self.internal.loghook = Some(hook);
     }
 
