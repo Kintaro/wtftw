@@ -1,4 +1,3 @@
-
 /// Handles focus tracking on a workspace.
 /// `focus` keeps track of the focused window's id
 /// and `up` and `down` are the windows above or
@@ -36,7 +35,7 @@ impl<T: Clone + Eq> Stack<T> {
         Stack {
             focus: t,
             up: self.up.clone(),
-            down: self.down.clone() + (vec!(self.focus.clone()).as_slice())
+            down: self.down.clone() + &(vec!(self.focus.clone()))[..]
         }
     }
 
@@ -53,7 +52,7 @@ impl<T: Clone + Eq> Stack<T> {
     /// Filter the stack to retain only windows
     /// that yield true in the given filter function
     pub fn filter<F>(&self, f: F) -> Option<Stack<T>> where F : Fn(&T) -> bool {
-        let lrs : Vec<T> = (vec!(self.focus.clone()) + self.down.as_slice()).iter()
+        let lrs : Vec<T> = (vec!(self.focus.clone()) + &self.down[..]).iter()
             .filter(|&x| f(x))
             .map(|x| x.clone())
             .collect();
@@ -84,7 +83,7 @@ impl<T: Clone + Eq> Stack<T> {
     /// Move the focus to the next element in the `up` list
     pub fn focus_up(&self) -> Stack<T> {
         if self.up.is_empty() {
-            let tmp : Vec<T> = (vec!(self.focus.clone()) + self.down.as_slice()).into_iter()
+            let tmp : Vec<T> = (vec!(self.focus.clone()) + &self.down[..]).into_iter()
                 .rev()
                 .collect();
             let xs : Vec<T> = tmp.iter()
@@ -94,7 +93,7 @@ impl<T: Clone + Eq> Stack<T> {
 
             Stack::<T>::new(tmp[0].clone(), xs, Vec::new())
         } else {
-            let down = (vec!(self.focus.clone())) + self.down.as_slice();
+            let down = (vec!(self.focus.clone())) + &self.down[..];
             let up   = self.up.iter().skip(1).map(|x| x.clone()).collect();
             Stack::<T>::new(self.up[0].clone(), up, down)
         }
@@ -111,7 +110,7 @@ impl<T: Clone + Eq> Stack<T> {
         } else {
             let x = self.up[0].clone();
             let xs = self.up.iter().skip(1).map(|x| x.clone()).collect();
-            let rs = vec!(x) + self.down.as_slice();
+            let rs = vec!(x) + &self.down[..];
             Stack::<T>::new(self.focus.clone(), xs, rs)
         }
     }
@@ -134,7 +133,7 @@ impl<T: Clone + Eq> Stack<T> {
             .skip(1)
             .map(|x| x.clone())
             .collect();
-        let rs : Vec<T> = xs + (vec!(x) + self.down.as_slice()).as_slice();
+        let rs : Vec<T> = xs + &(vec!(x) + &self.down[..])[..];
 
         Stack::<T>::new(self.focus.clone(), Vec::new(), rs)
     }
