@@ -72,11 +72,11 @@ pub fn split_horizontally_by(ratio: f32, screen: ScreenDetail) -> (Rectangle, Re
 pub trait Layout {
     fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle, config: &GeneralConfig,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)>;
-    fn apply_message<'b>(&mut self, _: LayoutMessage, _: &WindowSystem,
+    fn apply_message(&mut self, _: LayoutMessage, _: &WindowSystem,
                          _: &Option<Stack<Window>>, _: &GeneralConfig) -> bool { true }
     fn description(&self) -> String;
-    fn copy<'a>(&self) -> Box<Layout + 'a> { panic!("") }
-    fn unhook<'b>(&self, _: &WindowSystem, _: &Option<Stack<Window>>, _: &GeneralConfig) { }
+    fn copy(&self) -> Box<Layout> { panic!("") }
+    fn unhook(&self, _: &WindowSystem, _: &Option<Stack<Window>>, _: &GeneralConfig) { }
 }
 
 #[derive(Clone, Copy)]
@@ -87,12 +87,12 @@ pub struct TallLayout {
 }
 
 impl TallLayout {
-    pub fn new<'a>() -> Box<Layout + 'a> {
+    pub fn new() -> Box<Layout> {
         box TallLayout {
             num_master: 1,
             increment_ratio: 0.03,
             ratio: 0.5
-        } as Box<Layout + 'a>
+        } as Box<Layout>
     }
 }
 
@@ -111,7 +111,7 @@ impl Layout for TallLayout {
         }
     }
 
-    fn apply_message<'b>(&mut self, message: LayoutMessage, _: &WindowSystem,
+    fn apply_message(&mut self, message: LayoutMessage, _: &WindowSystem,
                          _: &Option<Stack<Window>>, _: &GeneralConfig) -> bool {
         match message {
             LayoutMessage::Increase => { self.ratio += 0.05; true }
@@ -128,24 +128,24 @@ impl Layout for TallLayout {
         String::from_str("Tall")
     }
 
-    fn copy<'a>(&self) -> Box<Layout + 'a> {
+    fn copy(&self) -> Box<Layout> {
         box self.clone()
     }
 }
 
-pub struct CenterLayout<'a> {
-    pub layout: Box<Layout + 'a>
+pub struct CenterLayout {
+    pub layout: Box<Layout>
 }
 
-impl<'a> CenterLayout<'a> {
-    pub fn new(layout: Box<Layout + 'a>) -> Box<Layout + 'a> {
+impl CenterLayout {
+    pub fn new(layout: Box<Layout>) -> Box<Layout> {
         box CenterLayout {
             layout: layout.copy()
-        } as Box<Layout + 'a>
+        } as Box<Layout>
     }
 }
 
-impl<'a> Layout for CenterLayout <'a> {
+impl Layout for CenterLayout  {
     fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle, config: &GeneralConfig,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
         match stack {
@@ -172,7 +172,7 @@ impl<'a> Layout for CenterLayout <'a> {
         }
     }
 
-    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
+    fn apply_message(&mut self, message: LayoutMessage, window_system: &WindowSystem,
                          stack: &Option<Stack<Window>>, config: &GeneralConfig) -> bool {
         self.layout.apply_message(message, window_system, stack, config)
     }
@@ -181,7 +181,7 @@ impl<'a> Layout for CenterLayout <'a> {
         String::from_str("Center")
     }
 
-    fn copy<'b>(&self) -> Box<Layout + 'b> {
+    fn copy(&self) -> Box<Layout> {
         CenterLayout::new(self.layout.copy())
     }
 }
@@ -195,13 +195,13 @@ pub struct ResizableTallLayout {
 }
 
 impl ResizableTallLayout {
-    pub fn new<'a>() -> Box<Layout + 'a> {
+    pub fn new() -> Box<Layout> {
         box ResizableTallLayout {
             num_master: 1,
             increment_ratio: 0.03,
             ratio: 0.5,
             slaves: Vec::new()
-        } as Box<Layout + 'a>
+        } as Box<Layout>
     }
 
     fn tile<U>(ratio: f32, mf: U, screen: ScreenDetail, num_master: u32, num_windows: u32) -> Vec<Rectangle> where
@@ -286,7 +286,7 @@ impl Layout for ResizableTallLayout {
         }
     }
 
-    fn apply_message<'b>(&mut self, message: LayoutMessage, _: &WindowSystem,
+    fn apply_message(&mut self, message: LayoutMessage, _: &WindowSystem,
                          stack: &Option<Stack<Window>>, _: &GeneralConfig) -> bool {
         let d = self.increment_ratio;
         match message {
@@ -307,7 +307,7 @@ impl Layout for ResizableTallLayout {
         String::from_str("ResizeTall")
     }
 
-    fn copy<'a>(&self) -> Box<Layout + 'a> {
+    fn copy(&self) -> Box<Layout> {
         box self.clone()
     }
 }
@@ -315,18 +315,18 @@ impl Layout for ResizableTallLayout {
 /// A simple layout container that just
 /// rotates the layout of its contained layout
 /// by 90° clockwise
-pub struct MirrorLayout<'a> {
-    pub layout: Box<Layout + 'a>
+pub struct MirrorLayout {
+    pub layout: Box<Layout>
 }
 
-impl<'a> MirrorLayout<'a> {
+impl MirrorLayout {
     /// Create a new MirrorLayout containing the given layout
-    pub fn new(layout: Box<Layout + 'a>) -> Box<Layout + 'a> {
+    pub fn new(layout: Box<Layout>) -> Box<Layout> {
         box MirrorLayout { layout: layout }
     }
 }
 
-impl<'a> Layout for MirrorLayout<'a> {
+impl Layout for MirrorLayout {
     fn apply_layout(&mut self, w: &WindowSystem, screen: Rectangle, config: &GeneralConfig,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
         // Rotate the screen, apply the layout, ...
@@ -335,7 +335,7 @@ impl<'a> Layout for MirrorLayout<'a> {
             .map(|&(w, r)| (w, mirror_rect(&r))).collect()
     }
 
-    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
+    fn apply_message(&mut self, message: LayoutMessage, window_system: &WindowSystem,
                          stack: &Option<Stack<Window>>, config: &GeneralConfig) -> bool {
         self.layout.apply_message(message, window_system, stack, config)
     }
@@ -344,7 +344,7 @@ impl<'a> Layout for MirrorLayout<'a> {
         self.layout.description()
     }
 
-    fn copy<'b>(&self) -> Box<Layout + 'b> {
+    fn copy(&self) -> Box<Layout> {
         box MirrorLayout { layout: self.layout.copy() }
     }
 }
@@ -439,15 +439,15 @@ pub fn get_strut(window_system: &WindowSystem, window: Window) -> Vec<Strut> {
 
 /// A layout that avoids dock like windows (e.g. dzen, xmobar, ...)
 /// to not overlap them.
-pub struct AvoidStrutsLayout<'a> {
+pub struct AvoidStrutsLayout {
     directions: EnumSet<Direction>,
-    layout: Box<Layout + 'a>
+    layout: Box<Layout>
 }
 
-impl<'a> AvoidStrutsLayout<'a> {
+impl AvoidStrutsLayout {
     /// Create a new AvoidStrutsLayout, containing the given layout
     /// and avoiding struts in the given directions.
-    pub fn new(d: Vec<Direction>, layout: Box<Layout + 'a>) -> Box<Layout + 'a> {
+    pub fn new(d: Vec<Direction>, layout: Box<Layout>) -> Box<Layout> {
         box AvoidStrutsLayout {
             directions: d.iter().map(|&x| x).collect(),
             layout: layout.copy()
@@ -455,7 +455,7 @@ impl<'a> AvoidStrutsLayout<'a> {
     }
 }
 
-impl<'a> Layout for AvoidStrutsLayout<'a> {
+impl Layout for AvoidStrutsLayout {
     fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle, config: &GeneralConfig,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
 
@@ -479,7 +479,7 @@ impl<'a> Layout for AvoidStrutsLayout<'a> {
         self.layout.apply_layout(window_system, new_screen, config, stack)
     }
 
-    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
+    fn apply_message(&mut self, message: LayoutMessage, window_system: &WindowSystem,
                          stack: &Option<Stack<Window>>, config: &GeneralConfig) -> bool {
         self.layout.apply_message(message, window_system, stack, config)
     }
@@ -488,7 +488,7 @@ impl<'a> Layout for AvoidStrutsLayout<'a> {
         self.layout.description()
     }
 
-    fn copy<'b>(&self) -> Box<Layout + 'b> {
+    fn copy(&self) -> Box<Layout> {
         box AvoidStrutsLayout {
             directions: self.directions.clone(),
             layout: self.layout.copy()
@@ -496,13 +496,13 @@ impl<'a> Layout for AvoidStrutsLayout<'a> {
     }
 }
 
-pub struct GapLayout<'a> {
+pub struct GapLayout {
     gap: u32,
-    layout: Box<Layout + 'a>
+    layout: Box<Layout>
 }
 
-impl<'a> GapLayout<'a> {
-    pub fn new(gap: u32, layout: Box<Layout + 'a>) -> Box<Layout + 'a> {
+impl GapLayout {
+    pub fn new(gap: u32, layout: Box<Layout>) -> Box<Layout> {
         box GapLayout {
             gap: gap,
             layout: layout.copy()
@@ -510,7 +510,7 @@ impl<'a> GapLayout<'a> {
     }
 }
 
-impl<'a> Layout for GapLayout<'a> {
+impl Layout for GapLayout {
     fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle, config: &GeneralConfig,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
         let layout = self.layout.apply_layout(window_system, screen, config, stack);
@@ -519,7 +519,7 @@ impl<'a> Layout for GapLayout<'a> {
         layout.iter().map(|&(win, Rectangle(x, y, w, h))| (win, Rectangle(x + g as i32, y + g as i32, w - 2 * g, h - 2 * g))).collect()
     }
 
-    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
+    fn apply_message(&mut self, message: LayoutMessage, window_system: &WindowSystem,
                          stack: &Option<Stack<Window>>, config: &GeneralConfig) -> bool {
         match message {
             LayoutMessage::IncreaseGap => { self.gap += 1; true }
@@ -532,7 +532,7 @@ impl<'a> Layout for GapLayout<'a> {
         self.layout.description()
     }
 
-    fn copy<'b>(&self) -> Box<Layout + 'b> {
+    fn copy(&self) -> Box<Layout> {
         box GapLayout {
             gap: self.gap,
             layout: self.layout.copy()
@@ -540,13 +540,13 @@ impl<'a> Layout for GapLayout<'a> {
     }
 }
 
-pub struct WithBordersLayout<'a> {
+pub struct WithBordersLayout {
     border: u32,
-    layout: Box<Layout + 'a>
+    layout: Box<Layout>
 }
 
-impl<'a> WithBordersLayout<'a> {
-    pub fn new(border: u32, layout: Box<Layout + 'a>) -> Box<Layout + 'a> {
+impl WithBordersLayout {
+    pub fn new(border: u32, layout: Box<Layout>) -> Box<Layout> {
         box WithBordersLayout {
             border: border,
             layout: layout.copy()
@@ -554,7 +554,7 @@ impl<'a> WithBordersLayout<'a> {
     }
 }
 
-impl<'a> Layout for WithBordersLayout<'a> {
+impl Layout for WithBordersLayout {
     fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle, config: &GeneralConfig,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
         if let &Some(ref s) = stack {
@@ -565,7 +565,7 @@ impl<'a> Layout for WithBordersLayout<'a> {
         self.layout.apply_layout(window_system, screen, config, stack)
     }
 
-    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
+    fn apply_message(&mut self, message: LayoutMessage, window_system: &WindowSystem,
                          stack: &Option<Stack<Window>>, config: &GeneralConfig) -> bool {
         self.layout.apply_message(message, window_system, stack, config)
     }
@@ -574,14 +574,14 @@ impl<'a> Layout for WithBordersLayout<'a> {
         self.layout.description()
     }
 
-    fn copy<'b>(&self) -> Box<Layout + 'b> {
+    fn copy(&self) -> Box<Layout> {
         box WithBordersLayout {
             border: self.border,
             layout: self.layout.copy()
         }
     }
 
-    fn unhook<'b>(&self, window_system: &WindowSystem, stack: &Option<Stack<Window>>, config: &GeneralConfig) {
+    fn unhook(&self, window_system: &WindowSystem, stack: &Option<Stack<Window>>, config: &GeneralConfig) {
         if let &Some(ref s) = stack {
             for window in s.integrate().into_iter() {
                 window_system.set_window_border_width(window, config.border_width);
@@ -595,7 +595,7 @@ impl<'a> Layout for WithBordersLayout<'a> {
 pub struct NoBordersLayout;
 
 impl NoBordersLayout {
-    pub fn new<'a>(layout: Box<Layout + 'a>) -> Box<Layout + 'a> {
+    pub fn new(layout: Box<Layout>) -> Box<Layout> {
         WithBordersLayout::new(0, layout)
     }
 }
@@ -620,18 +620,18 @@ impl Layout for FullLayout {
         String::from_str("Full")
     }
 
-    fn copy<'a>(&self) -> Box<Layout + 'a> {
+    fn copy(&self) -> Box<Layout> {
         box self.clone()
     }
 }
 
-pub struct LayoutCollection<'a> {
-    pub layouts: Vec<Box<Layout + 'a>>,
+pub struct LayoutCollection {
+    pub layouts: Vec<Box<Layout>>,
     pub current: usize
 }
 
-impl<'a> LayoutCollection<'a> {
-    pub fn new(layouts: Vec<Box<Layout + 'a>>) -> Box<Layout + 'a> {
+impl LayoutCollection {
+    pub fn new(layouts: Vec<Box<Layout>>) -> Box<Layout> {
         box LayoutCollection {
             layouts: layouts,
             current: 0
@@ -639,13 +639,13 @@ impl<'a> LayoutCollection<'a> {
     }
 }
 
-impl<'a> Layout for LayoutCollection<'a> {
+impl Layout for LayoutCollection {
     fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle, config: &GeneralConfig,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
         self.layouts[self.current].apply_layout(window_system, screen, config, stack)
     }
 
-    fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
+    fn apply_message(&mut self, message: LayoutMessage, window_system: &WindowSystem,
                          stack: &Option<Stack<Window>>, config: &GeneralConfig) -> bool {
         match message {
             LayoutMessage::Next => {
@@ -666,7 +666,7 @@ impl<'a> Layout for LayoutCollection<'a> {
         self.layouts[self.current].description()
     }
 
-    fn copy<'b>(&self) -> Box<Layout + 'b> {
+    fn copy(&self) -> Box<Layout> {
         box LayoutCollection {
             current: self.current,
             layouts: self.layouts.iter().map(|x| x.copy()).collect()
@@ -994,7 +994,7 @@ pub struct BinarySpacePartition {
 }
 
 impl BinarySpacePartition {
-    pub fn new<'a>() -> Box<Layout + 'a> {
+    pub fn new() -> Box<Layout> {
         box BinarySpacePartition::empty()
     }
 
@@ -1156,7 +1156,7 @@ impl Layout for BinarySpacePartition {
         }
     }
 
-    fn apply_message<'b>(&mut self, message: LayoutMessage, _: &WindowSystem,
+    fn apply_message(&mut self, message: LayoutMessage, _: &WindowSystem,
         stack: &Option<Stack<Window>>, _: &GeneralConfig) -> bool {
             match message {
                 LayoutMessage::TreeRotate => {
@@ -1209,7 +1209,7 @@ impl Layout for BinarySpacePartition {
         String::from_str("BSP")
     }
 
-    fn copy<'a>(&self) -> Box<Layout + 'a> {
+    fn copy(&self) -> Box<Layout> {
         box self.clone()
     }
 }

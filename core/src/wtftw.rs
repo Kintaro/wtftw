@@ -1,7 +1,4 @@
-#![allow(trivial_casts)]
-#![allow(deprecated)]
 #![feature(unboxed_closures)]
-#![feature(old_path)]
 #![feature(box_syntax)]
 #![feature(libc)]
 #![feature(io)]
