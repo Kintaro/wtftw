@@ -73,10 +73,10 @@ pub trait Layout {
     fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle, config: &GeneralConfig,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)>;
     fn apply_message<'b>(&mut self, _: LayoutMessage, _: &WindowSystem,
-                         _: &Option<Stack<Window>>, _: &GeneralConfig<'b>) -> bool { true }
+                         _: &Option<Stack<Window>>, _: &GeneralConfig) -> bool { true }
     fn description(&self) -> String;
     fn copy<'a>(&self) -> Box<Layout + 'a> { panic!("") }
-    fn unhook<'b>(&self, _: &WindowSystem, _: &Option<Stack<Window>>, _: &GeneralConfig<'b>) { }
+    fn unhook<'b>(&self, _: &WindowSystem, _: &Option<Stack<Window>>, _: &GeneralConfig) { }
 }
 
 #[derive(Clone, Copy)]
@@ -112,7 +112,7 @@ impl Layout for TallLayout {
     }
 
     fn apply_message<'b>(&mut self, message: LayoutMessage, _: &WindowSystem,
-                         _: &Option<Stack<Window>>, _: &GeneralConfig<'b>) -> bool {
+                         _: &Option<Stack<Window>>, _: &GeneralConfig) -> bool {
         match message {
             LayoutMessage::Increase => { self.ratio += 0.05; true }
             LayoutMessage::Decrease => { self.ratio -= 0.05; true }
@@ -173,7 +173,7 @@ impl<'a> Layout for CenterLayout <'a> {
     }
 
     fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
-                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig) -> bool {
         self.layout.apply_message(message, window_system, stack, config)
     }
 
@@ -287,7 +287,7 @@ impl Layout for ResizableTallLayout {
     }
 
     fn apply_message<'b>(&mut self, message: LayoutMessage, _: &WindowSystem,
-                         stack: &Option<Stack<Window>>, _: &GeneralConfig<'b>) -> bool {
+                         stack: &Option<Stack<Window>>, _: &GeneralConfig) -> bool {
         let d = self.increment_ratio;
         match message {
             LayoutMessage::Increase => { self.ratio += self.increment_ratio; true }
@@ -336,7 +336,7 @@ impl<'a> Layout for MirrorLayout<'a> {
     }
 
     fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
-                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig) -> bool {
         self.layout.apply_message(message, window_system, stack, config)
     }
 
@@ -480,7 +480,7 @@ impl<'a> Layout for AvoidStrutsLayout<'a> {
     }
 
     fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
-                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig) -> bool {
         self.layout.apply_message(message, window_system, stack, config)
     }
 
@@ -520,7 +520,7 @@ impl<'a> Layout for GapLayout<'a> {
     }
 
     fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
-                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig) -> bool {
         match message {
             LayoutMessage::IncreaseGap => { self.gap += 1; true }
             LayoutMessage::DecreaseGap => { self.gap -= 1; true }
@@ -566,7 +566,7 @@ impl<'a> Layout for WithBordersLayout<'a> {
     }
 
     fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
-                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig) -> bool {
         self.layout.apply_message(message, window_system, stack, config)
     }
 
@@ -581,7 +581,7 @@ impl<'a> Layout for WithBordersLayout<'a> {
         }
     }
 
-    fn unhook<'b>(&self, window_system: &WindowSystem, stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) {
+    fn unhook<'b>(&self, window_system: &WindowSystem, stack: &Option<Stack<Window>>, config: &GeneralConfig) {
         if let &Some(ref s) = stack {
             for window in s.integrate().into_iter() {
                 window_system.set_window_border_width(window, config.border_width);
@@ -646,7 +646,7 @@ impl<'a> Layout for LayoutCollection<'a> {
     }
 
     fn apply_message<'b>(&mut self, message: LayoutMessage, window_system: &WindowSystem,
-                         stack: &Option<Stack<Window>>, config: &GeneralConfig<'b>) -> bool {
+                         stack: &Option<Stack<Window>>, config: &GeneralConfig) -> bool {
         match message {
             LayoutMessage::Next => {
                 self.layouts[self.current].unhook(window_system, stack, config);
@@ -1157,7 +1157,7 @@ impl Layout for BinarySpacePartition {
     }
 
     fn apply_message<'b>(&mut self, message: LayoutMessage, _: &WindowSystem,
-        stack: &Option<Stack<Window>>, _: &GeneralConfig<'b>) -> bool {
+        stack: &Option<Stack<Window>>, _: &GeneralConfig) -> bool {
             match message {
                 LayoutMessage::TreeRotate => {
                     if let &Some(ref s) = stack {
