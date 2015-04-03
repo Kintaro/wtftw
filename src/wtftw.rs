@@ -22,7 +22,7 @@ pub fn parse_window_ids(ids: &str) -> Vec<(Window, u32)> {
 
 fn main() {
     // Parse command line arguments
-    let args : Vec<String> = env::args().map(|x| x.to_string()).collect();
+    let args : Vec<String> = env::args().collect();
 
     let mut options = Options::new();
     options.optopt("r", "resume", "list of window IDs to capture in resume", "WINDOW");
