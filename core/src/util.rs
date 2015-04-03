@@ -3,7 +3,8 @@ use std::process::Child;
 use std::process::Stdio;
 use std::rc::Rc;
 use std::sync::RwLock;
-use std::ffi::AsOsStr;
+use std::ffi::OsStr;
+use std::convert::AsRef;
 use core::workspaces::Workspaces;
 use config::Config;
 use window_system::*;
@@ -43,13 +44,13 @@ macro_rules! run(
     )
 );
 
-pub fn run<S: AsOsStr + ?Sized>(program: &S, args: Vec<String>) {
+pub fn run<S: AsRef<OsStr>>(program: S, args: Vec<String>) {
     match Command::new(program).args(&args).spawn() {
         _ => ()
     }
 }
 
-pub fn spawn_pipe<S: AsOsStr + ?Sized>(config: &mut Config, program: &S, args: Vec<String>) -> Rc<RwLock<Child>> {
+pub fn spawn_pipe<S: AsRef<OsStr>>(config: &mut Config, program: S, args: Vec<String>) -> Rc<RwLock<Child>> {
     let result = Command::new(program)
         .args(&args).stdin(Stdio::piped()).spawn().unwrap();
     let rc = Rc::new(RwLock::new(result));
