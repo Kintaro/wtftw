@@ -71,6 +71,11 @@ impl WindowManager {
             .chain(self.workspaces.visible.iter())
             .map(|x| x.workspace.clone())
             .collect();
+        let hidden : Vec<Workspace> = visible.iter()
+            .chain(self.workspaces.hidden.iter())
+            .skip(screens.len())
+            .map(|x| x.clone())
+            .collect();
         let sc : Vec<Screen> = visible.iter()
             .chain(self.workspaces.hidden.iter())
             .take(screens.len())
@@ -84,6 +89,7 @@ impl WindowManager {
             let mut r = w.clone();
             r.current = sc.first().unwrap().clone();
             r.visible = sc.iter().skip(1).map(|x| x.clone()).collect();
+            r.hidden  = hidden.clone();
             r
         })
     }
@@ -101,7 +107,8 @@ impl WindowManager {
         WindowManager {
             running: self.running,
             dragging: self.dragging.clone(),
-            workspaces: self.workspaces.from_current(screens[0].clone()).from_visible(screens.into_iter().skip(1).collect()),
+            workspaces: self.workspaces.from_current(screens[0].clone())
+                .from_visible(screens.into_iter().skip(1).collect()),
             waiting_unmap: self.waiting_unmap.clone()
         }
     }

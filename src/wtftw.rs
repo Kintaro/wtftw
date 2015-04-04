@@ -81,7 +81,6 @@ fn main() {
     // Enter the event loop and just listen for events
     while window_manager.running {
         let event = window_system.get_event();
-        debug!("Got event {:?}", event);
         match event {
             WindowSystemEvent::ClientMessageEvent(_) => {
             },
@@ -89,7 +88,7 @@ fn main() {
             // screen configurations.
             WindowSystemEvent::ConfigurationNotification(window) => {
                 if window_system.get_root() == window {
-                    debug!("screen config.generaluration changed. Rescreen");
+                    debug!("screen configuration changed. rescreen");
                     window_manager = window_manager.rescreen(&window_system);
                 }
             },
@@ -131,10 +130,11 @@ fn main() {
             // is enabled, we need to set focus to it.
             WindowSystemEvent::Enter(window) => {
                 if config.general.focus_follows_mouse && window_manager.is_window_managed(window) {
-                    debug!("enter event on {}", window_system.get_window_name(window));
                     window_manager = window_manager.focus(window, &window_system, &config.general);
                 }
             },
+            // Mouse button has been pressed. We need to check if there is a mouse handler
+            // associated and if necessary, call it. Otherwise it results in a focus action.
             WindowSystemEvent::ButtonPressed(window, subwindow, button, _, _) => {
                 let is_root = window_system.get_root() == window;
                 let is_sub_root = window_system.get_root() == subwindow || subwindow == 0;
@@ -175,22 +175,15 @@ fn main() {
             WindowSystemEvent::MouseMotion(x, y) => {
                 let local_window_manager = window_manager.clone();
                 if let Some(drag) = window_manager.dragging {
-                    debug!("dragging: {} {}", x, y);
                     window_manager = drag(x, y, local_window_manager, &window_system);
                     window_system.remove_motion_events();
                 }
             },
             _ => ()
         };
-        debug!("processed {:?}", event);
 
         if let Some(ref mut loghook) = config.internal.loghook {
-            println!("calling loghook!");
-            debug!("calling loghook");
             loghook(window_manager.clone(), &window_system);
-        } else {
-            println!("there is no loghook!");
-            debug!("no loghook!");
         }
     }
 }
