@@ -8,7 +8,7 @@ authors = ["Simon Wollwage"]
 bitflags = "0.1"
 rustc-serialize = "*"
 log = "*"
-#num = "*"
+num = "*"
 
 [lib]
 name = "wtftw_core"

@@ -1,14 +1,12 @@
 #![feature(unboxed_closures)]
-#![feature(macro_rules)]
 #![feature(plugin)]
 #![feature(box_syntax)]
+#![feature(std_misc, collections, path_ext)]
 #[macro_use]
 #[macro_use]
 extern crate wtftw;
 
 use std::fs::PathExt;
-use std::os::homedir;
-use std::ffi::CString;
 use std::io::Write;
 use std::path::Path;
 use std::env;
@@ -27,7 +25,7 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
     let modm = MOD1MASK;
 
     config.general.mod_mask = modm;
-    config.general.border_color = 0x586e75;
+    config.general.border_color = 0x404040;
     config.general.focus_border_color = 0xebebeb;
     config.general.border_width = 2;
     config.general.terminal = (String::from_str("termite"), String::from_str(""));
@@ -89,10 +87,10 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
 
     // Workspace switching and moving
     for i in (1usize..10) {
-        add_key_handler_str!(config, w, i.to_string().as_slice(), modm,
+        add_key_handler_str!(config, w, &i.to_string(), modm,
         move |m, w, c| switch_to_workspace(m, w, c, i - 1));
 
-        add_key_handler_str!(config, w, i.to_string().as_slice(), modm | SHIFTMASK,
+        add_key_handler_str!(config, w, &i.to_string(), modm | SHIFTMASK,
         move |m, w, c| move_window_to_workspace(m, w, c, i - 1));
     }
 
@@ -117,7 +115,7 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
 
     // Place specific applications on specific workspaces
     config.set_manage_hook(box |workspaces, window_system, window| {
-        match window_system.get_class_name(window).as_slice() {
+        match &window_system.get_class_name(window)[..] {
             "MPlayer" => spawn_on(workspaces, window_system, window, 3),
             "vlc"     => spawn_on(workspaces, window_system, window, 3),
             _         => workspaces.clone()
@@ -138,7 +136,7 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
             let tags = &tags;
             let workspaces = tags.clone().iter()
                 .enumerate()
-                .map(|(i, x)| if i as u32 == m.workspaces.current.workspace.id {
+                .map(|(i, _)| if i as u32 == m.workspaces.current.workspace.id {
                     format!("<fc=#d7af87>■</fc>")
                 } else if m.workspaces.visible.iter().any(|w| w.workspace.id == i as u32) {
                     format!("<fc=#808080>■</fc>")
@@ -147,7 +145,7 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
                 })
             .fold(String::from_str(""), |a, x| {
                 let mut r = a.clone();
-                r.push_str(x.as_slice());
+                r.push_str(&x);
                 r
             });
 
@@ -161,7 +159,7 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
                     match pin.write(content.as_bytes()) {
                         _      => ()
                     };
-                    pin.flush();
+                    pin.flush().unwrap();
                 },
                 _ => ()
             }

@@ -114,7 +114,7 @@ extern fn error_handler(_: *mut Display, _: *mut XErrorEvent) -> c_int {
 /// The xlib interface. Holds a pointer to the display,
 /// the root window's id and a generic event so
 /// we don't have to allocate it every time.
-#[derive(Clone, Copy)]
+//#[derive(Clone, Copy)]
 pub struct XlibWindowSystem {
     display: *mut Display,
     root:    Window,

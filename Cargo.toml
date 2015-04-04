@@ -9,6 +9,7 @@ bitflags = "0.1"
 rustc-serialize = "*"
 getopts = "*"
 log = "*"
+num = "*"
 
 [dependencies.wtftw_core]
 path = "core"

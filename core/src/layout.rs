@@ -1,12 +1,12 @@
 extern crate collections;
+extern crate num;
 
 use std::iter;
-use std::num::Float;
 use std::ops::Deref;
 use self::collections::EnumSet;
 use self::collections::enum_set::CLike;
 use core::stack::Stack;
-use std::num::Int;
+use self::num::traits::Bounded;
 use window_system::Window;
 use window_system::Rectangle;
 use window_system::WindowSystem;
@@ -417,7 +417,7 @@ pub fn get_strut(window_system: &WindowSystem, window: Window) -> Vec<Strut> {
         match &x[..] {
             [a, b, c, d] => {
                 let t = vec!(a, b, c, d);
-                let s = vec!(Int::min_value(), Int::max_value());
+                let s = vec!(Bounded::min_value(), Bounded::max_value());
                 let r : Vec<u64> = t.iter().chain(s.iter().cycle()).take(12).map(|&x| x).collect();
                 parse_strut_partial(r)
             }
