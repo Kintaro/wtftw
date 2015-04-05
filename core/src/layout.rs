@@ -1,10 +1,10 @@
-extern crate collections;
 extern crate num;
 
 use std::iter;
+use std::borrow::ToOwned;
 use std::ops::Deref;
-use self::collections::EnumSet;
-use self::collections::enum_set::CLike;
+use std::collections::BTreeSet;
+//use self::collections::enum_set::CLike;
 use core::stack::Stack;
 use self::num::traits::Bounded;
 use window_system::Window;
@@ -88,11 +88,11 @@ pub struct TallLayout {
 
 impl TallLayout {
     pub fn new() -> Box<Layout> {
-        box TallLayout {
+        Box::new(TallLayout {
             num_master: 1,
             increment_ratio: 0.03,
             ratio: 0.5
-        } as Box<Layout>
+        })
     }
 }
 
@@ -125,11 +125,11 @@ impl Layout for TallLayout {
     }
 
     fn description(&self) -> String {
-        String::from_str("Tall")
+        "Tall".to_owned()
     }
 
     fn copy(&self) -> Box<Layout> {
-        box self.clone()
+        Box::new(self.clone())
     }
 }
 
@@ -139,9 +139,9 @@ pub struct CenterLayout {
 
 impl CenterLayout {
     pub fn new(layout: Box<Layout>) -> Box<Layout> {
-        box CenterLayout {
+        Box::new(CenterLayout {
             layout: layout.copy()
-        } as Box<Layout>
+        })
     }
 }
 
@@ -154,9 +154,13 @@ impl Layout for CenterLayout  {
                     self.layout.apply_layout(window_system, screen, config, &Some(s.clone()))
                 } else {
                     let new_stack = if s.up.len() > 0 {
-                        Stack::<Window>::new(s.up[0], s.up.tail().to_vec(), s.down.clone())
+                        Stack::<Window>::new(s.up[0],
+                                             s.up.iter().skip(1).map(|&x| x).collect(),
+                                             s.down.clone())
                     } else {
-                        Stack::<Window>::new(s.down[0], Vec::new(), s.down.tail().to_vec())
+                        Stack::<Window>::new(s.down[0],
+                                             Vec::new(),
+                                             s.down.iter().skip(1).map(|&x| x).collect())
                     };
                     (vec!({
                         let x = screen.0 + ((screen.2 as f32 * 0.2) as i32 / 2);
@@ -178,7 +182,7 @@ impl Layout for CenterLayout  {
     }
 
     fn description(&self) -> String {
-        String::from_str("Center")
+        "Center".to_owned()
     }
 
     fn copy(&self) -> Box<Layout> {
@@ -196,12 +200,12 @@ pub struct ResizableTallLayout {
 
 impl ResizableTallLayout {
     pub fn new() -> Box<Layout> {
-        box ResizableTallLayout {
+        Box::new(ResizableTallLayout {
             num_master: 1,
             increment_ratio: 0.03,
             ratio: 0.5,
             slaves: Vec::new()
-        } as Box<Layout>
+        })
     }
 
     fn tile<U>(ratio: f32, mf: U, screen: ScreenDetail, num_master: u32, num_windows: u32) -> Vec<Rectangle> where
@@ -296,19 +300,18 @@ impl Layout for ResizableTallLayout {
             LayoutMessage::DecreaseMaster => {
                 if self.num_master > 1 { self.num_master -= 1 } true
             }
-            LayoutMessage::IncreaseSlave => { self.resize(stack,  d);
-            debug!("slaves are {:?}", self.slaves); true }
+            LayoutMessage::IncreaseSlave => { self.resize(stack,  d); true }
             LayoutMessage::DecreaseSlave => { self.resize(stack, -d); true }
             _                       => false
         }
     }
 
     fn description(&self) -> String {
-        String::from_str("ResizeTall")
+        "ResizeTall".to_owned()
     }
 
     fn copy(&self) -> Box<Layout> {
-        box self.clone()
+        Box::new(self.clone())
     }
 }
 
@@ -322,7 +325,7 @@ pub struct MirrorLayout {
 impl MirrorLayout {
     /// Create a new MirrorLayout containing the given layout
     pub fn new(layout: Box<Layout>) -> Box<Layout> {
-        box MirrorLayout { layout: layout }
+        Box::new(MirrorLayout { layout: layout })
     }
 }
 
@@ -345,12 +348,12 @@ impl Layout for MirrorLayout {
     }
 
     fn copy(&self) -> Box<Layout> {
-        box MirrorLayout { layout: self.layout.copy() }
+        Box::new(MirrorLayout { layout: self.layout.copy() })
     }
 }
 
 #[repr(usize)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Ord, Eq, PartialOrd, PartialEq)]
 pub enum Direction {
     Up,
     Down,
@@ -378,51 +381,69 @@ impl Direction {
     }
 }
 
-impl CLike for Direction {
-    fn to_usize(&self) -> usize {
-        *self as usize
-    }
+//impl CLike for Direction {
+    //fn to_usize(&self) -> usize {
+        //*self as usize
+    //}
 
-    fn from_usize(v: usize) -> Direction {
-        match v {
-            0 => Direction::Up,
-            1 => Direction::Down,
-            2 => Direction::Left,
-            _ => Direction::Right
-        }
-    }
-}
+    //fn from_usize(v: usize) -> Direction {
+        //match v {
+            //0 => Direction::Up,
+            //1 => Direction::Down,
+            //2 => Direction::Left,
+            //_ => Direction::Right
+        //}
+    //}
+//}
 
 #[derive(Clone, Copy)]
 pub struct Strut(Direction, u64, u64, u64);
 
 fn parse_strut_partial(x: Vec<u64>) -> Vec<Strut> {
-    match &x[..] {
-        [l, r, t, b, ly1, ly2, ry1, ry2, tx1, tx2, bx1, bx2] => {
-            (vec!(Strut(Direction::Left, l, ly1, ly2),
-                  Strut(Direction::Right, r, ry1, ry2),
-                  Strut(Direction::Up, t, tx1, tx2),
-                  Strut(Direction::Down, b, bx1, bx2))).into_iter()
-                .filter(|&Strut(_, n, _, _)| n != 0)
-                .collect()
-        },
-        _ => Vec::new()
+    if x.len() != 12 {
+        return Vec::new();
     }
+
+    (vec!(Strut(Direction::Left, x[0], x[4], x[5]),
+          Strut(Direction::Right, x[1], x[6], x[7]),
+          Strut(Direction::Up, x[2], x[8], x[9]),
+          Strut(Direction::Down, x[3], x[10], x[11]))).into_iter()
+        .filter(|&Strut(_, n, _, _)| n != 0)
+        .collect::<Vec<Strut>>()
+    //match &x[..] {
+        //[l, r, t, b, ly1, ly2, ry1, ry2, tx1, tx2, bx1, bx2] => {
+            //(vec!(Strut(Direction::Left, l, ly1, ly2),
+                  //Strut(Direction::Right, r, ry1, ry2),
+                  //Strut(Direction::Up, t, tx1, tx2),
+                  //Strut(Direction::Down, b, bx1, bx2))).into_iter()
+                //.filter(|&Strut(_, n, _, _)| n != 0)
+                //.collect()
+        //},
+        //_ => Vec::new()
+    //}
 }
 
 pub fn get_strut(window_system: &WindowSystem, window: Window) -> Vec<Strut> {
     let partial_strut = window_system.get_partial_strut(window);
 
     fn parse_strut(x: Vec<u64>) -> Vec<Strut> {
-        match &x[..] {
-            [a, b, c, d] => {
-                let t = vec!(a, b, c, d);
-                let s = vec!(Bounded::min_value(), Bounded::max_value());
-                let r : Vec<u64> = t.iter().chain(s.iter().cycle()).take(12).map(|&x| x).collect();
-                parse_strut_partial(r)
-            }
-            _ => Vec::new()
+        if x.len() != 4 {
+            return Vec::new();
         }
+
+        let s = vec!(Bounded::min_value(), Bounded::max_value());
+        let r : Vec<u64> = x.iter().chain(s.iter().cycle()).take(12).map(|&x| x).collect();
+        parse_strut_partial(r)
+
+        //match &x[..] {
+            //[a, b, c, d] => {
+                //let t = vec!(a, b, c, d);
+                //let s = vec!(Bounded::min_value(), Bounded::max_value());
+                //let r : Vec<u64> = t.iter().chain(s.iter().cycle()).take(12).map(|&x| x).collect();
+                //parse_strut_partial(r)
+            //}
+            //_ => Vec::new()
+        //}
     }
 
     match partial_strut {
@@ -440,7 +461,7 @@ pub fn get_strut(window_system: &WindowSystem, window: Window) -> Vec<Strut> {
 /// A layout that avoids dock like windows (e.g. dzen, xmobar, ...)
 /// to not overlap them.
 pub struct AvoidStrutsLayout {
-    directions: EnumSet<Direction>,
+    directions: BTreeSet<Direction>,
     layout: Box<Layout>
 }
 
@@ -448,10 +469,10 @@ impl AvoidStrutsLayout {
     /// Create a new AvoidStrutsLayout, containing the given layout
     /// and avoiding struts in the given directions.
     pub fn new(d: Vec<Direction>, layout: Box<Layout>) -> Box<Layout> {
-        box AvoidStrutsLayout {
+        Box::new(AvoidStrutsLayout {
             directions: d.iter().map(|&x| x).collect(),
             layout: layout.copy()
-        }
+        })
     }
 }
 
@@ -489,10 +510,10 @@ impl Layout for AvoidStrutsLayout {
     }
 
     fn copy(&self) -> Box<Layout> {
-        box AvoidStrutsLayout {
+        Box::new(AvoidStrutsLayout {
             directions: self.directions.clone(),
             layout: self.layout.copy()
-        }
+        })
     }
 }
 
@@ -503,10 +524,10 @@ pub struct GapLayout {
 
 impl GapLayout {
     pub fn new(gap: u32, layout: Box<Layout>) -> Box<Layout> {
-        box GapLayout {
+        Box::new(GapLayout {
             gap: gap,
             layout: layout.copy()
-        }
+        })
     }
 }
 
@@ -533,10 +554,10 @@ impl Layout for GapLayout {
     }
 
     fn copy(&self) -> Box<Layout> {
-        box GapLayout {
+        Box::new(GapLayout {
             gap: self.gap,
             layout: self.layout.copy()
-        }
+        })
     }
 }
 
@@ -547,10 +568,10 @@ pub struct WithBordersLayout {
 
 impl WithBordersLayout {
     pub fn new(border: u32, layout: Box<Layout>) -> Box<Layout> {
-        box WithBordersLayout {
+        Box::new(WithBordersLayout {
             border: border,
             layout: layout.copy()
-        }
+        })
     }
 }
 
@@ -575,10 +596,10 @@ impl Layout for WithBordersLayout {
     }
 
     fn copy(&self) -> Box<Layout> {
-        box WithBordersLayout {
+        Box::new(WithBordersLayout {
             border: self.border,
             layout: self.layout.copy()
-        }
+        })
     }
 
     fn unhook(&self, window_system: &WindowSystem, stack: &Option<Stack<Window>>, config: &GeneralConfig) {
@@ -617,11 +638,11 @@ impl Layout for FullLayout {
     }
 
     fn description(&self) -> String {
-        String::from_str("Full")
+        "Full".to_owned()
     }
 
     fn copy(&self) -> Box<Layout> {
-        box self.clone()
+        Box::new(self.clone())
     }
 }
 
@@ -632,10 +653,10 @@ pub struct LayoutCollection {
 
 impl LayoutCollection {
     pub fn new(layouts: Vec<Box<Layout>>) -> Box<Layout> {
-        box LayoutCollection {
+        Box::new(LayoutCollection {
             layouts: layouts,
             current: 0
-        }
+        })
     }
 }
 
@@ -667,10 +688,10 @@ impl Layout for LayoutCollection {
     }
 
     fn copy(&self) -> Box<Layout> {
-        box LayoutCollection {
+        Box::new(LayoutCollection {
             current: self.current,
             layouts: self.layouts.iter().map(|x| x.copy()).collect()
-        }
+        })
     }
 }
 
@@ -714,7 +735,7 @@ impl Split {
     pub fn new(axis: Axis, r: f32) -> Split {
         Split { axis: axis, ratio: r }
     }
-    
+
     pub fn split(&self, Rectangle(x, y, w, h): Rectangle) -> (Rectangle, Rectangle) {
         match self.axis {
             Axis::Horizontal => {
@@ -787,19 +808,19 @@ impl Zipper {
     pub fn go_left(&self) -> Option<Zipper> {
         match &self.tree {
             &Tree::Leaf => None,
-            &Tree::Node(ref x, ref l, ref r) => Some(Zipper { 
-                tree: l.deref().clone(), 
-                crumbs: Zipper::left_append::<Crumb<Split>>(Crumb::LeftCrumb(x.clone(), r.deref().clone()), self.crumbs.clone()) 
+            &Tree::Node(ref x, ref l, ref r) => Some(Zipper {
+                tree: l.deref().clone(),
+                crumbs: Zipper::left_append::<Crumb<Split>>(Crumb::LeftCrumb(x.clone(), r.deref().clone()), self.crumbs.clone())
             })
         }
     }
-    
+
     pub fn go_right(&self) -> Option<Zipper> {
         match &self.tree {
             &Tree::Leaf => None,
-            &Tree::Node(ref x, ref l, ref r) => Some(Zipper { 
-                tree: r.deref().clone(), 
-                crumbs: Zipper::left_append::<Crumb<Split>>(Crumb::RightCrumb(x.clone(), l.deref().clone()), self.crumbs.clone()) 
+            &Tree::Node(ref x, ref l, ref r) => Some(Zipper {
+                tree: r.deref().clone(),
+                crumbs: Zipper::left_append::<Crumb<Split>>(Crumb::RightCrumb(x.clone(), l.deref().clone()), self.crumbs.clone())
             })
         }
     }
@@ -809,11 +830,18 @@ impl Zipper {
             None
         } else {
             let head = self.crumbs[0].clone();
-            let rest = if self.crumbs.len() == 1 { Vec::new() } else { self.crumbs.clone().split_off(1) };
+            let rest = if self.crumbs.len() == 1 {
+                Vec::new()
+            } else {
+                self.crumbs.clone().into_iter().skip(1).collect()
+            };
 
             match head {
-                Crumb::LeftCrumb(x, r)  => Some(Zipper { tree: Tree::Node(x, box self.tree.clone(), box r), crumbs: rest }),
-                Crumb::RightCrumb(x, l) => Some(Zipper { tree: Tree::Node(x, box l, box self.tree.clone()), crumbs: rest })
+                Crumb::LeftCrumb(x, r)  => Some(Zipper { tree: Tree::Node(x, Box::new(self.tree.clone()),
+                                                                          Box::new(r)), crumbs: rest }),
+                Crumb::RightCrumb(x, l) => Some(Zipper { tree: Tree::Node(x, Box::new(l),
+                                                                          Box::new(self.tree.clone())),
+                    crumbs: rest })
             }
         }
     }
@@ -848,12 +876,15 @@ impl Zipper {
         match self.tree {
             Tree::Leaf => {
                 if self.crumbs.is_empty() {
-                    Some(Zipper { tree: Tree::Node(Split::new(Axis::Vertical, 0.5), box Tree::Leaf, box Tree::Leaf), crumbs: Vec::new() })
+                    Some(Zipper { tree: Tree::Node(Split::new(Axis::Vertical, 0.5),
+                                                   Box::new(Tree::Leaf), Box::new(Tree::Leaf)),
+                        crumbs: Vec::new() })
                 } else {
                     let head = self.crumbs[0].clone();
-                    Some(Zipper { 
-                        tree: Tree::Node(Split::new(head.parent().axis.opposite(), 0.5), box Tree::Leaf, box Tree::Leaf), 
-                        crumbs: self.crumbs.clone() 
+                    Some(Zipper {
+                        tree: Tree::Node(Split::new(head.parent().axis.opposite(), 0.5),
+                                         Box::new(Tree::Leaf), Box::new(Tree::Leaf)),
+                        crumbs: self.crumbs.clone()
                     })
                 }
             }
@@ -868,7 +899,11 @@ impl Zipper {
                     None
                 } else {
                     let head = self.crumbs[0].clone();
-                    let rest = if self.crumbs.len() == 1 { Vec::new() } else {  self.crumbs.clone().split_off(1) };
+                    let rest = if self.crumbs.len() == 1 {
+                        Vec::new()
+                    } else {
+                        self.crumbs.clone().into_iter().skip(1).collect()
+                    };
                     match head {
                         Crumb::LeftCrumb(_, r) => Some(Zipper { tree: r.clone(), crumbs: rest }),
                         Crumb::RightCrumb(_, l) => Some(Zipper { tree: l.clone(), crumbs: rest })
@@ -878,7 +913,7 @@ impl Zipper {
             _ => None
         }
     }
-    
+
     pub fn rotate_current_leaf(&self) -> Option<Zipper> {
         match self.tree {
             Tree::Leaf => {
@@ -887,16 +922,16 @@ impl Zipper {
                 } else {
                     let mut c = self.crumbs.clone();
                     c[0] = c[0].modify_parent(|x| x.opposite());
-                    Some(Zipper { 
-                        tree: Tree::Leaf, 
-                        crumbs: c 
+                    Some(Zipper {
+                        tree: Tree::Leaf,
+                        crumbs: c
                     })
                 }
             }
             _ => None
         }
     }
-    
+
     pub fn swap_current_leaf(&self) -> Option<Zipper> {
         match self.tree {
             Tree::Leaf => {
@@ -905,9 +940,9 @@ impl Zipper {
                 } else {
                     let mut c = self.crumbs.clone();
                     c[0] = c[0].swap();
-                    Some(Zipper { 
-                        tree: Tree::Leaf, 
-                        crumbs: c 
+                    Some(Zipper {
+                        tree: Tree::Leaf,
+                        crumbs: c
                     })
                 }
             }
@@ -940,23 +975,27 @@ impl Zipper {
         }
 
         let head = self.crumbs[0].clone();
-        let rest = if self.crumbs.len() == 1 { Vec::new() } else { self.crumbs.clone().split_off(1) };
+        let rest = if self.crumbs.len() == 1 {
+            Vec::new()
+        } else {
+            self.crumbs.clone().into_iter().skip(1).collect()
+        };
 
         match (dir, head) {
-            (Direction::Right, Crumb::LeftCrumb(ref s, ref r)) if s.axis == Axis::Vertical => Some(Zipper { 
-                tree: self.tree.clone(), 
+            (Direction::Right, Crumb::LeftCrumb(ref s, ref r)) if s.axis == Axis::Vertical => Some(Zipper {
+                tree: self.tree.clone(),
                 crumbs: Zipper::left_append(Crumb::LeftCrumb(s.increase_ratio(0.05), r.clone()), rest)
             }),
-            (Direction::Left, Crumb::RightCrumb(ref s, ref r)) if s.axis == Axis::Vertical => Some(Zipper { 
-                tree: self.tree.clone(), 
+            (Direction::Left, Crumb::RightCrumb(ref s, ref r)) if s.axis == Axis::Vertical => Some(Zipper {
+                tree: self.tree.clone(),
                 crumbs: Zipper::left_append(Crumb::RightCrumb(s.increase_ratio(-0.05), r.clone()), rest)
             }),
-            (Direction::Down, Crumb::LeftCrumb(ref s, ref r)) if s.axis == Axis::Horizontal => Some(Zipper { 
-                tree: self.tree.clone(), 
+            (Direction::Down, Crumb::LeftCrumb(ref s, ref r)) if s.axis == Axis::Horizontal => Some(Zipper {
+                tree: self.tree.clone(),
                 crumbs: Zipper::left_append(Crumb::LeftCrumb(s.increase_ratio(0.05), r.clone()), rest)
             }),
-            (Direction::Up, Crumb::RightCrumb(ref s, ref r)) if s.axis == Axis::Horizontal => Some(Zipper { 
-                tree: self.tree.clone(), 
+            (Direction::Up, Crumb::RightCrumb(ref s, ref r)) if s.axis == Axis::Horizontal => Some(Zipper {
+                tree: self.tree.clone(),
                 crumbs: Zipper::left_append(Crumb::RightCrumb(s.increase_ratio(-0.05), r.clone()), rest)
             }),
             _ => self.go_up().and_then(|x| x.expand_towards(dir))
@@ -995,7 +1034,7 @@ pub struct BinarySpacePartition {
 
 impl BinarySpacePartition {
     pub fn new() -> Box<Layout> {
-        box BinarySpacePartition::empty()
+        Box::new(BinarySpacePartition::empty())
     }
 
     pub fn empty() -> BinarySpacePartition {
@@ -1069,7 +1108,7 @@ impl BinarySpacePartition {
             }
         }
     }
-    
+
     pub fn swap_nth(&self, n: usize) -> BinarySpacePartition {
         match self.tree {
             None => BinarySpacePartition::empty(),
@@ -1093,7 +1132,7 @@ impl BinarySpacePartition {
             }
         }
     }
-    
+
     pub fn shrink_nth_from(&self, dir: Direction, n: usize) -> BinarySpacePartition {
         match self.tree {
             None => BinarySpacePartition::empty(),
@@ -1206,10 +1245,10 @@ impl Layout for BinarySpacePartition {
         }
 
     fn description(&self) -> String {
-        String::from_str("BSP")
+        "BSP".to_owned()
     }
 
     fn copy(&self) -> Box<Layout> {
-        box self.clone()
+        Box::new(self.clone())
     }
 }

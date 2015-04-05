@@ -23,6 +23,7 @@ pub mod default {
     use std::ptr::null;
     use std::process::Command;
     use std::thread::spawn;
+    use std::borrow::ToOwned;
     use handlers::rustc_serialize::json;
     use core::workspaces::Workspaces;
     use window_manager::WindowManager;
@@ -38,7 +39,7 @@ pub mod default {
         let arguments : Vec<String> = if args.is_empty() {
             Vec::new()
         } else {
-            args.split(' ').map(String::from_str).collect()
+            args.split(' ').map(|x| x.to_owned()).collect()
         };
 
         spawn(move || {
