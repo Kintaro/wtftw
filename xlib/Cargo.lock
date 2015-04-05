@@ -2,6 +2,7 @@
 name = "wtftw_xlib"
 version = "0.3.0"
 dependencies = [
+ "libc 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "wtftw_core 0.3.0",
  "xinerama 0.0.1 (git+https://github.com/Kintaro/rust-xinerama.git)",

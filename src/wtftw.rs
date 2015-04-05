@@ -1,6 +1,3 @@
-#![feature(unboxed_closures)]
-#![feature(plugin)]
-#![feature(box_syntax)]
 #[macro_use]
 extern crate log;
 extern crate getopts;
