@@ -6,6 +6,7 @@ authors = ["Simon Wollwage"]
 
 [dependencies]
 log = "*"
+libc = "*"
 
 [dependencies.xlib]
 git = "https://github.com/Kintaro/rust-xlib.git"

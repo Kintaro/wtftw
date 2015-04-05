@@ -1,6 +1,3 @@
-#![feature(plugin)]
-#![feature(libc)]
-#![feature(collections)]
 #[macro_use]
 
 extern crate log;
@@ -9,6 +6,7 @@ extern crate xlib;
 extern crate xinerama;
 extern crate wtftw_core;
 
+use std::borrow::ToOwned;
 use libc::{ c_char, c_uchar, c_int, c_uint, c_void, c_long, c_ulong };
 use libc::funcs::c95::stdlib::malloc;
 use xlib::{
@@ -131,7 +129,7 @@ impl XlibWindowSystem {
             if display == null_mut() {
                 error!("No display found at {}",
                     vars()
-                       .find(|&(ref d, _)| *d == String::from_str("DISPLAY"))
+                       .find(|&(ref d, _)| *d == "DISPLAY".to_owned())
                        .map(|(_, v)| v)
                        .unwrap());
                 panic!("Exiting");
@@ -281,7 +279,7 @@ impl WindowSystem for XlibWindowSystem {
         unsafe {
             let keysym = XKeycodeToKeysym(self.display, key as u8, 0);
             let keyname : *mut c_char = XKeysymToString(keysym);
-            String::from_str(from_utf8(CStr::from_ptr(transmute(keyname)).to_bytes()).unwrap())
+            from_utf8(CStr::from_ptr(transmute(keyname)).to_bytes()).unwrap().to_owned()
         }
     }
 
@@ -338,13 +336,13 @@ impl WindowSystem for XlibWindowSystem {
     }
 
     fn get_window_name(&self, window: Window) -> String {
-        if window == self.root { return String::from_str("root"); }
+        if window == self.root { return "root".to_owned(); }
         unsafe {
             let mut name : *mut c_char = uninitialized();
             if XFetchName(self.display, window as c_ulong, &mut name) == BADWINDOW || name.is_null() {
-                String::from_str("Unknown")
+                "Unknown".to_owned()
             } else {
-                String::from_str(str::from_utf8_unchecked(CStr::from_ptr(name as *const c_char).to_bytes()))
+                str::from_utf8_unchecked(CStr::from_ptr(name as *const c_char).to_bytes()).to_owned()
             }
         }
     }
@@ -353,7 +351,7 @@ impl WindowSystem for XlibWindowSystem {
         //unsafe {
             //let mut class_hint : XClassHint = uninitialized();
             //let result = if XGetClassHint(self.display, window as c_ulong, &mut class_hint) != 0 || class_hint.res_class.is_null() {
-                String::from_str("unknown")
+                "unknown".to_owned()
             //} else {
                 //debug!("getting class name");
                 //String::from_str(str::from_utf8_unchecked(ffi::c_str_to_bytes(&(class_hint.res_class as *const c_char))))

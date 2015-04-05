@@ -10,6 +10,7 @@ rustc-serialize = "*"
 getopts = "*"
 log = "*"
 num = "*"
+libc = "*"
 
 [dependencies.wtftw_core]
 path = "core"
