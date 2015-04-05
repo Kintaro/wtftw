@@ -1,5 +1,4 @@
 use std::collections::BTreeMap;
-use std::iter::AdditiveIterator;
 use std::iter::repeat;
 use config::GeneralConfig;
 use window_manager::ScreenDetail;
@@ -273,8 +272,8 @@ impl Workspaces {
     /// contained in all workspaces, including floating windows
     pub fn len(&self) -> usize {
         self.current.len() +
-            self.visible.iter().map(|x| x.len()).sum() +
-            self.hidden.iter().map(|x| x.len()).sum() +
+            self.visible.iter().map(|x| x.len()).fold(0, |a, x| a + x) +
+            self.hidden.iter().map(|x| x.len()).fold(0, |a, x| a + x) +
             self.floating.len()
     }
 
@@ -356,13 +355,13 @@ impl Workspaces {
 
     /// Shift the given window to the given workspace
     pub fn shift_window(&self, index: u32, window: Window) -> Workspaces {
-        let first_closure = (box move |w: Workspaces| {
+        let first_closure = (Box::new(move |w: Workspaces| {
             w.delete(window)
-        }) as Box<Fn(Workspaces,) -> Workspaces + 'static>;
+        })) as Box<Fn(Workspaces,) -> Workspaces + 'static>;
 
-        let second_closure = (box move |w: Workspaces| {
+        let second_closure = (Box::new(move |w: Workspaces| {
             w.insert_up(window)
-        }) as Box<Fn(Workspaces,) -> Workspaces + 'static>;
+        })) as Box<Fn(Workspaces,) -> Workspaces + 'static>;
 
         match self.find_tag(window) {
             Some(from) => {
@@ -370,7 +369,7 @@ impl Workspaces {
                 let b = self.on_workspace(index, second_closure);
 
                 debug!("shifting window from {} to {}", from, index);
-                b.call((a.call((self.clone(),)),))
+                b(a(self.clone()))
             },
             None => self.clone()
         }
@@ -379,10 +378,10 @@ impl Workspaces {
     /// Apply the given function to the given workspace
     pub fn on_workspace(&self, index: u32, f: Box<Fn(Workspaces,) -> Workspaces + 'static>)
         -> Box<Fn(Workspaces,) -> Workspaces + 'static> {
-            (box move |x: Workspaces| {
+            (Box::new(move |x: Workspaces| {
                 let current_tag = x.current_tag();
-                (*f).call((x.view(index),)).view(current_tag)
-            }) as Box<Fn(Workspaces,) -> Workspaces + 'static>
+                (*f)(x.view(index)).view(current_tag)
+            })) as Box<Fn(Workspaces,) -> Workspaces + 'static>
     }
 
     /// Return a list of all visible windows.

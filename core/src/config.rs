@@ -1,10 +1,8 @@
-extern crate rustc;
-extern crate rustc_trans;
-extern crate syntax;
 extern crate libc;
 extern crate rustc_serialize;
 
 use std::env;
+use std::borrow::ToOwned;
 use std::collections::BTreeMap;
 use core::workspaces::Workspaces;
 use window_system::*;
@@ -99,27 +97,27 @@ impl Config {
                 border_color:        0x00444444,
                 border_width:        2,
                 mod_mask:            MOD1MASK,
-                terminal:            (String::from_str("xterm"), String::from_str("")),
+                terminal:            ("xterm".to_owned(), "".to_owned()),
                 logfile:             format!("{}/.wtftw.log", home),
                 tags:                vec!(
-                    String::from_str("1: term"),
-                    String::from_str("2: web"),
-                    String::from_str("3: code"),
-                    String::from_str("4: media")),
-                launcher:            String::from_str("dmenu_run"),
+                    "1: term".to_owned(),
+                    "2: web".to_owned(),
+                    "3: code".to_owned(),
+                    "4: media".to_owned()),
+                launcher:            "dmenu_run".to_owned(),
                 pipes:               Vec::new(),
-                layout:              box TallLayout { num_master: 1, increment_ratio: 0.3/100.0, ratio: 0.5 },
+                layout:              Box::new(TallLayout { num_master: 1, increment_ratio: 0.3/100.0, ratio: 0.5 }),
             },
             internal: InternalConfig {
                 library:      None,
                 key_handlers: BTreeMap::new(),
                 mouse_handlers: BTreeMap::new(),
-                manage_hook:  box move |m: Workspaces, _: &WindowSystem, _: Window| -> Workspaces {
+                manage_hook:  Box::new(move |m: Workspaces, _: &WindowSystem, _: Window| -> Workspaces {
                     m.clone()
-                },
-                startup_hook: box move |m: WindowManager, _: &WindowSystem, _: &Config| -> WindowManager {
+                }),
+                startup_hook: Box::new(move |m: WindowManager, _: &WindowSystem, _: &Config| -> WindowManager {
                     m.clone()
-                },
+                }),
                 loghook:      None,
                 wtftw_dir:    format!("{}/.wtftw", home),
             }
@@ -129,11 +127,11 @@ impl Config {
     pub fn default_configuration(&mut self, w: &WindowSystem) {
         let mod_mask = self.general.mod_mask.clone();
         self.add_key_handler(w.get_keycode_from_string("Return"), mod_mask | SHIFTMASK,
-            box |m, w, c| start_terminal(m, w, c));
+            Box::new(|m, w, c| start_terminal(m, w, c)));
         self.add_key_handler(w.get_keycode_from_string("q"), mod_mask,
-            box |m, w, c| restart(m, w, c));
+            Box::new(|m, w, c| restart(m, w, c)));
         self.add_key_handler(w.get_keycode_from_string("q"), mod_mask | SHIFTMASK,
-            box |m, w, c| exit(m, w, c));
+            Box::new(|m, w, c| exit(m, w, c)));
     }
 
     pub fn get_mod_mask(&self) -> KeyModifiers {

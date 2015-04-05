@@ -1,4 +1,4 @@
-extern crate collections;
+//extern crate collections;
 
 use core::rational_rect::RationalRect;
 use core::screen::Screen;
@@ -324,10 +324,10 @@ impl WindowManager {
     pub fn mouse_drag(&self, window_system: &WindowSystem, f: Box<Fn(u32, u32, WindowManager, &WindowSystem) -> WindowManager>) -> WindowManager {
         window_system.grab_pointer();
 
-        let motion = Rc::new((box move |x, y, window_manager, w| {
+        let motion = Rc::new(Box::new(move |x, y, window_manager, w: &WindowSystem| {
             let z = f(x, y, window_manager, w);
             w.remove_motion_events();
-            z
+            z.clone()
         }) as MouseDrag);
 
         WindowManager {
@@ -343,10 +343,10 @@ impl WindowManager {
         let (ox, oy) = window_system.get_pointer(window);
         let Rectangle(x, y, _, _) = window_system.get_geometry(window);
 
-        self.mouse_drag(window_system, box move |ex: u32, ey: u32, m: WindowManager, w: &WindowSystem| {
+        self.mouse_drag(window_system, Box::new(move |ex: u32, ey: u32, m: WindowManager, w: &WindowSystem| {
             w.move_window(window, x + (ex as i32 - ox as i32), y + (ey as i32 - oy as i32));
             m.modify_workspaces(|wsp| wsp.update_floating_rect(window, m.float_location(w, window)))
-        }).float(window_system, config, window)
+        })).float(window_system, config, window)
     }
 
     pub fn mouse_resize_window(&self, window_system: &WindowSystem, config: &GeneralConfig,
@@ -354,12 +354,12 @@ impl WindowManager {
         let Rectangle(x, y, w, h) = window_system.get_geometry(window);
 
         window_system.warp_pointer(window, w, h);
-        self.mouse_drag(window_system, box move |ex: u32, ey: u32, m: WindowManager, w: &WindowSystem| {
+        self.mouse_drag(window_system, Box::new(move |ex: u32, ey: u32, m: WindowManager, w: &WindowSystem| {
             let nx = cmp::max(0, ex as i32 - x) as u32;
             let ny = cmp::max(0, ey as i32 - y) as u32;
             w.resize_window(window, nx, ny);
             m.modify_workspaces(|wsp| wsp.update_floating_rect(window, m.float_location(w, window)))
-        }).float(window_system, config, window)
+        })).float(window_system, config, window)
     }
 
     // Checks if the window is awaiting an unmap operation
