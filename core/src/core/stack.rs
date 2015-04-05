@@ -45,7 +45,7 @@ impl<T: Clone + Eq> Stack<T> {
             .rev()
             .chain((vec!(self.focus.clone())).iter())
             .chain(self.down.iter())
-            .map(|x| x.clone())
+            .cloned()
             .collect()
     }
 
@@ -62,17 +62,16 @@ impl<T: Clone + Eq> Stack<T> {
             let rest : Vec<T>     = lrs.iter().skip(1).map(|x| x.clone()).collect();
             let filtered : Vec<T> = self.up.iter()
                 .filter(|&x| f(x))
-                .map(|x| x.clone())
+                .cloned()
                 .collect();
             let stack : Stack<T>  = Stack::<T>::new(first, filtered, rest);
 
             Some(stack)
         } else {
-            let filtered : Vec<T> = self.up.iter().map(|x| x.clone()).filter(|x| f(x)).collect();
+            let filtered : Vec<T> = self.up.clone().into_iter().filter(|x| f(x)).collect();
             if filtered.len() > 0 {
                 let first : T        = filtered[0].clone();
-                let rest : Vec<T>    = filtered.iter().skip(1).map(|x| x.clone()).collect();
-
+                let rest : Vec<T>    = filtered.iter().skip(1).cloned().collect();
                 Some(Stack::<T>::new(first, rest, Vec::new()))
             } else {
                 None
@@ -88,13 +87,13 @@ impl<T: Clone + Eq> Stack<T> {
                 .collect();
             let xs : Vec<T> = tmp.iter()
                 .skip(1)
-                .map(|x| x.clone())
+                .cloned()
                 .collect();
 
             Stack::<T>::new(tmp[0].clone(), xs, Vec::new())
         } else {
             let down = (vec!(self.focus.clone())) + &self.down[..];
-            let up   = self.up.iter().skip(1).map(|x| x.clone()).collect();
+            let up   = self.up.iter().skip(1).cloned().collect();
             Stack::<T>::new(self.up[0].clone(), up, down)
         }
     }
@@ -106,10 +105,10 @@ impl<T: Clone + Eq> Stack<T> {
 
     pub fn swap_up(&self) -> Stack<T> {
         if self.up.is_empty() {
-            Stack::<T>::new(self.focus.clone(), self.down.iter().rev().map(|x| x.clone()).collect(), Vec::new())
+            Stack::<T>::new(self.focus.clone(), self.down.iter().rev().cloned().collect(), Vec::new())
         } else {
             let x = self.up[0].clone();
-            let xs = self.up.iter().skip(1).map(|x| x.clone()).collect();
+            let xs = self.up.iter().skip(1).cloned().collect();
             let rs = vec!(x) + &self.down[..];
             Stack::<T>::new(self.focus.clone(), xs, rs)
         }
