@@ -10,6 +10,7 @@ rustc-serialize = "*"
 log = "*"
 num = "*"
 libc = "*"
+dylib = "*"
 
 [lib]
 name = "wtftw_core"

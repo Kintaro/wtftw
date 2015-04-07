@@ -544,7 +544,7 @@ impl Layout for GapLayout {
                          stack: &Option<Stack<Window>>, config: &GeneralConfig) -> bool {
         match message {
             LayoutMessage::IncreaseGap => { self.gap += 1; true }
-            LayoutMessage::DecreaseGap => { self.gap -= 1; true }
+            LayoutMessage::DecreaseGap => { if self.gap > 0 { self.gap -= 1; } true }
             _                          => self.layout.apply_message(message, window_system, stack, config)
         }
     }

@@ -1,9 +1,6 @@
-#![feature(collections)]
-
 extern crate wtftw_core;
 
 use self::wtftw_core::core::stack::Stack;
-use self::wtftw_core::core::workspace::Workspace;
 
 #[test]
 fn stack_add() {
