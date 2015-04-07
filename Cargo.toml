@@ -11,6 +11,7 @@ getopts = "*"
 log = "*"
 num = "*"
 libc = "*"
+dylib = "*"
 
 [dependencies.wtftw_core]
 path = "core"

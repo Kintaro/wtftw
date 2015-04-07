@@ -1,4 +1,5 @@
 extern crate rustc_serialize;
+extern crate dylib;
 
 use std::env;
 use std::borrow::ToOwned;
@@ -18,7 +19,7 @@ use std::fs::PathExt;
 use std::fs::{ read_dir, create_dir_all };
 use std::process::Command;
 use std::process::Child;
-use std::dynamic_lib::DynamicLibrary;
+use self::dylib::DynamicLibrary;
 use std::rc::Rc;
 use std::sync::RwLock;
 use std::thread::spawn;
