@@ -151,7 +151,7 @@ impl XlibWindowSystem {
                 event:   malloc(256),
             };
 
-            let name = CString::new("wtftw").unwrap().as_bytes_with_nul().as_ptr();
+            let name = (*CString::new("wtftw").unwrap()).as_ptr();
 
             let wmcheck = res.get_atom("_NET_SUPPORTING_WM_CHECK");
             let wmname = res.get_atom("_NET_WM_NAME");
