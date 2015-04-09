@@ -5,6 +5,7 @@
 #[macro_use]
 #[macro_use]
 extern crate wtftw;
+extern crate wtftw_contrib;
 
 use std::fs::PathExt;
 use std::io::Write;
@@ -16,9 +17,10 @@ use wtftw::window_manager::*;
 use wtftw::handlers::default::*;
 use wtftw::config::*;
 use wtftw::util::*;
-use wtftw::layout::*;
-use wtftw::layout::Direction::*;
-use wtftw::layout::LayoutMessage::*;
+use wtftw::layout::Direction;
+use wtftw::layout::LayoutMessage;
+use wtftw_contrib::layout::{ AvoidStrutsLayout, LayoutCollection, BinarySpacePartition, GapLayout, MirrorLayout, NoBordersLayout, FullLayout };
+
 
 #[no_mangle]
 pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Config) {
@@ -27,11 +29,11 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
     config.general.mod_mask = modm;
     config.general.border_color = 0x404040;
     config.general.focus_border_color = 0xebebeb;
-    config.general.border_width = 2;
+    config.general.border_width = 1;
     config.general.terminal = (String::from_str("termite"), String::from_str(""));
     config.general.layout = LayoutCollection::new(vec!(
-            GapLayout::new(8, AvoidStrutsLayout::new(vec!(Direction::Up, Direction::Down), BinarySpacePartition::new())),
-            GapLayout::new(8, AvoidStrutsLayout::new(vec!(Direction::Up, Direction::Down), MirrorLayout::new(BinarySpacePartition::new()))),
+            GapLayout::new(0, AvoidStrutsLayout::new(vec!(Direction::Up, Direction::Down), BinarySpacePartition::new())),
+            GapLayout::new(0, AvoidStrutsLayout::new(vec!(Direction::Up, Direction::Down), MirrorLayout::new(BinarySpacePartition::new()))),
             NoBordersLayout::new(box FullLayout)));
 
     config.general.tags = (vec!("一: ターミナル", "二: ウェブ", "三: コード",
@@ -137,9 +139,9 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
             let workspaces = tags.clone().iter()
                 .enumerate()
                 .map(|(i, _)| if i as u32 == m.workspaces.current.workspace.id {
-                    format!("<fc=#d7af87>■</fc>")
+                    format!("<fc=#fb4934>■</fc>")
                 } else if m.workspaces.visible.iter().any(|w| w.workspace.id == i as u32) {
-                    format!("<fc=#808080>■</fc>")
+                    format!("<fc=#fabd2f>■</fc>")
                 } else {
                     format!("■")
                 })
