@@ -75,6 +75,11 @@ ALT+num
 ### Open terminal
 ```
 ALT+SHIFT+Enter
+
+## Additional layouts and other extensions
+
+To keep wtftw as small and lean as possible, all layouts (except the standard one) have been moved to 
+![wtftw-contrib](https://github.com/Kintaro/wtftw-contrib)
 ```
 
 ## FAQ
