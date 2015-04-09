@@ -210,7 +210,7 @@ impl XlibWindowSystem {
 
     fn get_atom(&self, s: &str) -> u64 {
         unsafe {
-            XInternAtom(self.display, CString::new(s.as_bytes()).unwrap().as_ptr() as *mut i8, 0) as u64
+            XInternAtom(self.display, (*CString::new(s.as_bytes()).unwrap()).as_ptr() as *mut i8, 0) as u64
         }
     }
 

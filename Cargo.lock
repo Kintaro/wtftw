@@ -10,7 +10,7 @@ dependencies = [
  "num 0.1.22 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.3.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "wtftw_core 0.3.1",
- "wtftw_xlib 0.3.1",
+ "wtftw_xlib 0.3.2",
 ]
 
 [[package]]
@@ -84,7 +84,7 @@ dependencies = [
 
 [[package]]
 name = "wtftw_xlib"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "libc 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
