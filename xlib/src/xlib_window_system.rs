@@ -151,7 +151,7 @@ impl XlibWindowSystem {
                 event:   malloc(256),
             };
 
-            let name = (*CString::new("wtftw").unwrap()).as_ptr();
+            let name = (*CString::new(&b"wtftw"[..]).unwrap()).as_ptr();
 
             let wmcheck = res.get_atom("_NET_SUPPORTING_WM_CHECK");
             let wmname = res.get_atom("_NET_WM_NAME");
@@ -161,7 +161,7 @@ impl XlibWindowSystem {
             let mut root_cpy = root;
             let root_ptr : *mut Window = &mut root_cpy;
             XChangeProperty(display, root, wmcheck, xa_window, 32, 0, root_ptr as *mut c_uchar, 1);
-            XChangeProperty(display, root, wmname, utf8, 8, 0, name as *mut c_uchar, 5); 
+            XChangeProperty(display, root, wmname, utf8, 8, 0, name as *mut c_uchar, 5);
 
             res
         }
@@ -203,14 +203,22 @@ impl XlibWindowSystem {
 
     fn get_property_from_string(&self, s: &str, window: Window) -> Option<Vec<u64>> {
         unsafe {
-            let atom = XInternAtom(self.display, CString::new(s.as_bytes()).unwrap().as_ptr() as *mut i8, 0);
-            self.get_property(atom as u64, window)
+            match CString::new(s.as_bytes()) {
+                Ok(b) => {
+                    let atom = XInternAtom(self.display, b.as_ptr() as *mut i8, 0);
+                    self.get_property(atom as u64, window)
+                },
+                _     => None
+            }
         }
     }
 
     fn get_atom(&self, s: &str) -> u64 {
         unsafe {
-            XInternAtom(self.display, CString::new(s).unwrap().as_ptr() as *mut i8, 0) as u64
+            match CString::new(s) {
+                Ok(b) => XInternAtom(self.display, b.as_ptr() as *mut i8, 0) as u64,
+                _     => panic!("Invalid atom! {}", s)
+            }
         }
     }
 
@@ -279,13 +287,20 @@ impl WindowSystem for XlibWindowSystem {
         unsafe {
             let keysym = XKeycodeToKeysym(self.display, key as u8, 0);
             let keyname : *mut c_char = XKeysymToString(keysym);
-            from_utf8(CStr::from_ptr(transmute(keyname)).to_bytes()).unwrap().to_owned()
+
+            match from_utf8(CStr::from_ptr(transmute(keyname)).to_bytes()) {
+                Ok(x) => x.to_owned(),
+                _     => panic!("Invalid keycode!")
+            }
         }
     }
 
     fn get_keycode_from_string(&self, key: &str) -> u64 {
         unsafe {
-            XStringToKeysym(CString::new(key.as_bytes()).unwrap().as_ptr() as *mut i8) as u64
+            match CString::new(key.as_bytes()) {
+                Ok(b) => XStringToKeysym(b.as_ptr() as *mut i8) as u64,
+                _     => panic!("Invalid key string!")
+            }
         }
     }
 

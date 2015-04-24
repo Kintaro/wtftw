@@ -1,4 +1,3 @@
-#![feature(std_misc)]
 #![feature(path_ext)]
 #[deny(warnings)]
 #[macro_use]

@@ -25,7 +25,6 @@ use std::sync::RwLock;
 use std::thread::spawn;
 use std::path::PathBuf;
 use std::path::Path;
-use std::ffi::AsOsStr;
 
 pub struct GeneralConfig {
     /// Whether focus follows mouse movements or

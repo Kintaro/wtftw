@@ -14,7 +14,10 @@ use wtftw_core::window_system::*;
 use wtftw_xlib::XlibWindowSystem;
 
 pub fn parse_window_ids(ids: &str) -> Vec<(Window, u32)> {
-    json::decode(ids).unwrap()
+    match json::decode(ids) {
+        Ok(x) => x,
+        _     => Vec::new()
+    }
 }
 
 fn main() {
