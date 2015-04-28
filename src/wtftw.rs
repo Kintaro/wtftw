@@ -4,6 +4,7 @@ extern crate getopts;
 extern crate rustc_serialize;
 extern crate wtftw_core;
 extern crate wtftw_xlib;
+extern crate zombie;
 
 use std::env;
 use getopts::Options;
@@ -117,8 +118,9 @@ fn main() {
                         window_manager.unmanage(&window_system, window, &config.general)
                     } else {
                         window_manager.update_unmap(window)
-                    }
+                    };
                 }
+                zombie::collect_zombies();
             },
             WindowSystemEvent::WindowDestroyed(window) => {
                 if window_manager.is_window_managed(window) {
