@@ -11,6 +11,7 @@ dependencies = [
  "rustc-serialize 0.3.13 (registry+https://github.com/rust-lang/crates.io-index)",
  "wtftw_core 0.3.1",
  "wtftw_xlib 0.3.3",
+ "zombie 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -107,6 +108,14 @@ version = "0.1.0"
 source = "git+https://github.com/Kintaro/rust-xlib.git?branch=wtftw#a4bbc864bae81e58f5d74b0a0aadaa9fa1022071"
 dependencies = [
  "bitflags 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "zombie"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
  "libc 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 

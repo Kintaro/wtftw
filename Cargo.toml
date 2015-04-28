@@ -12,6 +12,7 @@ log = "*"
 num = "*"
 libc = "*"
 dylib = "*"
+zombie = "*"
 
 [dependencies.wtftw_core]
 path = "core"
