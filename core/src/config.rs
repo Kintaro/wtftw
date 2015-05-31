@@ -78,6 +78,20 @@ pub struct InternalConfig {
     pub wtftw_dir: String,
 }
 
+impl InternalConfig {
+    pub fn new(manage_hook: ManageHook, startup_hook: StartupHook, home: String) -> InternalConfig {
+        InternalConfig {
+            library: None,
+            key_handlers: BTreeMap::new(),
+            mouse_handlers: BTreeMap::new(),
+            manage_hook: manage_hook,
+            startup_hook: startup_hook,
+            loghook: None,
+            wtftw_dir: format!("{}/.wtftw", home)
+        }
+    }
+}
+
 /// Common configuration options for the window manager.
 pub struct Config {
     pub general: GeneralConfig,
@@ -89,8 +103,8 @@ impl Config {
     pub fn initialize() -> Config {
         let home = env::home_dir().unwrap_or(PathBuf::from("./")).into_os_string().into_string().unwrap();
         // Default version of the config, for fallback
-        Config {
-            general: GeneralConfig {
+        let general_config = 
+            GeneralConfig {
                 focus_follows_mouse: true,
                 focus_border_color:  0x00B6FFB0,
                 border_color:        0x00444444,
@@ -106,21 +120,25 @@ impl Config {
                 launcher:            "dmenu_run".to_owned(),
                 pipes:               Vec::new(),
                 layout:              Box::new(TallLayout { num_master: 1, increment_ratio: 0.3/100.0, ratio: 0.5 }),
-            },
-            internal: InternalConfig {
-                library:      None,
-                key_handlers: BTreeMap::new(),
-                mouse_handlers: BTreeMap::new(),
-                manage_hook:  Box::new(move |m: Workspaces, _: &WindowSystem, _: Window| -> Workspaces {
-                    m.clone()
-                }),
-                startup_hook: Box::new(move |m: WindowManager, _: &WindowSystem, _: &Config| -> WindowManager {
-                    m.clone()
-                }),
-                loghook:      None,
-                wtftw_dir:    format!("{}/.wtftw", home),
-            }
+            };
+        
+        let internal_config = InternalConfig::new(
+            Box::new(Config::default_manage_hook),
+            Box::new(Config::default_startup_hook),
+            home); 
+
+        Config {
+            general: general_config,
+            internal: internal_config
         }
+    }
+
+    pub fn default_manage_hook(m: Workspaces, _: &WindowSystem, _: Window) -> Workspaces {
+        m
+    }
+
+    pub fn default_startup_hook(m: WindowManager, _: &WindowSystem, _: &Config) -> WindowManager {
+        m
     }
 
     pub fn default_configuration(&mut self, w: &WindowSystem) {
