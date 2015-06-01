@@ -33,7 +33,7 @@ macro_rules! add_mouse_handler(
 #[macro_export]
 macro_rules! send_layout_message(
     ($message: expr) => (
-        |m, w, c| m.send_layout_message($message, w, c).windows(w, c, |x| x.clone())
+        |m, w, c| m.send_layout_message($message, w.deref(), c).windows(w.deref(), c, &|x| x.clone())
     )
 );
 

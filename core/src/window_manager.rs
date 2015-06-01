@@ -51,7 +51,7 @@ impl WindowManager {
                 config: &GeneralConfig) -> WindowManager {
         if index < self.workspaces.number_workspaces() {
             debug!("switching to workspace {}", config.tags[index as usize].clone());
-            self.windows(window_system, config, |w| w.view(index))
+            self.windows(window_system, config, &|w: &Workspaces| w.view(index))
         } else {
             self.clone()
         }
@@ -60,7 +60,7 @@ impl WindowManager {
     pub fn move_window_to_workspace(&self, window_system: &WindowSystem,
                                     config: &GeneralConfig,
                                     index: u32) -> WindowManager {
-        self.windows(window_system, config, |w| w.shift(index))
+        self.windows(window_system, config, &|w| w.shift(index))
     }
 
     /// Rearrange the workspaces across the given screens.
@@ -140,10 +140,10 @@ impl WindowManager {
 
         let result = if is_transient || is_fixed_size {
             let r = adjust(self.float_location(window_system, window));
-            self.windows(window_system, config, |x| x.insert_up(window).float(window, r))
+            self.windows(window_system, config, &|x| x.insert_up(window).float(window, r))
                 .focus(window, window_system, config)
         } else {
-            self.windows(window_system, config, |x| x.insert_up(window))
+            self.windows(window_system, config, &|x| x.insert_up(window))
                 .focus(window, window_system, config)
         };
 
@@ -157,7 +157,7 @@ impl WindowManager {
                     config: &GeneralConfig) -> WindowManager {
         if self.workspaces.contains(window) {
             debug!("unmanaging window {}", window);
-            self.windows(window_system, config, |x| x.delete(window))
+            self.windows(window_system, config, &|x| x.delete(window))
         } else {
             self.clone()
         }
@@ -168,9 +168,9 @@ impl WindowManager {
         if let Some(screen) = self.workspaces.find_screen(window) {
             if screen.screen_id == self.workspaces.current.screen_id &&
                screen.workspace.peek() != Some(window) {
-                return self.windows(window_system, config, |w| w.focus_window(window))
+                return self.windows(window_system, config, &|w| w.focus_window(window))
             } else if window == window_system.get_root() {
-                return self.windows(window_system, config, |w| w.view(screen.workspace.id))
+                return self.windows(window_system, config, &|w| w.view(screen.workspace.id))
             }
         }
         self.clone()
@@ -199,7 +199,7 @@ impl WindowManager {
     }
 
     pub fn windows<F>(&self, window_system: &WindowSystem, config: &GeneralConfig,
-                   f: F) -> WindowManager where F : Fn(&Workspaces) -> Workspaces {
+                   f: &F) -> WindowManager where F : Fn(&Workspaces) -> Workspaces {
         let ws = f(&self.workspaces);
         let old_visible = self.workspaces.visible_windows().into_iter().collect::<BTreeSet<_>>();
         let new_windows = ws.visible_windows().into_iter().collect::<BTreeSet<_>>()
@@ -317,7 +317,7 @@ impl WindowManager {
     pub fn float(&self, window_system: &WindowSystem, config: &GeneralConfig,
                  window: Window) -> WindowManager {
         let rect = self.float_location(window_system, window);
-        let result = self.windows(window_system, config, |w| w.float(window, rect));
+        let result = self.windows(window_system, config, &|w| w.float(window, rect));
         result
     }
 

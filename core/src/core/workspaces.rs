@@ -118,7 +118,7 @@ impl Workspaces {
                 .map(|(_, y)| y.clone())
                 .collect();
 
-            self.from_visible(visible + &(vec!(self.current.clone()))[..])
+            self.from_visible(visible.into_iter().chain((vec!(self.current.clone())).into_iter()).collect())
                 .from_current(screen)
         // Desired workspace is hidden. Switch it with the current workspace
         } else if let Some(workspace_pos) = self.hidden.iter().position(|w| w.id == index) {
@@ -128,7 +128,7 @@ impl Workspaces {
                 .map(|(_, y)| y.clone())
                 .collect();
 
-            self.from_hidden(hidden + &(vec!(self.current.workspace.clone()))[..])
+            self.from_hidden(hidden.clone().into_iter().chain((vec!(self.current.workspace.clone())).into_iter()).collect())
                 .from_current(self.current.map_workspace(|_| self.hidden[workspace_pos].clone()))
         } else {
             self.clone()
@@ -150,7 +150,8 @@ impl Workspaces {
                 .from_visible(self.visible.iter()
                               .filter(|x| x.workspace.id != index)
                               .map(|x| x.clone())
-                              .collect::<Vec<_>>() + &(vec!(screen))[..])
+                              .chain((vec!(screen)).into_iter())
+                              .collect())
         } else {
             self.clone()
         }
@@ -319,7 +320,7 @@ impl Workspaces {
         }
 
         self.from_current(self.current.map_or(Stack::from_element(window), |s| {
-            Stack::<Window>::new(window, s.up, (vec!(s.focus.clone())) + &s.down[..])
+            Stack::<Window>::new(window, s.up, ((vec!(s.focus.clone())).into_iter().chain(s.down.clone().into_iter()).collect()))
         }))
     }
 
@@ -350,7 +351,7 @@ impl Workspaces {
     /// Flatten all workspaces into a list
     pub fn workspaces(&self) -> Vec<Workspace> {
         let v : Vec<Workspace> = self.visible.iter().map(|x| x.workspace.clone()).collect();
-        (vec!(self.current.workspace.clone())) + &v[..] + &self.hidden[..]
+        (vec!(self.current.workspace.clone())).into_iter().chain(v.into_iter()).chain(self.hidden.clone().into_iter()).collect()
     }
 
     /// Shift the given window to the given workspace
@@ -414,7 +415,7 @@ impl Workspaces {
     /// Return a list of all screens and their workspaces.
     /// Mostly used by layout.
     pub fn screens(&self) -> Vec<Screen> {
-        (vec!(self.current.clone())) + &self.visible[..]
+        (vec!(self.current.clone())).into_iter().chain(self.visible.clone().into_iter()).collect()
     }
 
     pub fn send_layout_message(&self, message: LayoutMessage, window_system: &WindowSystem,
