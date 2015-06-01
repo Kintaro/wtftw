@@ -123,8 +123,10 @@ impl Config {
             };
         
         let internal_config = InternalConfig::new(
-            Box::new(Config::default_manage_hook),
-            Box::new(Config::default_startup_hook),
+            Box::new(move |a, _, _| a.clone()),
+            Box::new(move |a, _, _| a.clone()),
+            //Box::new(Config::default_manage_hook),
+            //Box::new(Config::default_startup_hook),
             home); 
 
         Config {
@@ -133,22 +135,22 @@ impl Config {
         }
     }
 
-    pub fn default_manage_hook(m: Workspaces, _: &WindowSystem, _: Window) -> Workspaces {
+    pub fn default_manage_hook(m: Workspaces, _: Rc<WindowSystem>, _: Window) -> Workspaces {
         m
     }
 
-    pub fn default_startup_hook(m: WindowManager, _: &WindowSystem, _: &Config) -> WindowManager {
+    pub fn default_startup_hook(m: WindowManager, _: Rc<WindowSystem>, _: &Config) -> WindowManager {
         m
     }
 
     pub fn default_configuration(&mut self, w: &WindowSystem) {
         let mod_mask = self.general.mod_mask.clone();
         self.add_key_handler(w.get_keycode_from_string("Return"), mod_mask | SHIFTMASK,
-            Box::new(|m, w, c| start_terminal(m, w, c)));
+            Box::new(|m, ws, c| start_terminal(m, ws, c)));
         self.add_key_handler(w.get_keycode_from_string("q"), mod_mask,
-            Box::new(|m, w, c| restart(m, w, c)));
+            Box::new(|m, ws, c| restart(m, ws, c)));
         self.add_key_handler(w.get_keycode_from_string("q"), mod_mask | SHIFTMASK,
-            Box::new(|m, w, c| exit(m, w, c)));
+            Box::new(|m, ws, c| exit(m, ws, c)));
     }
 
     pub fn get_mod_mask(&self) -> KeyModifiers {
