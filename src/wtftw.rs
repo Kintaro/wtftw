@@ -14,7 +14,6 @@ use rustc_serialize::json;
 use wtftw_core::config::Config;
 use wtftw_core::window_manager::WindowManager;
 use wtftw_core::window_system::*;
-use wtftw_core::core::workspaces::Workspaces;
 use wtftw_xlib::XlibWindowSystem;
 
 pub fn parse_window_ids(ids: &str) -> Vec<(Window, u32)> {
