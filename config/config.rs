@@ -11,7 +11,8 @@ use std::fs::PathExt;
 use std::io::Write;
 use std::path::Path;
 use std::env;
-use std::ffi::AsOsStr;
+use std::ops::Deref;
+//use std::ffi::AsOsStr;
 use wtftw::window_system::*;
 use wtftw::window_manager::*;
 use wtftw::handlers::default::*;
@@ -30,7 +31,7 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
     config.general.border_color = 0x404040;
     config.general.focus_border_color = 0xebebeb;
     config.general.border_width = 1;
-    config.general.terminal = (String::from_str("termite"), String::from_str(""));
+    config.general.terminal = (String::from_str("xterm"), String::from_str(""));
     config.general.layout = LayoutCollection::new(vec!(
             GapLayout::new(0, AvoidStrutsLayout::new(vec!(Direction::Up, Direction::Down), BinarySpacePartition::new())),
             GapLayout::new(0, AvoidStrutsLayout::new(vec!(Direction::Up, Direction::Down), MirrorLayout::new(BinarySpacePartition::new()))),
@@ -50,16 +51,16 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
     add_key_handler_str!(config, w, "p",      modm,             start_launcher);
 
     // Focus and window movement
-    add_key_handler_str!(config, w, "j", modm,             |m, w, c| m.windows(w, c, |x| x.focus_down()));
-    add_key_handler_str!(config, w, "k", modm,             |m, w, c| m.windows(w, c, |x| x.focus_up()));
-    add_key_handler_str!(config, w, "j", modm | SHIFTMASK, |m, w, c| m.windows(w, c, |x| x.swap_down()));
-    add_key_handler_str!(config, w, "k", modm | SHIFTMASK, |m, w, c| m.windows(w, c, |x| x.swap_up()));
-    add_key_handler_str!(config, w, "Return", modm,        |m, w, c| m.windows(w, c, |x| x.swap_master()));
-    add_key_handler_str!(config, w, "c", modm, |m, w, c| m.kill_window(w).windows(w, c, |x| x.clone()));
+    add_key_handler_str!(config, w, "j", modm,             |m, w, c| m.windows(w.deref(), c, &|x| x.focus_down()));
+    add_key_handler_str!(config, w, "k", modm,             |m, w, c| m.windows(w.deref(), c, &|x| x.focus_up()));
+    add_key_handler_str!(config, w, "j", modm | SHIFTMASK, |m, w, c| m.windows(w.deref(), c, &|x| x.swap_down()));
+    add_key_handler_str!(config, w, "k", modm | SHIFTMASK, |m, w, c| m.windows(w.deref(), c, &|x| x.swap_up()));
+    add_key_handler_str!(config, w, "Return", modm,        |m, w, c| m.windows(w.deref(), c, &|x| x.swap_master()));
+    add_key_handler_str!(config, w, "c", modm, |m, w, c| m.kill_window(w.deref()).windows(w.deref(), c, &|x| x.clone()));
 
     add_key_handler_str!(config, w, "t", modm, |m, w, c| {
         match m.workspaces.peek() {
-            Some(window) => m.windows(w, c, |x| x.sink(window)),
+            Some(window) => m.windows(w.deref(), c, &|x| x.sink(window)),
             None => m.clone()
         }
     });
@@ -108,21 +109,12 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
 
     add_mouse_handler!(config, BUTTON1, modm,
                        |m, w, c, s| {
-                           m.focus(s, w, c).mouse_move_window(w, c, s).windows(w, c, |x| x.shift_master())
+                           m.focus(s, w.deref(), c).mouse_move_window(w.deref(), c, s).windows(w.deref(), c, &|x| x.shift_master())
                        });
     add_mouse_handler!(config, BUTTON3, modm,
                        |m, w, c, s| {
-                           m.focus(s, w, c).mouse_resize_window(w, c, s).windows(w, c, |x| x.shift_master())
+                           m.focus(s, w.deref(), c).mouse_resize_window(w.deref(), c, s).windows(w.deref(), c, &|x| x.shift_master())
                        });
-
-    // Place specific applications on specific workspaces
-    config.set_manage_hook(box |workspaces, window_system, window| {
-        match &window_system.get_class_name(window)[..] {
-            "MPlayer" => spawn_on(workspaces, window_system, window, 3),
-            "vlc"     => spawn_on(workspaces, window_system, window, 3),
-            _         => workspaces.clone()
-        }
-    });
 
     // Xmobar handling and formatting
     let home_dir = env::home_dir().unwrap();
@@ -130,7 +122,7 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
     let xmobar_config = format!("{}/.xmonad/xmobar1.hs", home);
 
     if Path::new(&xmobar_config.clone()).is_file() {
-        let mut xmobar = spawn_pipe(config, "xmobar",
+        let mut xmobar = spawn_pipe(config, "/home/rootnode/.cabal/bin/xmobar",
                                     vec!(xmobar_config));
         let tags = config.general.tags.clone();
         config.set_log_hook(box move |m, w| {
