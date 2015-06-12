@@ -31,7 +31,7 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
     config.general.border_color = 0x404040;
     config.general.focus_border_color = 0xebebeb;
     config.general.border_width = 1;
-    config.general.terminal = (String::from_str("xterm"), String::from_str(""));
+    config.general.terminal = (String::from("xterm"), String::from(""));
     config.general.layout = LayoutCollection::new(vec!(
             GapLayout::new(0, AvoidStrutsLayout::new(vec!(Direction::Up, Direction::Down), BinarySpacePartition::new())),
             GapLayout::new(0, AvoidStrutsLayout::new(vec!(Direction::Up, Direction::Down), MirrorLayout::new(BinarySpacePartition::new()))),
@@ -40,7 +40,7 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
     config.general.tags = (vec!("一: ターミナル", "二: ウェブ", "三: コード",
                                 "四: メディア", "五: スチーム", "六: ラテック",
                                 "七: 音楽", "八: im", "九: 残り"))
-        .into_iter().map(String::from_str).collect();
+        .into_iter().map(String::from).collect();
 
     // Register key handlers
 
@@ -137,14 +137,14 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
                 } else {
                     format!("■")
                 })
-            .fold(String::from_str(""), |a, x| {
+            .fold(String::from(""), |a, x| {
                 let mut r = a.clone();
                 r.push_str(&x);
                 r
             });
 
             let name = match m.workspaces.peek() {
-                None => String::from_str(""),
+                None => String::from(""),
                 Some(window) => w.get_window_name(window)
             };
             let content = format!("{} {} {}\n", workspaces, m.workspaces.current.workspace.layout.description(), name);
