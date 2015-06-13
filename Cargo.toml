@@ -20,6 +20,14 @@ path = "core"
 [dependencies.wtftw_xlib]
 path = "xlib"
 
+[profile.release]
+codegen-units = 8
+lto = false
+
+[profile.debug]
+codegen-units = 8
+lto = false
+
 [lib]
 name = "wtftw"
 path = "core/src/wtftw.rs"

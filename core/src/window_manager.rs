@@ -249,6 +249,7 @@ impl WindowManager {
         }
 
         visible.iter().fold((),|_, &x| window_system.set_window_border_color(x, config.border_color.clone()));
+        visible.iter().fold((),|_, &x| window_system.set_window_border_width(x, config.border_width));
 
         for &win in visible.iter() {
             window_system.show_window(win);

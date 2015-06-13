@@ -190,6 +190,8 @@ impl Config {
                                      name = \"config\"\n\
                                      version = \"0.0.0\"\n\
                                      authors = [\"wtftw\"]\n\n\
+                                     [dependencies.wtftw_contrib]
+                                     git = \"https://github.com/Kintaro/wtftw-contrib.git\"\n
                                      [dependencies.wtftw]\n\
                                      git = \"https://github.com/Kintaro/wtftw.git\"\n\n\
                                      [lib]\n\
