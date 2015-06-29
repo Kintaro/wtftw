@@ -40,7 +40,7 @@ macro_rules! send_layout_message(
 #[macro_export]
 macro_rules! run(
     ($command: expr, $options: expr) => (
-        |w, _, _| { run($command, String::from_str($options).split(' ').map(String::from_str).collect()); w }
+        |w, _, _| { run($command, String::from($options).split(' ').map(String::from).collect()); w }
     )
 );
 
