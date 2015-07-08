@@ -35,7 +35,10 @@ impl<T: Clone + Eq> Stack<T> {
         Stack {
             focus: t,
             up: self.up.clone(),
-            down: self.down.clone().into_iter().chain((vec!(self.focus.clone())).into_iter()).collect()
+            down: self.down.clone()
+                .into_iter()
+                .chain((vec!(self.focus.clone())).into_iter())
+                .collect()
         }
     }
 
