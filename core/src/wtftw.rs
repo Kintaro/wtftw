@@ -1,5 +1,4 @@
 #![feature(unboxed_closures)]
-#![feature(path_ext)]
 #[deny(warnings)]
 #[macro_use]
 #[link]
