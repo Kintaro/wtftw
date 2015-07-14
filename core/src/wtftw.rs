@@ -1,4 +1,3 @@
-#![feature(unboxed_closures)]
 #[deny(warnings)]
 #[macro_use]
 #[link]
