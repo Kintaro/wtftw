@@ -15,7 +15,6 @@ use std::mem;
 use std::error::Error;
 use std::fs::File;
 use std::io::Write;
-use std::fs::PathExt;
 use std::fs::{ read_dir, create_dir_all };
 use std::process::Command;
 use std::process::Child;
@@ -25,6 +24,7 @@ use std::sync::RwLock;
 use std::thread::spawn;
 use std::path::PathBuf;
 use std::path::Path;
+use std::fs::metadata;
 
 pub struct GeneralConfig {
     /// Whether focus follows mouse movements or
@@ -177,14 +177,14 @@ impl Config {
     pub fn compile_and_call(&mut self, m: &mut WindowManager, w: &WindowSystem) {
         let toml = format!("{}/Cargo.toml", self.internal.wtftw_dir.clone());
 
-        if !Path::new(&self.internal.wtftw_dir.clone()).exists() {
+        if !path_exists(&self.internal.wtftw_dir.clone()) {
             match create_dir_all(Path::new(&self.internal.wtftw_dir.clone())) {
                 Ok(()) => (),
                 Err(e) => panic!(format!("mkdir: {} failed with error {}", self.internal.wtftw_dir.clone(), e))
             }
         }
 
-        if !Path::new(&toml.clone()).exists() {
+        if path_exists(&toml.clone()) {
             let file = File::create(Path::new(&toml).as_os_str());
             file.unwrap().write("[project]\n\
                                      name = \"config\"\n\
@@ -200,7 +200,7 @@ impl Config {
         }
 
         let config_source = format!("{}/src/config.rs", self.internal.wtftw_dir.clone());
-        if Path::new(&config_source).exists() && self.compile() {
+        if path_exists(&config_source) && self.compile() {
             self.call(m, w)
         } else {
             self.default_configuration(w);
@@ -270,4 +270,8 @@ impl Config {
             }
         }
     }
+}
+
+fn path_exists(path: &String) -> bool {
+    metadata(path).is_ok()
 }
