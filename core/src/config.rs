@@ -184,7 +184,7 @@ impl Config {
             }
         }
 
-        if path_exists(&toml.clone()) {
+        if !path_exists(&toml.clone()) {
             let file = File::create(Path::new(&toml).as_os_str());
             file.unwrap().write("[project]\n\
                                      name = \"config\"\n\
