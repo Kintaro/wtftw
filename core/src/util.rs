@@ -12,21 +12,21 @@ use window_system::*;
 #[macro_export]
 macro_rules! add_key_handler_str(
     ($config: expr, $w:expr, $key:expr, $modkey:expr, $inp:expr) => (
-        $config.add_key_handler($w.get_keycode_from_string($key), $modkey, box $inp);
+        $config.add_key_handler($w.get_keycode_from_string($key), $modkey, Box::new($inp));
     )
 );
 
 #[macro_export]
 macro_rules! add_key_handler_code(
     ($config: expr, $key:expr, $modkey:expr, $inp:expr) => (
-        $config.add_key_handler($key, $modkey, box $inp);
+        $config.add_key_handler($key, $modkey, Box::new($inp));
     )
 );
 
 #[macro_export]
 macro_rules! add_mouse_handler(
     ($config: expr, $button:expr, $modkey:expr, $inp:expr) => (
-        $config.add_mouse_handler($button, $modkey, box $inp);
+        $config.add_mouse_handler($button, $modkey, Box::new($inp));
     )
 );
 
