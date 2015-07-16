@@ -1,2 +1,3 @@
 language: rust
 rust: nightly
+script: make test
