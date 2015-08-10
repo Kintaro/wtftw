@@ -14,7 +14,7 @@ Window Tiling For The Win. A tiling window manager written in Rust
 
 ## Build
 
-**Notice:** Wtftw is compiled against the latest nightlies, so make sure to have your *rustc* up to date.
+**Notice:** Wtftw is compiled against Rust1.2.0+, so make sure to have a recent enough *rustc*.
 
 To build it, just run
 
