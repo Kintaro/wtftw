@@ -384,8 +384,11 @@ impl WindowSystem for XlibWindowSystem {
             let mut children : *mut c_ulong = uninitialized();
             let children_ptr : *mut *mut c_ulong = &mut children;
             let mut num_children : c_uint = 0;
-            XQueryTree(self.display, self.root as c_ulong, &mut unused, &mut unused, children_ptr, &mut num_children);
+            XQueryTree(self.display, self.root as c_ulong, 
+                       &mut unused, &mut unused, children_ptr, 
+                       &mut num_children);
             let const_children : *const u64 = children as *const u64;
+            debug!("Found {} windows", num_children);
             from_raw_parts(const_children, num_children as usize).iter()
                             .filter(|&&c| c != self.root)
                             .map(|c| *c)
