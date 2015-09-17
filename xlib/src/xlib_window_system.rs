@@ -7,7 +7,7 @@ extern crate xinerama;
 extern crate wtftw_core;
 
 use std::borrow::ToOwned;
-use libc::{ c_char, c_uchar, c_int, c_uint, c_void, c_long, c_ulong };
+use libc::{ c_char, c_uchar, c_int, c_uint, c_void, c_long, c_ulong, int32_t };
 use libc::funcs::c95::stdlib::malloc;
 use xlib::{
     Display,
@@ -384,8 +384,8 @@ impl WindowSystem for XlibWindowSystem {
             let mut children : *mut c_ulong = uninitialized();
             let children_ptr : *mut *mut c_ulong = &mut children;
             let mut num_children : c_uint = 0;
-            XQueryTree(self.display, self.root as c_ulong, 
-                       &mut unused, &mut unused, children_ptr, 
+            XQueryTree(self.display, self.root as c_ulong,
+                       &mut unused, &mut unused, children_ptr,
                        &mut num_children);
             let const_children : *const u64 = children as *const u64;
             debug!("Found {} windows", num_children);
@@ -539,7 +539,7 @@ impl WindowSystem for XlibWindowSystem {
             CLIENTMESSAGE => {
                 unsafe {
                     let event : &XClientMessageEvent = self.get_event_as();
-                    WindowSystemEvent::ClientMessageEvent(event.window as u64)
+                    WindowSystemEvent::ClientMessageEvent(event.window as u64, event.message_type, event.format, event.data)
                 }
             },
             CONFIGUREREQUEST => {
@@ -750,12 +750,17 @@ impl WindowSystem for XlibWindowSystem {
     }
 
     fn update_server_state(&self, manager: &WindowManager) {
-        let i32_type = self.get_atom("CARDINAL/32");
+        let i32_type = self.get_atom("32");
+        let current_desktop : i32 = manager.workspaces.current.workspace.id as i32;
+        let number_desktops : i32 = manager.workspaces.workspaces().len() as i32;
+        let current_desktop_ptr : *const i32 = &current_desktop;
+        let number_desktops_ptr : *const i32 = &number_desktops;
+
         unsafe {
-            XChangeProperty(self.display, self.root, self.get_atom("_NET_CURRENT_DESKTOP"), i32_type, 
-                            32, 0, manager.workspaces.current.workspace.id as *mut c_uchar, 1);
-            XChangeProperty(self.display, self.root, self.get_atom("_NET_NUMBER_OF_DESKTOPS"), i32_type, 
-                            32, 0, manager.workspaces.workspaces().len() as *mut c_uchar, 1);
+            XChangeProperty(self.display, self.root, self.get_atom("_NET_CURRENT_DESKTOP"), i32_type,
+                            32, 0, current_desktop_ptr as *mut c_uchar, 1);
+            XChangeProperty(self.display, self.root, self.get_atom("_NET_NUMBER_OF_DESKTOPS"), i32_type,
+                            32, 0, number_desktops_ptr as *mut c_uchar, 1);
         }
     }
 
@@ -784,6 +789,14 @@ impl WindowSystem for XlibWindowSystem {
             let mut attributes : XWindowAttributes = uninitialized();
             XGetWindowAttributes(self.display, window as c_ulong, &mut attributes);
             attributes.override_redirect != 0
+        }
+    }
+
+    fn process_message(&self, window_manager: &WindowManager, _: Window, atom: c_ulong, _: c_int, data: [int32_t; 5]) -> WindowManager {
+        if atom == self.get_atom("_NET_CURRENT_DESKTOP") {
+            window_manager.modify_workspaces(|w| w.view(data[0] as u32))
+        } else {
+            window_manager.clone()
         }
     }
 }
