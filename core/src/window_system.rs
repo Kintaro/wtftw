@@ -2,6 +2,7 @@ extern crate libc;
 
 use std::fmt::{ Error, Formatter, Debug };
 use window_manager::WindowManager;
+use self::libc::{ c_int, c_ulong, int32_t };
 
 pub type Window = u64;
 
@@ -121,7 +122,7 @@ pub enum WindowSystemEvent {
     ButtonReleased,
     MouseMotion(u32, u32),
     KeyPressed(Window, KeyCommand),
-    ClientMessageEvent(Window),
+    ClientMessageEvent(Window, c_ulong, c_int, [int32_t; 5]),
     /// The underlying event by xlib or wayland is unknown
     /// and can be ignored.
     UnknownEvent
@@ -182,6 +183,7 @@ pub trait WindowSystem {
     fn warp_pointer(&self, window: Window, x: u32, y: u32);
     fn overrides_redirect(&self, window: Window) -> bool;
     fn update_server_state(&self, manager: &WindowManager);
+    fn process_message(&self, window_manager: &WindowManager, window: Window, atom: c_ulong, format: c_int, data: [int32_t; 5]) -> WindowManager;
 }
-
+ 
 

@@ -86,7 +86,8 @@ fn main() {
     while window_manager.running {
         let event = window_system.clone().get_event();
         match event {
-            WindowSystemEvent::ClientMessageEvent(_) => {
+            WindowSystemEvent::ClientMessageEvent(window, atom, format, data) => {
+                window_manager = window_system.process_message(&window_manager, window, atom, format, data);
             },
             // The X11/Wayland configuration changed, so we need to readjust the
             // screen configurations.
