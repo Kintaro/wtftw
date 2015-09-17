@@ -753,6 +753,7 @@ impl WindowSystem for XlibWindowSystem {
         let i32_type = self.get_atom("32");
         let current_desktop : i32 = manager.workspaces.current.workspace.id as i32;
         let number_desktops : i32 = manager.workspaces.workspaces().len() as i32;
+        let window = manager.workspaces.peek();
         let current_desktop_ptr : *const i32 = &current_desktop;
         let number_desktops_ptr : *const i32 = &number_desktops;
 
@@ -761,6 +762,12 @@ impl WindowSystem for XlibWindowSystem {
                             32, 0, current_desktop_ptr as *mut c_uchar, 1);
             XChangeProperty(self.display, self.root, self.get_atom("_NET_NUMBER_OF_DESKTOPS"), i32_type,
                             32, 0, number_desktops_ptr as *mut c_uchar, 1);
+
+            if let Some(win) = window {
+                let win_ptr : *const u64 = &win;
+                XChangeProperty(self.display, self.root, self.get_atom("_NET_NUMBER_OF_DESKTOPS"), i32_type,
+                                32, 0, win_ptr as *mut c_uchar, 2);
+            }
         }
     }
 
