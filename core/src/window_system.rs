@@ -181,6 +181,7 @@ pub trait WindowSystem {
     fn get_pointer(&self, window: Window) -> (u32, u32);
     fn warp_pointer(&self, window: Window, x: u32, y: u32);
     fn overrides_redirect(&self, window: Window) -> bool;
+    fn update_server_state(&self, manager: &WindowManager);
 }
 
 

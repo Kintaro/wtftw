@@ -190,5 +190,7 @@ fn main() {
         if let Some(ref mut loghook) = config.internal.loghook {
             loghook(window_manager.clone(), window_system.clone());
         }
+
+        window_system.update_server_state(&window_manager);
     }
 }

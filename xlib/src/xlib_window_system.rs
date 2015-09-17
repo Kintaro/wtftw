@@ -749,6 +749,16 @@ impl WindowSystem for XlibWindowSystem {
         }
     }
 
+    fn update_server_state(&self, manager: &WindowManager) {
+        let i32_type = self.get_atom("CARDINAL/32");
+        unsafe {
+            XChangeProperty(self.display, self.root, self.get_atom("_NET_CURRENT_DESKTOP"), i32_type, 
+                            32, 0, manager.workspaces.current.workspace.id as *mut c_uchar, 1);
+            XChangeProperty(self.display, self.root, self.get_atom("_NET_NUMBER_OF_DESKTOPS"), i32_type, 
+                            32, 0, manager.workspaces.workspaces().len() as *mut c_uchar, 1);
+        }
+    }
+
     fn get_pointer(&self, window: Window) -> (u32, u32) {
         let mut tmp_win : c_ulong = 0;
         let mut x : c_int = 0;
