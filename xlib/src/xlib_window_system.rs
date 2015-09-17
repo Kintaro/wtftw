@@ -765,7 +765,7 @@ impl WindowSystem for XlibWindowSystem {
 
             if let Some(win) = window {
                 let win_ptr : *const u64 = &win;
-                XChangeProperty(self.display, self.root, self.get_atom("_NET_NUMBER_OF_DESKTOPS"), i32_type,
+                XChangeProperty(self.display, self.root, self.get_atom("_NET_ACTIVE_WINDOW"), i32_type,
                                 32, 0, win_ptr as *mut c_uchar, 2);
             }
         }
