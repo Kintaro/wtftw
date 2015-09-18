@@ -123,6 +123,7 @@ pub enum WindowSystemEvent {
     MouseMotion(u32, u32),
     KeyPressed(Window, KeyCommand),
     ClientMessageEvent(Window, c_ulong, c_int, [int32_t; 5]),
+    PropertyMessageEvent(bool, Window, c_ulong),
     /// The underlying event by xlib or wayland is unknown
     /// and can be ignored.
     UnknownEvent
@@ -183,7 +184,7 @@ pub trait WindowSystem {
     fn warp_pointer(&self, window: Window, x: u32, y: u32);
     fn overrides_redirect(&self, window: Window) -> bool;
     fn update_server_state(&self, manager: &WindowManager);
-    fn process_message(&self, window_manager: &WindowManager, window: Window, atom: c_ulong, format: c_int, data: [int32_t; 5]) -> WindowManager;
+    fn process_message(&self, window_manager: &WindowManager, window: Window, atom: c_ulong) -> WindowManager;
 }
  
 

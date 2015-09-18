@@ -87,7 +87,13 @@ fn main() {
         let event = window_system.clone().get_event();
         match event {
             WindowSystemEvent::ClientMessageEvent(window, atom, format, data) => {
-                window_manager = window_system.process_message(&window_manager, window, atom, format, data);
+            },
+            WindowSystemEvent::PropertyMessageEvent(process, window, atom) => {
+                if process {
+                    window_manager = window_system.process_message(&window_manager, window, atom);
+                    let desktop = window_manager.workspaces.current.workspace.id;
+                    window_manager = window_manager.view(window_system.deref(), desktop, &config.general);
+                }
             },
             // The X11/Wayland configuration changed, so we need to readjust the
             // screen configurations.

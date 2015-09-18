@@ -50,6 +50,7 @@ use xlib::{
     XNextEvent,
     XOpenDisplay,
     XPending,
+    XPropertyEvent,
     XQueryPointer,
     XQueryTree,
     XResizeWindow,
@@ -100,6 +101,7 @@ const UNMAPNOTIFY            : usize = 18;
 const MAPREQUEST             : usize = 20;
 const CONFIGURENOTIFY        : usize = 22;
 const CONFIGUREREQUEST       : usize = 23;
+const PROPERTYNOTIFY         : usize = 28;
 const CLIENTMESSAGE          : usize = 33;
 const BADWINDOW              :  i32 =  3;
 
@@ -140,7 +142,7 @@ impl XlibWindowSystem {
 
             XSetErrorHandler(error_handler as *mut u8);
 
-            XSelectInput(display, root, 0x1A0034);
+            XSelectInput(display, root, 0x5A0034);
             XSync(display, 0);
 
             XUngrabButton(display, 0, 0x8000, root);
@@ -542,6 +544,12 @@ impl WindowSystem for XlibWindowSystem {
                     WindowSystemEvent::ClientMessageEvent(event.window as u64, event.message_type, event.format, event.data)
                 }
             },
+            PROPERTYNOTIFY => {
+                unsafe {
+                    let event : &XPropertyEvent = self.get_event_as();
+                    WindowSystemEvent::PropertyMessageEvent(event.window == self.root, event.window as u64, event.atom)
+                }
+            },
             CONFIGUREREQUEST => {
                 let event : &XConfigureRequestEvent = unsafe { self.get_event_as() };
                 let window_changes = WindowChanges {
@@ -757,7 +765,9 @@ impl WindowSystem for XlibWindowSystem {
         let current_desktop_ptr : *const i32 = &current_desktop;
         let number_desktops_ptr : *const i32 = &number_desktops;
 
+
         unsafe {
+            XSelectInput(self.display, self.root, 0x1A0034);
             XChangeProperty(self.display, self.root, self.get_atom("_NET_CURRENT_DESKTOP"), i32_type,
                             32, 0, current_desktop_ptr as *mut c_uchar, 1);
             XChangeProperty(self.display, self.root, self.get_atom("_NET_NUMBER_OF_DESKTOPS"), i32_type,
@@ -768,6 +778,8 @@ impl WindowSystem for XlibWindowSystem {
                 XChangeProperty(self.display, self.root, self.get_atom("_NET_ACTIVE_WINDOW"), i32_type,
                                 32, 0, win_ptr as *mut c_uchar, 2);
             }
+            XSync(self.display, 0);
+            XSelectInput(self.display, self.root, 0x5A0034);
         }
     }
 
@@ -799,9 +811,10 @@ impl WindowSystem for XlibWindowSystem {
         }
     }
 
-    fn process_message(&self, window_manager: &WindowManager, _: Window, atom: c_ulong, _: c_int, data: [int32_t; 5]) -> WindowManager {
+    fn process_message(&self, window_manager: &WindowManager, window: Window, atom: c_ulong) -> WindowManager {
         if atom == self.get_atom("_NET_CURRENT_DESKTOP") {
-            window_manager.modify_workspaces(|w| w.view(data[0] as u32))
+            let prop = self.get_property(atom, window).unwrap();
+            window_manager.modify_workspaces(|w| w.view(prop[0] as u32))
         } else {
             window_manager.clone()
         }
