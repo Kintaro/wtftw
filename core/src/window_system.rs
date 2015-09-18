@@ -2,6 +2,7 @@ extern crate libc;
 
 use std::fmt::{ Error, Formatter, Debug };
 use window_manager::WindowManager;
+use config::GeneralConfig;
 use self::libc::{ c_int, c_ulong, int32_t };
 
 pub type Window = u64;
@@ -184,7 +185,7 @@ pub trait WindowSystem {
     fn warp_pointer(&self, window: Window, x: u32, y: u32);
     fn overrides_redirect(&self, window: Window) -> bool;
     fn update_server_state(&self, manager: &WindowManager);
-    fn process_message(&self, window_manager: &WindowManager, window: Window, atom: c_ulong) -> WindowManager;
+    fn process_message(&self, window_manager: &WindowManager, config: &GeneralConfig, window: Window, atom: c_ulong) -> WindowManager;
 }
  
 
