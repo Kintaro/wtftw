@@ -7,7 +7,8 @@ extern crate xinerama;
 extern crate wtftw_core;
 
 use std::borrow::ToOwned;
-use libc::{ c_char, c_uchar, c_int, c_uint, c_void, c_long, c_ulong, int32_t };
+use wtftw_core::config::GeneralConfig;
+use libc::{ c_char, c_uchar, c_int, c_uint, c_void, c_long, c_ulong };
 use libc::funcs::c95::stdlib::malloc;
 use xlib::{
     Display,
@@ -811,10 +812,10 @@ impl WindowSystem for XlibWindowSystem {
         }
     }
 
-    fn process_message(&self, window_manager: &WindowManager, window: Window, atom: c_ulong) -> WindowManager {
+    fn process_message(&self, window_manager: &WindowManager, config: &GeneralConfig, window: Window, atom: c_ulong) -> WindowManager {
         if atom == self.get_atom("_NET_CURRENT_DESKTOP") {
             let prop = self.get_property(atom, window).unwrap();
-            window_manager.modify_workspaces(|w| w.view(prop[0] as u32))
+            window_manager.view(self, prop[0] as u32, config)
         } else {
             window_manager.clone()
         }
