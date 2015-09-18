@@ -5,7 +5,7 @@ use std::env;
 use std::borrow::ToOwned;
 use std::collections::BTreeMap;
 use core::workspaces::Workspaces;
-use window_system::*;
+use window_system::{ WindowSystem, KeyModifiers, KeyCommand, MouseCommand, MouseButton, MOD1MASK, SHIFTMASK, Window };
 use window_manager::WindowManager;
 use handlers::{ KeyHandler, MouseHandler, ManageHook, StartupHook, LogHook };
 use handlers::default::{ exit, restart, start_terminal };
