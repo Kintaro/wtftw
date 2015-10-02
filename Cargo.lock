@@ -1,6 +1,6 @@
 [root]
 name = "wtftw"
-version = "0.4.2"
+version = "0.4.3"
 dependencies = [
  "bitflags 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "dylib 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -10,7 +10,7 @@ dependencies = [
  "num 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.3.16 (registry+https://github.com/rust-lang/crates.io-index)",
  "wtftw_core 0.3.1",
- "wtftw_xlib 0.3.3",
+ "wtftw_xlib 0.4.0",
  "zombie 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -64,6 +64,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "pkg-config"
+version = "0.3.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "rand"
 version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -102,31 +107,21 @@ dependencies = [
 
 [[package]]
 name = "wtftw_xlib"
-version = "0.3.3"
+version = "0.4.0"
 dependencies = [
  "libc 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "wtftw_core 0.3.1",
- "xinerama 0.0.1 (git+https://github.com/Kintaro/rust-xinerama.git)",
- "xlib 0.1.0 (git+https://github.com/Kintaro/rust-xlib.git?branch=wtftw)",
+ "x11 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
-name = "xinerama"
-version = "0.0.1"
-source = "git+https://github.com/Kintaro/rust-xinerama.git#3d0e3cbf923b9c5919503502b48c50b993cee6e5"
+name = "x11"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "libc 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
- "xlib 0.1.0 (git+https://github.com/Kintaro/rust-xlib.git?branch=wtftw)",
-]
-
-[[package]]
-name = "xlib"
-version = "0.1.0"
-source = "git+https://github.com/Kintaro/rust-xlib.git?branch=wtftw#a4bbc864bae81e58f5d74b0a0aadaa9fa1022071"
-dependencies = [
- "bitflags 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pkg-config 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

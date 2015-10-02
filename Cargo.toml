@@ -13,9 +13,7 @@ num = "0.1.25"
 libc = "0.1.8"
 dylib = "0.0.1"
 zombie = "0.0.1"
-
-[dependencies.wtftw_core]
-path = "core"
+wtftw_core = { path = "core" }
 
 [dependencies.wtftw_xlib]
 path = "xlib"

@@ -7,7 +7,7 @@ authors = ["Simon Wollwage"]
 [dependencies]
 log = "*"
 libc = "*"
-x11 = "*"
+x11 = { version = "*", features = ["xlib", "xinerama"] }
 
 [dependencies.wtftw_core]
 path = "../core"
