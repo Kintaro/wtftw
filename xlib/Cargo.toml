@@ -1,19 +1,13 @@
 [project]
 
 name = "wtftw_xlib"
-version = "0.3.3"
+version = "0.4.0"
 authors = ["Simon Wollwage"]
 
 [dependencies]
 log = "*"
 libc = "*"
-
-[dependencies.xlib]
-git = "https://github.com/Kintaro/rust-xlib.git"
-branch = "wtftw"
-
-[dependencies.xinerama]
-git = "https://github.com/Kintaro/rust-xinerama.git"
+x11 = "*"
 
 [dependencies.wtftw_core]
 path = "../core"
