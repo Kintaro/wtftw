@@ -178,6 +178,7 @@ pub trait WindowSystem {
     fn get_geometry(&self, window: Window) -> Rectangle;
     fn get_size_hints(&self, window: Window) -> SizeHint;
     fn restack_windows(&self, windows: Vec<Window>);
+    fn close_client(&self, window: Window);
     fn kill_client(&self, window: Window);
     fn grab_pointer(&self);
     fn ungrab_pointer(&self);
