@@ -730,6 +730,12 @@ impl WindowSystem for XlibWindowSystem {
         }
     }
 
+    fn close_client(&self, window: Window) {
+        unsafe {
+            XKillClient(self.display, window as c_ulong);
+        }
+    }
+
     fn kill_client(&self, window: Window) {
         unsafe {
             let wmdelete = self.get_atom("WM_DELETE_WINDOW");
