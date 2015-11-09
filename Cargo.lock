@@ -1,17 +1,17 @@
 [root]
 name = "wtftw"
-version = "0.4.3"
+version = "0.4.4"
 dependencies = [
  "bitflags 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "dylib 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "getopts 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "num 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.3.16 (registry+https://github.com/rust-lang/crates.io-index)",
  "wtftw_core 0.3.1",
  "wtftw_xlib 0.4.0",
- "zombie 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "zombie 0.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -33,7 +33,7 @@ name = "dylib"
 version = "0.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "libc 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -43,15 +43,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "libc"
-version = "0.1.10"
+version = "0.1.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "libc"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "log"
-version = "0.3.2"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "libc 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -65,7 +70,7 @@ dependencies = [
 
 [[package]]
 name = "pkg-config"
-version = "0.3.5"
+version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -74,7 +79,7 @@ version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "advapi32-sys 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -99,8 +104,8 @@ version = "0.3.1"
 dependencies = [
  "bitflags 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "dylib 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "num 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.3.16 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -109,26 +114,26 @@ dependencies = [
 name = "wtftw_xlib"
 version = "0.4.0"
 dependencies = [
- "libc 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "wtftw_core 0.3.1",
- "x11 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "x11 2.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "x11"
-version = "2.1.0"
+version = "2.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "libc 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
- "pkg-config 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pkg-config 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "zombie"
-version = "0.0.1"
+version = "0.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "libc 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
