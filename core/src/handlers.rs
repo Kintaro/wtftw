@@ -31,7 +31,7 @@ pub mod default {
     use window_system::WindowSystem;
     use window_system::Window;
     use config::GeneralConfig;
-    use handlers::libc::funcs::posix88::unistd::execvp;
+    use handlers::libc::execvp;
     use std::ffi::CString;
     use std::rc::Rc;
     use std::ops::Deref;
