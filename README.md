@@ -22,6 +22,7 @@ To build it, just run
 cargo build
 ```
 
+### Common build issues
 On OSX, you might get a linker error when linking against X11 or Xinerama. For example:
 
 ```
@@ -32,6 +33,12 @@ You need to install XQuartz to get the X11 libraries, and make sure that they ar
 
 ```
 LIBRARY_PATH=/opt/X11/lib cargo build
+```
+
+On Ubuntu if you have this issue, simply install libxinerama-dev and restart cargo build
+
+```
+sudo apt-get install libxinerama-dev
 ```
 
 ## Testing
