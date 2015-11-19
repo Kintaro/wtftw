@@ -1,4 +1,5 @@
-#[macro_use]
+#![feature(alloc_jemalloc)]
+extern crate alloc_jemalloc;
 #[macro_use]
 extern crate wtftw;
 extern crate wtftw_contrib;
@@ -25,11 +26,11 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
     config.general.mod_mask = modm;
     config.general.border_color = 0x404040;
     config.general.focus_border_color = 0xebebeb;
-    config.general.border_width = 1;
-    config.general.terminal = (String::from("xterm"), String::from(""));
+    config.general.border_width = 2;
+    config.general.terminal = (String::from("urxvt"), String::from(""));
     config.general.layout = LayoutCollection::new(vec!(
-            GapLayout::new(0, AvoidStrutsLayout::new(vec!(Direction::Up, Direction::Down), BinarySpacePartition::new())),
-            GapLayout::new(0, AvoidStrutsLayout::new(vec!(Direction::Up, Direction::Down), MirrorLayout::new(BinarySpacePartition::new()))),
+            GapLayout::new(8, AvoidStrutsLayout::new(vec!(Direction::Up, Direction::Down), BinarySpacePartition::new())),
+            GapLayout::new(8, AvoidStrutsLayout::new(vec!(Direction::Up, Direction::Down), MirrorLayout::new(BinarySpacePartition::new()))),
             NoBordersLayout::new(Box::new(FullLayout))));
 
     config.general.tags = (vec!("一: ターミナル", "二: ウェブ", "三: コード",
@@ -110,48 +111,4 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
                        |m, w, c, s| {
                            m.focus(s, w.deref(), c).mouse_resize_window(w.deref(), c, s).windows(w.deref(), c, &|x| x.shift_master())
                        });
-
-    // Xmobar handling and formatting
-    let home_dir = env::home_dir().unwrap();
-    let home = home_dir.as_os_str().to_str().unwrap();
-    let xmobar_config = format!("{}/.xmonad/xmobar1.hs", home);
-
-    if metadata(&xmobar_config).map(|s| s.is_file()).unwrap_or(false) {
-        let mut xmobar = spawn_pipe(config, "/home/rootnode/.cabal/bin/xmobar",
-                                    vec!(xmobar_config));
-        let tags = config.general.tags.clone();
-        config.set_log_hook(Box::new(move |m, w| {
-            let p = &mut xmobar;
-            let tags = &tags;
-            let workspaces = tags.clone().iter()
-                .enumerate()
-                .map(|(i, _)| if i as u32 == m.workspaces.current.workspace.id {
-                    format!("<fc=#fb4934>■</fc>")
-                } else if m.workspaces.visible.iter().any(|w| w.workspace.id == i as u32) {
-                    format!("<fc=#fabd2f>■</fc>")
-                } else {
-                    format!("■")
-                })
-            .fold(String::from(""), |a, x| {
-                let mut r = a.clone();
-                r.push_str(&x);
-                r
-            });
-
-            let name = match m.workspaces.peek() {
-                None => String::from(""),
-                Some(window) => w.get_window_name(window)
-            };
-            let content = format!("{} {} {}\n", workspaces, m.workspaces.current.workspace.layout.description(), name);
-            match p.write().unwrap().stdin.as_mut() {
-                Some(pin) => {
-                    match pin.write(content.as_bytes()) {
-                        _      => ()
-                    };
-                    pin.flush().unwrap();
-                },
-                _ => ()
-            }
-        }));
-    };
 }

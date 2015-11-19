@@ -40,7 +40,7 @@ pub struct WindowChanges {
 /// Represents a keyboard input
 /// with an abstracted modifier mask
 /// and the key represented as a string
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct KeyCommand {
     pub mask: KeyModifiers,
     pub key: u64
@@ -52,10 +52,24 @@ impl KeyCommand {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+impl Debug for KeyCommand {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        f.write_str(&format!("{:}", self.key)).unwrap();
+        Ok(())
+    }
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct MouseCommand {
     pub mask: KeyModifiers,
     pub button: MouseButton
+}
+
+impl Debug for MouseCommand {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        f.write_str(&format!("{:}", self.button)).unwrap();
+        Ok(())
+    }
 }
 
 impl MouseCommand {
@@ -84,13 +98,6 @@ pub const BUTTON2 : MouseButton = 2;
 pub const BUTTON3 : MouseButton = 3;
 pub const BUTTON4 : MouseButton = 4;
 pub const BUTTON5 : MouseButton = 5;
-
-impl Debug for KeyModifiers {
-    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        f.write_str(&format!("{:X}", self.get_mask())).unwrap();
-        Ok(())
-    }
-}
 
 impl KeyModifiers {
     pub fn get_mask(&self) -> u32 {
