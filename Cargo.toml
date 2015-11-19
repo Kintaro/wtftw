@@ -5,14 +5,14 @@ version = "0.4.4"
 authors = ["Simon Wollwage"]
 
 [dependencies]
-bitflags = "0.1.1"
-rustc-serialize = "0.3.15"
-getopts = "0.2.11"
-log = "0.3.1"
-num = "0.1.25"
-libc = "0.2.1"
-dylib = "0.0.1"
-zombie = "0.0.2"
+bitflags = "*"
+rustc-serialize = "*"
+getopts = "*"
+log = "*"
+num = "*"
+libc = "*"
+dylib = "*"
+zombie = "*"
 wtftw_core = { path = "core" }
 
 [dependencies.wtftw_xlib]
