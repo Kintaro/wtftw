@@ -79,7 +79,7 @@ impl MouseCommand {
 }
 
 bitflags! {
-    flags KeyModifiers : u32 {
+    pub flags KeyModifiers : u32 {
         const NONEMASK    = (0 << 0),
         const SHIFTMASK   = (1 << 0),
         const LOCKMASK    = (1 << 1),
@@ -195,5 +195,3 @@ pub trait WindowSystem {
     fn update_server_state(&self, manager: &WindowManager);
     fn process_message(&self, window_manager: &WindowManager, config: &GeneralConfig, window: Window, atom: c_ulong) -> WindowManager;
 }
- 
-
