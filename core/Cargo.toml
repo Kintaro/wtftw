@@ -4,7 +4,7 @@ version = "0.3.1"
 authors = ["Simon Wollwage"]
 
 [dependencies]
-bitflags = "0.1"
+bitflags = "0.5.0"
 rustc-serialize = "*"
 log = "*"
 num = "*"
