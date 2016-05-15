@@ -82,6 +82,8 @@ fn main() {
             .manage(window_system.deref(), window, &config.general);
     }
 
+    window_manager = (*config.internal.startup_hook)(window_manager, window_system.clone(), &config);
+
     // Enter the event loop and just listen for events
     while window_manager.running {
         let event = window_system.clone().get_event();
