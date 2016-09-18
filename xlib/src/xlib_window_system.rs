@@ -146,7 +146,7 @@ impl XlibWindowSystem {
     fn get_atom(&self, s: &str) -> u64 {
         unsafe {
             match CString::new(s) {
-                Ok(b) => xlib::XInternAtom(self.display, b.as_ptr(), 0) as u64,
+                Ok(b) => xlib::XInternAtom(self.display, b.as_ptr() as *const c_char, 0) as u64,
                 _     => panic!("Invalid atom! {}", s)
             }
         }
@@ -156,10 +156,13 @@ impl XlibWindowSystem {
         unsafe {
             let mut protocols : *mut c_ulong = uninitialized();
             let mut num = 0;
-            xlib::XGetWMProtocols(self.display, window as c_ulong, &mut protocols, &mut num);
-            from_raw_parts(&(protocols as *const c_ulong), num as usize).iter()
-                .map(|&c| c as u64)
-                .collect::<Vec<_>>()
+            xlib::XGetWMProtocols(self.display, window, &mut protocols, &mut num);
+            let slice = from_raw_parts(protocols, num as usize);
+            slice.iter()
+                .map(|&c| {
+                    c as u64
+                })
+            .collect::<Vec<_>>()
         }
     }
 
@@ -284,8 +287,26 @@ impl WindowSystem for XlibWindowSystem {
         if window == self.root { return "root".to_owned(); }
         unsafe {
             let mut name : *mut c_char = uninitialized();
-            if xlib::XFetchName(self.display, window as c_ulong, &mut name) == BADWINDOW || name.is_null() {
-                "Unknown".to_owned()
+            let result = xlib::XFetchName(self.display, window as c_ulong, &mut name);
+            if  0 == result || name.is_null() {
+                let mut actual_type_return : c_ulong = 0;
+                let mut actual_format_return : c_int = 0;
+                let mut nitems_return : c_ulong = 0;
+                let mut bytes_after_return : c_ulong = 0;
+                let mut prop_return : *mut c_uchar = uninitialized();
+
+                let atom = xlib::XInternAtom(self.display, CString::new("WM_NAME").unwrap().as_ptr(), 0);
+                let r = xlib::XGetWindowProperty(self.display, window as c_ulong, atom as c_ulong, 0, 0xFFFFFFFF, 0, 0,
+                                                 &mut actual_type_return,
+                                                 &mut actual_format_return,
+                                                 &mut nitems_return,
+                                                 &mut bytes_after_return,
+                                                 &mut prop_return);
+                if r != 0 {
+                    "Unknown".to_owned()
+                } else {
+                    CStr::from_ptr(prop_return as *const c_char).to_string_lossy().into_owned()
+                }
             } else {
                 str::from_utf8_unchecked(CStr::from_ptr(name as *const c_char).to_bytes()).to_owned()
             }
@@ -659,7 +680,7 @@ impl WindowSystem for XlibWindowSystem {
 
             debug!("supported protocols: {:?} (wmdelete = {:?})", protocols, wmdelete);
 
-            if protocols.iter().any(|&x| x == wmdelete) {
+            if protocols.iter().any(|x| *x == wmdelete) {
                 let mut data : xlib::ClientMessageData = uninitialized();
                 data.set_long(0, (wmdelete >> 32) as i64);
                 data.set_long(0, (wmdelete & 0xFFFFFFFF) as i64);
