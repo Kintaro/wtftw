@@ -79,7 +79,9 @@ fn main() {
     for (window, workspace) in window_ids {
         debug!("re-inserting window {}", window);
         window_manager = window_manager.view(window_system.deref(), workspace, &config.general)
-            .manage(window_system.deref(), window, &config.general);
+            .manage(window_system.deref(), window, &config.general).windows(window_system.deref(), &config.general,
+                                                        &|x| (config.internal.manage_hook)(x.clone(),
+                                                        window_system.clone(), window));
     }
 
     window_manager = (*config.internal.startup_hook)(window_manager, window_system.clone(), &config);
