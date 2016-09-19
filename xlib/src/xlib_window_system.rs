@@ -313,20 +313,40 @@ impl WindowSystem for XlibWindowSystem {
         }
     }
 
-    fn get_class_name(&self, _: Window) -> String {
-        //unsafe {
-        //let mut class_hint : xlib::XClassHint = uninitialized();
-        //let result = if xlib::XGetClassHint(self.display, window as c_ulong, &mut class_hint) != 0 || class_hint.res_class.is_null() {
-        "unknown".to_owned()
-            //} else {
-            //debug!("getting class name");
-            //String::from_str(str::from_utf8_unchecked(ffi::c_str_to_bytes(&(class_hint.res_class as *const c_char))))
-            //};
+    fn get_class_name(&self, window: Window) -> String {
+        unsafe {
+            let mut class_hint : xlib::XClassHint = uninitialized();
+            let rs = xlib::XGetClassHint(self.display, window as c_ulong, &mut class_hint);
 
-            //debug!("class name is {}", result);
+            let result = if  rs == 0 || class_hint.res_class.is_null() {
+                "unknown".to_owned()
+            } else {
+                debug!("getting class name");
+                CStr::from_ptr(class_hint.res_class).to_string_lossy().into_owned()
+            };
 
-            //result
-            //}
+            debug!("class name is {}", result);
+
+            result
+        }
+    }
+
+    fn get_role_name(&self, window: Window) -> String {
+        unsafe {
+            let mut class_hint : xlib::XClassHint = uninitialized();
+            let rs = xlib::XGetClassHint(self.display, window as c_ulong, &mut class_hint);
+
+            let result = if  rs == 0 || class_hint.res_name.is_null() {
+                "unknown".to_owned()
+            } else {
+                debug!("getting role name");
+                CStr::from_ptr(class_hint.res_name).to_string_lossy().into_owned()
+            };
+
+            debug!("role name is {}", result);
+
+            result
+        }
     }
 
     fn get_windows(&self) -> Vec<Window> {
@@ -491,7 +511,7 @@ impl WindowSystem for XlibWindowSystem {
         match event_type as usize {
             CLIENTMESSAGE => {
                 let event = xlib::XClientMessageEvent::from(event);
-                let data : [i32; 5] = [ 
+                let data : [i32; 5] = [
                     event.data.get_long(0) as i32,
                     event.data.get_long(1) as i32,
                     event.data.get_long(2) as i32,
