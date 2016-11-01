@@ -152,6 +152,8 @@ pub trait WindowSystem {
     /// Get the given window's name
     fn get_window_name(&self, window: Window) -> String;
     fn get_class_name(&self, window: Window) -> String;
+    // Get 'role' name of window
+    fn get_role_name(&self, window: Window) -> String;
     /// Get a list of all windows
     fn get_windows(&self) -> Vec<Window>;
     /// Set the given window's border width
