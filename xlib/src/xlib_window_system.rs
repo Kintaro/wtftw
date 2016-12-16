@@ -884,7 +884,7 @@ impl WindowSystem for XlibWindowSystem {
     }
 
     fn update_server_state(&self, manager: &WindowManager) {
-        let i32_type = self.get_atom("INTEGER");
+        let i32_type = self.get_atom("CARDINAL");
         let current_desktop: i32 = manager.workspaces.current.workspace.id as i32;
         let number_desktops: i32 = manager.workspaces.workspaces().len() as i32;
         let window = manager.workspaces.peek();
