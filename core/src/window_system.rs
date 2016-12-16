@@ -1,9 +1,9 @@
 extern crate libc;
 
-use std::fmt::{ Error, Formatter, Debug };
+use std::fmt::{Error, Formatter, Debug};
 use window_manager::WindowManager;
 use config::GeneralConfig;
-use self::libc::{ c_int, c_ulong, int32_t };
+use self::libc::{c_int, c_ulong, int32_t};
 
 pub type Window = u64;
 
@@ -19,9 +19,7 @@ impl Rectangle {
 
     pub fn overlaps(&self, &Rectangle(bx, by, bw, bh): &Rectangle) -> bool {
         let &Rectangle(ax, ay, aw, ah) = self;
-        !(bx             >= ax + aw as i32 ||
-          bx + bw as i32 <= ax ||
-          by             >= ay + ah as i32 ||
+        !(bx >= ax + aw as i32 || bx + bw as i32 <= ax || by >= ay + ah as i32 ||
           by + bh as i32 <= ay)
     }
 }
@@ -43,12 +41,15 @@ pub struct WindowChanges {
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct KeyCommand {
     pub mask: KeyModifiers,
-    pub key: u64
+    pub key: u64,
 }
 
 impl KeyCommand {
     pub fn new(key: u64, mask: KeyModifiers) -> KeyCommand {
-        KeyCommand { key: key, mask: mask }
+        KeyCommand {
+            key: key,
+            mask: mask,
+        }
     }
 }
 
@@ -62,7 +63,7 @@ impl Debug for KeyCommand {
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct MouseCommand {
     pub mask: KeyModifiers,
-    pub button: MouseButton
+    pub button: MouseButton,
 }
 
 impl Debug for MouseCommand {
@@ -74,7 +75,10 @@ impl Debug for MouseCommand {
 
 impl MouseCommand {
     pub fn new(button: MouseButton, mask: KeyModifiers) -> MouseCommand {
-        MouseCommand { button: button, mask: mask }
+        MouseCommand {
+            button: button,
+            mask: mask,
+        }
     }
 }
 
@@ -93,11 +97,11 @@ bitflags! {
 }
 
 pub type MouseButton = u32;
-pub const BUTTON1 : MouseButton = 1;
-pub const BUTTON2 : MouseButton = 2;
-pub const BUTTON3 : MouseButton = 3;
-pub const BUTTON4 : MouseButton = 4;
-pub const BUTTON5 : MouseButton = 5;
+pub const BUTTON1: MouseButton = 1;
+pub const BUTTON2: MouseButton = 2;
+pub const BUTTON3: MouseButton = 3;
+pub const BUTTON4: MouseButton = 4;
+pub const BUTTON5: MouseButton = 5;
 
 impl KeyModifiers {
     pub fn get_mask(&self) -> u32 {
@@ -108,7 +112,7 @@ impl KeyModifiers {
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct SizeHint {
     pub min_size: Option<(u32, u32)>,
-    pub max_size: Option<(u32, u32)>
+    pub max_size: Option<(u32, u32)>,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -134,7 +138,7 @@ pub enum WindowSystemEvent {
     PropertyMessageEvent(bool, Window, c_ulong),
     /// The underlying event by xlib or wayland is unknown
     /// and can be ignored.
-    UnknownEvent
+    UnknownEvent,
 }
 
 pub trait WindowSystem {
@@ -170,7 +174,11 @@ pub trait WindowSystem {
     fn hide_window(&self, window: Window);
     fn focus_window(&self, window: Window, window_manager: &WindowManager);
     fn get_focused_window(&self) -> Window;
-    fn configure_window(&self, window: Window, window_changes: WindowChanges, mask: u64, is_floating: bool);
+    fn configure_window(&self,
+                        window: Window,
+                        window_changes: WindowChanges,
+                        mask: u64,
+                        is_floating: bool);
     /// Check if there are events pending
     fn event_pending(&self) -> bool;
     /// Get the next event from the queue
@@ -195,5 +203,10 @@ pub trait WindowSystem {
     fn warp_pointer(&self, window: Window, x: u32, y: u32);
     fn overrides_redirect(&self, window: Window) -> bool;
     fn update_server_state(&self, manager: &WindowManager);
-    fn process_message(&self, window_manager: &WindowManager, config: &GeneralConfig, window: Window, atom: c_ulong) -> WindowManager;
+    fn process_message(&self,
+                       window_manager: &WindowManager,
+                       config: &GeneralConfig,
+                       window: Window,
+                       atom: c_ulong)
+                       -> WindowManager;
 }
