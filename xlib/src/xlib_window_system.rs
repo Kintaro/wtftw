@@ -21,6 +21,7 @@ use std::str::from_utf8;
 use std::slice::from_raw_parts;
 use std::ffi::CString;
 use std::ffi::CStr;
+use std::io::Write;
 
 use wtftw_core::window_system::*;
 use wtftw_core::window_manager::*;
@@ -53,6 +54,7 @@ unsafe extern "C" fn error_handler(_: *mut xlib::Display, _: *mut xlib::XErrorEv
 pub struct XlibWindowSystem {
     display: *mut xlib::Display,
     root: Window,
+    ewmh_child: Window,
 }
 
 impl XlibWindowSystem {
@@ -81,42 +83,95 @@ impl XlibWindowSystem {
 
             xlib::XUngrabButton(display, 0, 0x8000, root);
 
-            let res = XlibWindowSystem {
+            let mut res = XlibWindowSystem {
                 display: display,
-                root: root as u64,
+                root: root,
+                ewmh_child: 0,
             };
 
-            let name = (*CString::new(&b"wtftw"[..]).unwrap()).as_ptr();
+            // let name = (*CString::new(&b"wtftw"[..]).unwrap()).as_ptr();
+            let name = "wtftw";
+            let name_ptr = name.as_ptr();
 
             let wmcheck = res.get_atom("_NET_SUPPORTING_WM_CHECK");
             let wmname = res.get_atom("_NET_WM_NAME");
             let utf8 = res.get_atom("UTF8_STRING");
-            let xa_window = res.get_atom("xlib::XA_WINDOW");
+            let atom_type = res.get_atom("ATOM");
+            let window = res.get_atom("WINDOW");
+            let net_supported = res.get_atom("_NET_SUPPORTED");
 
-            let mut root_cpy = root;
-            let root_ptr: *mut Window = &mut root_cpy;
+            let mut attributes = 1u32;
+            let attrib_ptr: *mut u32 = &mut attributes;
+
+            res.ewmh_child = xlib::XCreateWindow(display,
+                                                 root,
+                                                 -1,
+                                                 -1,
+                                                 1,
+                                                 1,
+                                                 0, // border
+                                                 0, // depth (CopyFromParent)
+                                                 2, // InputOnly
+                                                 ::std::ptr::null_mut(),
+                                                 1 << 9,
+                                                 attrib_ptr as *mut xlib::XSetWindowAttributes);
+
+            let mut f = ::std::fs::File::create("/tmp/window_id.txt").unwrap();
+            f.write_all(format!("WindowID: {}", res.ewmh_child).as_bytes()).unwrap();
+
+            let mut child: u32 = res.ewmh_child as u32;
+            let child_ptr: *mut u32 = &mut child;
+            xlib::XChangeProperty(display,
+                                  res.ewmh_child,
+                                  wmcheck,
+                                  window,
+                                  32,
+                                  0,
+                                  child_ptr as *mut c_uchar,
+                                  1);
+            xlib::XChangeProperty(display,
+                                  res.ewmh_child,
+                                  wmname,
+                                  utf8,
+                                  8,
+                                  0,
+                                  name_ptr as *mut c_uchar,
+                                  5);
             xlib::XChangeProperty(display,
                                   root,
                                   wmcheck,
-                                  xa_window,
+                                  window,
                                   32,
                                   0,
-                                  root_ptr as *mut c_uchar,
+                                  child_ptr as *mut c_uchar,
                                   1);
-            xlib::XChangeProperty(display, root, wmname, utf8, 8, 0, name as *mut c_uchar, 5);
+            xlib::XChangeProperty(display, root, wmname, utf8, 8, 0, name_ptr as *mut c_uchar, 5);
 
             let supported = [res.get_atom("_NET_ACTIVE_WINDOW"),
                              res.get_atom("_NET_NUMBER_OF_DESKTOPS"),
                              res.get_atom("_NET_CURRENT_DESKTOP")];
-            let i32_type = res.get_atom("32");
             xlib::XChangeProperty(res.display,
                                   res.root,
-                                  res.get_atom("_NET_SUPPORTED"),
-                                  i32_type,
+                                  net_supported,
+                                  atom_type,
                                   32,
                                   0,
                                   supported.as_ptr() as *mut c_uchar,
                                   supported.len() as i32);
+
+            //xlib::XMapWindow(res.display, res.ewmh_child);
+            //let mut changes = xlib::XWindowChanges {
+            //    x: -1,
+            //    y: -1,
+            //    width: -1,
+            //    height: -1,
+            //    border_width: 0,
+            //    sibling: 0,
+            //    stack_mode: 1,
+            //};
+            //let changes_ptr: &mut xlib::XWindowChanges = &mut changes;
+
+            //xlib::XConfigureWindow(res.display, res.ewmh_child, 64, changes_ptr);
 
             res
         }
@@ -829,19 +884,23 @@ impl WindowSystem for XlibWindowSystem {
     }
 
     fn update_server_state(&self, manager: &WindowManager) {
-        let i32_type = self.get_atom("32");
+        let i32_type = self.get_atom("INTEGER");
         let current_desktop: i32 = manager.workspaces.current.workspace.id as i32;
         let number_desktops: i32 = manager.workspaces.workspaces().len() as i32;
         let window = manager.workspaces.peek();
         let current_desktop_ptr: *const i32 = &current_desktop;
         let number_desktops_ptr: *const i32 = &number_desktops;
 
+        let net_current_desktop = self.get_atom("_NET_CURRENT_DESKTOP");
+        let net_number_desktops = self.get_atom("_NET_NUMBER_OF_DESKTOPS");
+        let net_active_window = self.get_atom("_NET_ACTIVE_WINDOW");
+        let window_atom = self.get_atom("WINDOW");
 
         unsafe {
             xlib::XSelectInput(self.display, self.root, 0x1A0034);
             xlib::XChangeProperty(self.display,
                                   self.root,
-                                  self.get_atom("_NET_CURRENT_DESKTOP"),
+                                  net_current_desktop,
                                   i32_type,
                                   32,
                                   0,
@@ -849,7 +908,7 @@ impl WindowSystem for XlibWindowSystem {
                                   1);
             xlib::XChangeProperty(self.display,
                                   self.root,
-                                  self.get_atom("_NET_NUMBER_OF_DESKTOPS"),
+                                  net_number_desktops,
                                   i32_type,
                                   32,
                                   0,
@@ -857,15 +916,16 @@ impl WindowSystem for XlibWindowSystem {
                                   1);
 
             if let Some(win) = window {
-                let win_ptr: *const u64 = &win;
+                let w: u32 = win as u32;
+                let win_ptr: *const u32 = &w;
                 xlib::XChangeProperty(self.display,
                                       self.root,
-                                      self.get_atom("_NET_ACTIVE_WINDOW"),
-                                      i32_type,
+                                      net_active_window,
+                                      window_atom,
                                       32,
                                       0,
                                       win_ptr as *mut c_uchar,
-                                      2);
+                                      1);
             }
             xlib::XSync(self.display, 0);
             xlib::XSelectInput(self.display, self.root, 0x5A0034);
