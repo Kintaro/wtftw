@@ -9,6 +9,7 @@ use core::rational_rect::RationalRect;
 use core::workspace::Workspace;
 use core::stack::Stack;
 
+#[derive(Debug)]
 pub struct Workspaces {
     /// The currently focused and visible screen
     pub current:  Screen,
@@ -145,13 +146,21 @@ impl Workspaces {
         if self.hidden.iter().any(|x| x.id == index) {
             self.view(index)
         } else if let Some(s) = self.visible.iter().find(|x| x.workspace.id == index) {
-            let screen = self.current.clone();
-            self.from_current(s.clone())
+            let mut current_screen = self.current.clone();
+            let old_workspace = current_screen.workspace.clone();
+            let mut screen_with_requested_workspace = s.clone();
+            let desired_workspace = screen_with_requested_workspace.workspace.clone();
+
+            current_screen.workspace = desired_workspace;
+            screen_with_requested_workspace.workspace = old_workspace;
+
+            self.from_current(current_screen.clone())
                 .from_visible(self.visible.iter()
-                              .filter(|x| x.workspace.id != index)
+                              .filter(|x| x.screen_id != screen_with_requested_workspace.screen_id)
                               .map(|x| x.clone())
-                              .chain((vec!(screen)).into_iter())
+                              .chain((vec!(screen_with_requested_workspace.clone())).into_iter())
                               .collect())
+
         } else {
             self.clone()
         }
