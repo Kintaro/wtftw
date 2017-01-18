@@ -9,7 +9,6 @@ use core::rational_rect::RationalRect;
 use core::workspace::Workspace;
 use core::stack::Stack;
 
-#[derive(Debug)]
 pub struct Workspaces {
     /// The currently focused and visible screen
     pub current:  Screen,
