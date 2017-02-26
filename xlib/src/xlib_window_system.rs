@@ -39,7 +39,6 @@ const CONFIGURENOTIFY: usize = 22;
 const CONFIGUREREQUEST: usize = 23;
 const PROPERTYNOTIFY: usize = 28;
 const CLIENTMESSAGE: usize = 33;
-const BADWINDOW: i32 = 3;
 
 /// A custom error handler to prevent xlib from crashing the whole WM.
 /// Necessary because a few events may call the error routine.
