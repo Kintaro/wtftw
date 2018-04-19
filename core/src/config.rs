@@ -250,7 +250,7 @@ impl Config {
         let mut contents = read_dir(&Path::new(&format!("{}/target/debug", self.internal.wtftw_dir.clone()))).unwrap();
         let libname = contents.find(|x| {
                             match x {
-                                &Ok(ref y) => y.path().into_os_string().as_os_str().to_str().unwrap().contains("libconfig"),
+                                &Ok(ref y) => y.path().into_os_string().as_os_str().to_str().unwrap().contains("libconfig.so"),
                                 &Err(_) => false
                             }
         });
