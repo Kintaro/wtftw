@@ -1,5 +1,3 @@
-#![feature(alloc_jemalloc)]
-extern crate alloc_jemalloc;
 #[macro_use]
 extern crate wtftw;
 extern crate wtftw_contrib;
