@@ -12,6 +12,7 @@ log = "*"
 num = "*"
 libc = "*"
 dylib = "*"
+simplelog = "*"
 zombie = "*"
 wtftw_core = { path = "core" }
 

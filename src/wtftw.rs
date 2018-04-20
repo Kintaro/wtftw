@@ -5,6 +5,7 @@ extern crate rustc_serialize;
 extern crate wtftw_core;
 extern crate wtftw_xlib;
 extern crate zombie;
+extern crate simplelog;
 
 use std::env;
 use std::rc::Rc;
@@ -23,16 +24,27 @@ pub fn parse_window_ids(ids: &str) -> Vec<(Window, u32)> {
     }
 }
 
+fn init_terminal_logger(verbose_mode_enabled: bool) {
+    let level =  if verbose_mode_enabled { simplelog::LevelFilter::Debug } else { simplelog::LevelFilter::Warn };
+    simplelog::CombinedLogger::init(vec![
+        simplelog::TermLogger::new(level, simplelog::Config::default()).unwrap(),
+    ]).unwrap();
+}
+
 fn main() {
     // Parse command line arguments
     let args : Vec<String> = env::args().collect();
 
     let mut options = Options::new();
     options.optopt("r", "resume", "list of window IDs to capture in resume", "WINDOW");
+    options.optflag("v", "verbose", "be verbose");
+
     let matches = match options.parse(args.into_iter().skip(1).collect::<Vec<_>>()) {
         Ok(m)  => m,
         Err(f) => panic!(f.to_string())
     };
+
+    init_terminal_logger(matches.opt_present("v"));
 
     // Create a default config.generaluration
     let mut config = Config::initialize();
