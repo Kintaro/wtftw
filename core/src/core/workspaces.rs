@@ -328,7 +328,7 @@ impl Workspaces {
         }
 
         self.from_current(self.current.map_or(Stack::from_element(window), |s| {
-            Stack::<Window>::new(window, s.up, ((vec!(s.focus.clone())).into_iter().chain(s.down.clone().into_iter()).collect()))
+            Stack::<Window>::new(window, s.up, (vec!(s.focus.clone())).into_iter().chain(s.down.clone().into_iter()).collect())
         }))
     }
 
