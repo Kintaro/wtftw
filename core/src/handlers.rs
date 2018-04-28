@@ -1,5 +1,5 @@
 extern crate libc;
-extern crate rustc_serialize;
+extern crate serde_json;
 
 use std::rc::Rc;
 use core::workspaces::Workspaces;
@@ -25,7 +25,6 @@ pub mod default {
     use std::process::Command;
     use std::thread::spawn;
     use std::borrow::ToOwned;
-    use handlers::rustc_serialize::json;
     use core::workspaces::Workspaces;
     use window_manager::WindowManager;
     use window_system::WindowSystem;
@@ -93,7 +92,7 @@ pub mod default {
         // Get absolute path to binary
         let filename = env::current_dir().unwrap().join(&env::current_exe().unwrap());
         // Collect all managed windows
-        let window_ids : String = json::encode(&window_manager.workspaces.all_windows_with_workspaces()).unwrap();
+        let window_ids : String = json!(&window_manager.workspaces.all_windows_with_workspaces()).to_string();
 
         // Create arguments
         let resume = &"--resume";
