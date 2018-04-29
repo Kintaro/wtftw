@@ -284,13 +284,13 @@ impl WindowManager {
                                config: &GeneralConfig) -> WindowManager {
         self.modify_workspaces(|w| w.send_layout_message(message, window_system, config))
     }
-    
+
     /// Close the currently focused window
     pub fn close_window(&self, window_system: &WindowSystem) -> WindowManager {
         self.workspaces.with_focused(|w| window_system.close_client(w));
         self.clone()
     }
-    
+
     /// Kill the currently focused window
     pub fn kill_window(&self, window_system: &WindowSystem) -> WindowManager {
         self.workspaces.with_focused(|w| window_system.kill_client(w));
