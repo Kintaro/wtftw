@@ -103,7 +103,7 @@ impl Config {
     pub fn initialize() -> Config {
         let home = env::home_dir().unwrap_or(PathBuf::from("./")).into_os_string().into_string().unwrap();
         // Default version of the config, for fallback
-        let general_config = 
+        let general_config =
             GeneralConfig {
                 focus_follows_mouse: true,
                 focus_border_color:  0x00B6FFB0,
@@ -121,13 +121,13 @@ impl Config {
                 pipes:               Vec::new(),
                 layout:              Box::new(TallLayout { num_master: 1, increment_ratio: 0.3/100.0, ratio: 0.5 }),
             };
-        
+
         let internal_config = InternalConfig::new(
             Box::new(move |a, _, _| a.clone()),
             Box::new(move |a, _, _| a.clone()),
             //Box::new(Config::default_manage_hook),
             //Box::new(Config::default_startup_hook),
-            home); 
+            home);
 
         Config {
             general: general_config,
