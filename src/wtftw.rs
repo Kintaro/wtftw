@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate log;
 extern crate getopts;
-extern crate rustc_serialize;
+extern crate serde_json;
 extern crate wtftw_core;
 extern crate wtftw_xlib;
 extern crate zombie;
@@ -11,14 +11,13 @@ use std::env;
 use std::rc::Rc;
 use std::ops::Deref;
 use getopts::Options;
-use rustc_serialize::json;
 use wtftw_core::config::Config;
 use wtftw_core::window_manager::WindowManager;
 use wtftw_core::window_system::*;
 use wtftw_xlib::XlibWindowSystem;
 
 pub fn parse_window_ids(ids: &str) -> Vec<(Window, u32)> {
-    match json::decode(ids) {
+    match serde_json::from_str(ids) {
         Ok(x) => x,
         _     => Vec::new()
     }
