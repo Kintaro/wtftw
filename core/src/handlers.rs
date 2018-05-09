@@ -106,7 +106,7 @@ pub mod default {
         }
 
         unsafe {
-            let mut slice : &mut [*const i8; 4] = &mut [
+            let slice : &mut [*const i8; 4] = &mut [
                 filename_c.as_ptr(),
                 CString::new(resume.as_bytes()).unwrap().as_ptr(),
                 CString::new(windows.as_bytes()).unwrap().as_ptr(),
