@@ -2,9 +2,6 @@
 extern crate wtftw;
 extern crate wtftw_contrib;
 
-use std::io::Write;
-use std::fs::metadata;
-use std::env;
 use std::ops::Deref;
 //use std::ffi::AsOsStr;
 use wtftw::window_system::*;
@@ -83,7 +80,7 @@ pub extern fn configure(_: &mut WindowManager, w: &WindowSystem, config: &mut Co
 
 
     // Workspace switching and moving
-    for i in (1usize..10) {
+    for i in 1usize..10 {
         add_key_handler_str!(config, w, &i.to_string(), modm,
         move |m, w, c| switch_to_workspace(m, w, c, i - 1));
 
