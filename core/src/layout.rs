@@ -1,4 +1,3 @@
-extern crate num;
 
 use std::borrow::ToOwned;
 use core::stack::Stack;
