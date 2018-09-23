@@ -1,5 +1,6 @@
 extern crate serde_json;
 extern crate dylib;
+extern crate dirs;
 
 use std::env;
 use std::borrow::ToOwned;
@@ -101,7 +102,7 @@ pub struct Config {
 impl Config {
     /// Create the Config from a json file
     pub fn initialize() -> Config {
-        let home = env::home_dir().unwrap_or(PathBuf::from("./")).into_os_string().into_string().unwrap();
+        let home = dirs::home_dir().unwrap_or(PathBuf::from("./")).into_os_string().into_string().unwrap();
         // Default version of the config, for fallback
         let general_config =
             GeneralConfig {
