@@ -6,7 +6,7 @@ authors = ["Simon Wollwage"]
 
 [dependencies]
 bitflags = "0.5"
-serde_json = "1.0.16"
+serde_json = "1.0.44"
 getopts = "*"
 log = "*"
 libc = "*"
