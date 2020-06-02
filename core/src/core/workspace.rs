@@ -8,7 +8,7 @@ use core::stack::Stack;
 pub struct Workspace {
     pub id:     u32,
     pub tag:    String,
-    pub layout: Box<Layout>,
+    pub layout: Box<dyn Layout>,
     pub stack:  Option<Stack<Window>>
 }
 
@@ -25,7 +25,7 @@ impl Clone for Workspace {
 
 impl Workspace {
     /// Create a new workspace
-    pub fn new(id: u32, tag: String, layout: Box<Layout>, stack: Option<Stack<Window>>) -> Workspace {
+    pub fn new(id: u32, tag: String, layout: Box<dyn Layout>, stack: Option<Stack<Window>>) -> Workspace {
         Workspace {
             id: id,
             tag: tag,
@@ -77,7 +77,7 @@ impl Workspace {
         Some(self.stack.clone().map_or(default, |x| f(x))))
     }
 
-    pub fn send_layout_message(&self, message: LayoutMessage, window_system: &WindowSystem,
+    pub fn send_layout_message(&self, message: LayoutMessage, window_system: &dyn WindowSystem,
                                    config: &GeneralConfig) -> Workspace {
         let mut layout = self.layout.copy();
         layout.apply_message(message, window_system, &self.stack, config);

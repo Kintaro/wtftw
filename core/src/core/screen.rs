@@ -64,7 +64,7 @@ impl Screen {
         Screen::new(self.workspace.map_or(default, f), self.screen_id, self.screen_detail)
     }
 
-    pub fn send_layout_message(&self, message: LayoutMessage, window_system: &WindowSystem,
+    pub fn send_layout_message(&self, message: LayoutMessage, window_system: &dyn WindowSystem,
                                    config: &GeneralConfig) -> Screen {
         Screen::new(self.workspace.send_layout_message(message, window_system, config), self.screen_id, self.screen_detail)
     }

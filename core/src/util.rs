@@ -58,7 +58,7 @@ pub fn spawn_pipe<S: AsRef<OsStr>>(config: &mut Config, program: S, args: Vec<St
     rc
 }
 
-pub fn spawn_on(workspaces: Workspaces, _: &WindowSystem,
+pub fn spawn_on(workspaces: Workspaces, _: &dyn WindowSystem,
                 window: Window, workspace_id: u32) -> Workspaces {
     workspaces.focus_window(window).shift(workspace_id)
 }

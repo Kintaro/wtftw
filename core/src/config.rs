@@ -2,7 +2,6 @@ extern crate serde_json;
 extern crate dylib;
 extern crate dirs;
 
-use std::env;
 use std::borrow::ToOwned;
 use std::collections::BTreeMap;
 use core::workspaces::Workspaces;
@@ -13,7 +12,6 @@ use handlers::default::{ exit, restart, start_terminal };
 use layout::{ Layout, TallLayout };
 
 use std::mem;
-use std::error::Error;
 use std::fs::File;
 use std::io::Write;
 use std::fs::{ read_dir, create_dir_all };
@@ -48,7 +46,7 @@ pub struct GeneralConfig {
     pub launcher: String,
     pub mod_mask: KeyModifiers,
     pub pipes: Vec<Rc<RwLock<Child>>>,
-    pub layout: Box<Layout>
+    pub layout: Box<dyn Layout>
 }
 
 impl Clone for GeneralConfig {
@@ -136,15 +134,15 @@ impl Config {
         }
     }
 
-    pub fn default_manage_hook(m: Workspaces, _: Rc<WindowSystem>, _: Window) -> Workspaces {
+    pub fn default_manage_hook(m: Workspaces, _: Rc<dyn WindowSystem>, _: Window) -> Workspaces {
         m
     }
 
-    pub fn default_startup_hook(m: WindowManager, _: Rc<WindowSystem>, _: &Config) -> WindowManager {
+    pub fn default_startup_hook(m: WindowManager, _: Rc<dyn WindowSystem>, _: &Config) -> WindowManager {
         m
     }
 
-    pub fn default_configuration(&mut self, w: &WindowSystem) {
+    pub fn default_configuration(&mut self, w: &dyn WindowSystem) {
         let mod_mask = self.general.mod_mask.clone();
         self.add_key_handler(w.get_keycode_from_string("Return"), mod_mask | SHIFTMASK,
             Box::new(|m, ws, c| start_terminal(m, ws, c)));
@@ -175,7 +173,7 @@ impl Config {
         self.internal.loghook = Some(hook);
     }
 
-    pub fn compile_and_call(&mut self, m: &mut WindowManager, w: &WindowSystem) {
+    pub fn compile_and_call(&mut self, m: &mut WindowManager, w: &dyn WindowSystem) {
         let toml = format!("{}/Cargo.toml", self.internal.wtftw_dir.clone());
 
         if !path_exists(&self.internal.wtftw_dir.clone()) {
@@ -239,14 +237,14 @@ impl Config {
             Err(err) => {
                 error!("error compiling config module");
                 spawn(move || {
-                    Command::new("xmessage").arg(err.description()).spawn().unwrap();
+                    Command::new("xmessage").arg(err.to_string()).spawn().unwrap();
                 });
                 false
             }
         }
     }
 
-    pub fn call(&mut self, m: &mut WindowManager, w: &WindowSystem) {
+    pub fn call(&mut self, m: &mut WindowManager, w: &dyn WindowSystem) {
         debug!("looking for config module");
         let mut contents = read_dir(&Path::new(&format!("{}/target/debug", self.internal.wtftw_dir.clone()))).unwrap();
         let libname = contents.find(|x| {
@@ -260,7 +258,7 @@ impl Config {
             unsafe {
                 if let Ok(symbol) = lib.symbol("configure") {
                     let result = mem::transmute::<*mut u8, extern fn(&mut WindowManager,
-                                                        &WindowSystem,
+                                                        &dyn WindowSystem,
                                                         &mut Config)>(symbol);
 
                     self.internal.library = Some(lib);

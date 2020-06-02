@@ -50,7 +50,7 @@ fn main() {
     // Initialize window system. Use xlib here for now
     debug!("initialize window system");
     let xlib = XlibWindowSystem::new();
-    let window_system : Rc<WindowSystem> = Rc::new(xlib);
+    let window_system : Rc<dyn WindowSystem> = Rc::new(xlib);
     // Create the actual window manager
     debug!("create window manager");
     let mut window_manager = WindowManager::new(window_system.deref(), &config.general);

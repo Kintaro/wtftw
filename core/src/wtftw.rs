@@ -1,6 +1,6 @@
 #[deny(warnings)]
 #[macro_use]
-#[link]
+#[link(name="log")]
 extern crate log;
 #[macro_use]
 extern crate bitflags;

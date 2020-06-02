@@ -39,7 +39,7 @@ impl Workspaces {
     /// list will be current.
     ///
     /// Xinerama: Virtual workspaces are assigned to physical screens, starting at 0.
-    pub fn new(layout: Box<Layout>, tags: Vec<String>, screens: Vec<ScreenDetail>) -> Workspaces {
+    pub fn new(layout: Box<dyn Layout>, tags: Vec<String>, screens: Vec<ScreenDetail>) -> Workspaces {
         debug!("creating new workspaces with {} screen(s)", screens.len());
         let workspaces : Vec<Workspace> = tags.iter()
             .enumerate()

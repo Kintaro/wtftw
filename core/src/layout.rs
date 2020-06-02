@@ -64,13 +64,13 @@ pub fn split_horizontally_by(ratio: f32, screen: ScreenDetail) -> (Rectangle, Re
 }
 
 pub trait Layout {
-    fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle, config: &GeneralConfig,
+    fn apply_layout(&mut self, window_system: &dyn WindowSystem, screen: Rectangle, config: &GeneralConfig,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)>;
-    fn apply_message(&mut self, _: LayoutMessage, _: &WindowSystem,
+    fn apply_message(&mut self, _: LayoutMessage, _: &dyn WindowSystem,
                          _: &Option<Stack<Window>>, _: &GeneralConfig) -> bool { true }
     fn description(&self) -> String;
-    fn copy(&self) -> Box<Layout> { panic!("") }
-    fn unhook(&self, _: &WindowSystem, _: &Option<Stack<Window>>, _: &GeneralConfig) { }
+    fn copy(&self) -> Box<dyn Layout> { panic!("") }
+    fn unhook(&self, _: &dyn WindowSystem, _: &Option<Stack<Window>>, _: &GeneralConfig) { }
 }
 
 #[derive(Clone, Copy)]
@@ -81,7 +81,7 @@ pub struct TallLayout {
 }
 
 impl TallLayout {
-    pub fn new() -> Box<Layout> {
+    pub fn new() -> Box<dyn Layout> {
         Box::new(TallLayout {
             num_master: 1,
             increment_ratio: 0.03,
@@ -91,7 +91,7 @@ impl TallLayout {
 }
 
 impl Layout for TallLayout {
-    fn apply_layout(&mut self, _: &WindowSystem, screen: Rectangle, _: &GeneralConfig,
+    fn apply_layout(&mut self, _: &dyn WindowSystem, screen: Rectangle, _: &GeneralConfig,
                     stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
         match stack {
             &Some(ref s) => {
@@ -105,7 +105,7 @@ impl Layout for TallLayout {
         }
     }
 
-    fn apply_message(&mut self, message: LayoutMessage, _: &WindowSystem,
+    fn apply_message(&mut self, message: LayoutMessage, _: &dyn WindowSystem,
                          _: &Option<Stack<Window>>, _: &GeneralConfig) -> bool {
         match message {
             LayoutMessage::Increase => { self.ratio += 0.05; true }
@@ -122,7 +122,7 @@ impl Layout for TallLayout {
         "Tall".to_owned()
     }
 
-    fn copy(&self) -> Box<Layout> {
+    fn copy(&self) -> Box<dyn Layout> {
         Box::new(self.clone())
     }
 }
