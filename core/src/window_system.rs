@@ -1,9 +1,9 @@
 extern crate libc;
 
-use std::fmt::{Error, Formatter, Debug};
-use window_manager::WindowManager;
-use config::GeneralConfig;
-use self::libc::{c_int, c_ulong, int32_t};
+use self::libc::{c_int, c_ulong};
+use crate::config::GeneralConfig;
+use std::fmt::{Debug, Error, Formatter};
+use crate::window_manager::WindowManager;
 
 pub type Window = u64;
 
@@ -19,8 +19,10 @@ impl Rectangle {
 
     pub fn overlaps(&self, &Rectangle(bx, by, bw, bh): &Rectangle) -> bool {
         let &Rectangle(ax, ay, aw, ah) = self;
-        !(bx >= ax + aw as i32 || bx + bw as i32 <= ax || by >= ay + ah as i32 ||
-          by + bh as i32 <= ay)
+        !(bx >= ax + aw as i32
+            || bx + bw as i32 <= ax
+            || by >= ay + ah as i32
+            || by + bh as i32 <= ay)
     }
 }
 
@@ -46,10 +48,7 @@ pub struct KeyCommand {
 
 impl KeyCommand {
     pub fn new(key: u64, mask: KeyModifiers) -> KeyCommand {
-        KeyCommand {
-            key: key,
-            mask: mask,
-        }
+        KeyCommand { key, mask }
     }
 }
 
@@ -75,24 +74,21 @@ impl Debug for MouseCommand {
 
 impl MouseCommand {
     pub fn new(button: MouseButton, mask: KeyModifiers) -> MouseCommand {
-        MouseCommand {
-            button: button,
-            mask: mask,
-        }
+        MouseCommand { button, mask }
     }
 }
 
 bitflags! {
-    pub flags KeyModifiers : u32 {
-        const NONEMASK    = (0 << 0),
-        const SHIFTMASK   = (1 << 0),
-        const LOCKMASK    = (1 << 1),
-        const CONTROLMASK = (1 << 2),
-        const MOD1MASK    = (1 << 3),
-        const MOD2MASK    = (1 << 4),
-        const MOD3MASK    = (1 << 5),
-        const MOD4MASK    = (1 << 6),
-        const MOD5MASK    = (1 << 7),
+    pub struct KeyModifiers : u32 {
+        const NONEMASK    = (0 << 0);
+        const SHIFTMASK   = (1 << 0);
+        const LOCKMASK    = (1 << 1);
+        const CONTROLMASK = (1 << 2);
+        const MOD1MASK    = (1 << 3);
+        const MOD2MASK    = (1 << 4);
+        const MOD3MASK    = (1 << 5);
+        const MOD4MASK    = (1 << 6);
+        const MOD5MASK    = (1 << 7);
     }
 }
 
@@ -134,7 +130,7 @@ pub enum WindowSystemEvent {
     ButtonReleased,
     MouseMotion(u32, u32),
     KeyPressed(Window, KeyCommand),
-    ClientMessageEvent(Window, c_ulong, c_int, [int32_t; 5]),
+    ClientMessageEvent(Window, c_ulong, c_int, [i32; 5]),
     PropertyMessageEvent(bool, Window, c_ulong),
     /// The underlying event by xlib or wayland is unknown
     /// and can be ignored.
@@ -174,11 +170,13 @@ pub trait WindowSystem {
     fn hide_window(&self, window: Window);
     fn focus_window(&self, window: Window, window_manager: &WindowManager);
     fn get_focused_window(&self) -> Window;
-    fn configure_window(&self,
-                        window: Window,
-                        window_changes: WindowChanges,
-                        mask: u64,
-                        is_floating: bool);
+    fn configure_window(
+        &self,
+        window: Window,
+        window_changes: WindowChanges,
+        mask: u64,
+        is_floating: bool,
+    );
     /// Check if there are events pending
     fn event_pending(&self) -> bool;
     /// Get the next event from the queue
@@ -203,10 +201,11 @@ pub trait WindowSystem {
     fn warp_pointer(&self, window: Window, x: u32, y: u32);
     fn overrides_redirect(&self, window: Window) -> bool;
     fn update_server_state(&self, manager: &WindowManager);
-    fn process_message(&self,
-                       window_manager: &WindowManager,
-                       config: &GeneralConfig,
-                       window: Window,
-                       atom: c_ulong)
-                       -> WindowManager;
+    fn process_message(
+        &self,
+        window_manager: &WindowManager,
+        config: &GeneralConfig,
+        window: Window,
+        atom: c_ulong,
+    ) -> WindowManager;
 }

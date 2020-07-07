@@ -5,18 +5,14 @@
 #[derive(Clone, PartialEq, Eq)]
 pub struct Stack<T> {
     pub focus: T,
-    pub up:    Vec<T>,
-    pub down:  Vec<T>
+    pub up: Vec<T>,
+    pub down: Vec<T>,
 }
 
 impl<T: Clone + Eq> Stack<T> {
     /// Create a new stack with the given values
     pub fn new(f: T, up: Vec<T>, down: Vec<T>) -> Stack<T> {
-        Stack {
-            focus: f,
-            up:    up,
-            down:  down
-        }
+        Stack { focus: f, up, down }
     }
 
     /// Create a new stack with only the given element
@@ -24,8 +20,8 @@ impl<T: Clone + Eq> Stack<T> {
     pub fn from_element(t: T) -> Stack<T> {
         Stack {
             focus: t,
-            up:    Vec::new(),
-            down:  Vec::new()
+            up: Vec::new(),
+            down: Vec::new(),
         }
     }
 
@@ -35,18 +31,21 @@ impl<T: Clone + Eq> Stack<T> {
         Stack {
             focus: t,
             up: self.up.clone(),
-            down: self.down.clone()
+            down: self
+                .down
+                .clone()
                 .into_iter()
-                .chain((vec!(self.focus.clone())).into_iter())
-                .collect()
+                .chain((vec![self.focus.clone()]).into_iter())
+                .collect(),
         }
     }
 
     /// Flatten the stack into a list
     pub fn integrate(&self) -> Vec<T> {
-        self.up.iter()
+        self.up
+            .iter()
             .rev()
-            .chain((vec!(self.focus.clone())).iter())
+            .chain((vec![self.focus.clone()]).iter())
             .chain(self.down.iter())
             .cloned()
             .collect()
@@ -54,27 +53,29 @@ impl<T: Clone + Eq> Stack<T> {
 
     /// Filter the stack to retain only windows
     /// that yield true in the given filter function
-    pub fn filter<F>(&self, f: F) -> Option<Stack<T>> where F : Fn(&T) -> bool {
-        let lrs : Vec<T> = (vec!(self.focus.clone())).iter().chain(self.down.iter())
+    pub fn filter<F>(&self, f: F) -> Option<Stack<T>>
+    where
+        F: Fn(&T) -> bool,
+    {
+        let lrs: Vec<T> = (vec![self.focus.clone()])
+            .iter()
+            .chain(self.down.iter())
             .filter(|&x| f(x))
             .map(|x| x.clone())
             .collect();
 
         if lrs.len() > 0 {
-            let first : T         = lrs[0].clone();
-            let rest : Vec<T>     = lrs.iter().skip(1).map(|x| x.clone()).collect();
-            let filtered : Vec<T> = self.up.iter()
-                .filter(|&x| f(x))
-                .cloned()
-                .collect();
-            let stack : Stack<T>  = Stack::<T>::new(first, filtered, rest);
+            let first: T = lrs[0].clone();
+            let rest: Vec<T> = lrs.iter().skip(1).map(|x| x.clone()).collect();
+            let filtered: Vec<T> = self.up.iter().filter(|&x| f(x)).cloned().collect();
+            let stack: Stack<T> = Stack::<T>::new(first, filtered, rest);
 
             Some(stack)
         } else {
-            let filtered : Vec<T> = self.up.clone().into_iter().filter(|x| f(x)).collect();
+            let filtered: Vec<T> = self.up.clone().into_iter().filter(|x| f(x)).collect();
             if filtered.len() > 0 {
-                let first : T        = filtered[0].clone();
-                let rest : Vec<T>    = filtered.iter().skip(1).cloned().collect();
+                let first: T = filtered[0].clone();
+                let rest: Vec<T> = filtered.iter().skip(1).cloned().collect();
                 Some(Stack::<T>::new(first, rest, Vec::new()))
             } else {
                 None
@@ -85,18 +86,20 @@ impl<T: Clone + Eq> Stack<T> {
     /// Move the focus to the next element in the `up` list
     pub fn focus_up(&self) -> Stack<T> {
         if self.up.is_empty() {
-            let tmp : Vec<T> = (vec!(self.focus.clone())).into_iter().chain(self.down.clone().into_iter())
+            let tmp: Vec<T> = (vec![self.focus.clone()])
+                .into_iter()
+                .chain(self.down.clone().into_iter())
                 .rev()
                 .collect();
-            let xs : Vec<T> = tmp.iter()
-                .skip(1)
-                .cloned()
-                .collect();
+            let xs: Vec<T> = tmp.iter().skip(1).cloned().collect();
 
             Stack::<T>::new(tmp[0].clone(), xs, Vec::new())
         } else {
-            let down = (vec!(self.focus.clone())).into_iter().chain(self.down.clone().into_iter()).collect();
-            let up   = self.up.iter().skip(1).cloned().collect();
+            let down = (vec![self.focus.clone()])
+                .into_iter()
+                .chain(self.down.clone().into_iter())
+                .collect();
+            let up = self.up.iter().skip(1).cloned().collect();
             Stack::<T>::new(self.up[0].clone(), up, down)
         }
     }
@@ -108,11 +111,18 @@ impl<T: Clone + Eq> Stack<T> {
 
     pub fn swap_up(&self) -> Stack<T> {
         if self.up.is_empty() {
-            Stack::<T>::new(self.focus.clone(), self.down.iter().rev().cloned().collect(), Vec::new())
+            Stack::<T>::new(
+                self.focus.clone(),
+                self.down.iter().rev().cloned().collect(),
+                Vec::new(),
+            )
         } else {
             let x = self.up[0].clone();
             let xs = self.up.iter().skip(1).cloned().collect();
-            let rs = (vec!(x)).into_iter().chain(self.down.clone().into_iter()).collect();
+            let rs = (vec![x])
+                .into_iter()
+                .chain(self.down.clone().into_iter())
+                .collect();
             Stack::<T>::new(self.focus.clone(), xs, rs)
         }
     }
@@ -126,16 +136,14 @@ impl<T: Clone + Eq> Stack<T> {
             return self.clone();
         }
 
-        let r : Vec<T>  = self.up.iter()
-            .rev()
-            .map(|x| x.clone())
+        let r: Vec<T> = self.up.iter().rev().map(|x| x.clone()).collect();
+        let x: T = r[0].clone();
+        let xs: Vec<T> = r.iter().skip(1).map(|x| x.clone()).collect();
+        let rs: Vec<T> = xs
+            .into_iter()
+            .chain((vec![x]).into_iter())
+            .chain(self.down.clone().into_iter())
             .collect();
-        let x : T       = r[0].clone();
-        let xs : Vec<T> = r.iter()
-            .skip(1)
-            .map(|x| x.clone())
-            .collect();
-        let rs : Vec<T> = xs.into_iter().chain((vec!(x)).into_iter()).chain(self.down.clone().into_iter()).collect();
 
         Stack::<T>::new(self.focus.clone(), Vec::new(), rs)
     }

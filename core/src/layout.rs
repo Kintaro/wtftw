@@ -1,11 +1,10 @@
-
+use crate::config::GeneralConfig;
+use crate::core::stack::Stack;
 use std::borrow::ToOwned;
-use core::stack::Stack;
-use window_system::Window;
-use window_system::Rectangle;
-use window_system::WindowSystem;
-use window_manager::ScreenDetail;
-use config::GeneralConfig;
+use crate::window_manager::ScreenDetail;
+use crate::window_system::Rectangle;
+use crate::window_system::Window;
+use crate::window_system::WindowSystem;
 
 #[derive(Clone, Copy)]
 pub enum LayoutMessage {
@@ -25,10 +24,10 @@ pub enum LayoutMessage {
     TreeRotate,
     TreeSwap,
     TreeExpandTowards(Direction),
-    TreeShrinkFrom(Direction)
+    TreeShrinkFrom(Direction),
 }
 
-pub fn mirror_rect(&Rectangle(x, y, w, h) : &Rectangle) -> Rectangle {
+pub fn mirror_rect(&Rectangle(x, y, w, h): &Rectangle) -> Rectangle {
     Rectangle(y, x, h, w)
 }
 
@@ -45,12 +44,13 @@ pub fn tile(ratio: f32, screen: ScreenDetail, num_master: u32, num_windows: u32)
 
 pub fn split_vertically(num: u32, screen: ScreenDetail) -> Vec<Rectangle> {
     if num < 2 {
-        return vec!(screen);
+        return vec![screen];
     }
 
     let Rectangle(sx, sy, sw, sh) = screen;
     let smallh = sh / num;
-    (vec!(Rectangle(sx, sy, sw, smallh))).iter()
+    (vec![Rectangle(sx, sy, sw, smallh)])
+        .iter()
         .chain(split_vertically(num - 1, Rectangle(sx, sy + smallh as i32, sw, sh - smallh)).iter())
         .map(|&x| x)
         .collect()
@@ -60,61 +60,101 @@ pub fn split_horizontally_by(ratio: f32, screen: ScreenDetail) -> (Rectangle, Re
     let Rectangle(sx, sy, sw, sh) = screen;
     let leftw = (sw as f32 * ratio).floor() as u32;
 
-    (Rectangle(sx, sy, leftw, sh), Rectangle(sx + leftw as i32, sy, sw - leftw, sh))
+    (
+        Rectangle(sx, sy, leftw, sh),
+        Rectangle(sx + leftw as i32, sy, sw - leftw, sh),
+    )
 }
 
 pub trait Layout {
-    fn apply_layout(&mut self, window_system: &WindowSystem, screen: Rectangle, config: &GeneralConfig,
-                    stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)>;
-    fn apply_message(&mut self, _: LayoutMessage, _: &WindowSystem,
-                         _: &Option<Stack<Window>>, _: &GeneralConfig) -> bool { true }
+    fn apply_layout(
+        &mut self,
+        window_system: &dyn WindowSystem,
+        screen: Rectangle,
+        config: &GeneralConfig,
+        stack: &Option<Stack<Window>>,
+    ) -> Vec<(Window, Rectangle)>;
+    fn apply_message(
+        &mut self,
+        _: LayoutMessage,
+        _: &dyn WindowSystem,
+        _: &Option<Stack<Window>>,
+        _: &GeneralConfig,
+    ) -> bool {
+        true
+    }
     fn description(&self) -> String;
-    fn copy(&self) -> Box<Layout> { panic!("") }
-    fn unhook(&self, _: &WindowSystem, _: &Option<Stack<Window>>, _: &GeneralConfig) { }
+    fn copy(&self) -> Box<dyn Layout> {
+        panic!("")
+    }
+    fn unhook(&self, _: &dyn WindowSystem, _: &Option<Stack<Window>>, _: &GeneralConfig) {}
 }
 
 #[derive(Clone, Copy)]
 pub struct TallLayout {
     pub num_master: u32,
     pub increment_ratio: f32,
-    pub ratio: f32
+    pub ratio: f32,
 }
 
 impl TallLayout {
-    pub fn new() -> Box<Layout> {
+    pub fn new() -> Box<dyn Layout> {
         Box::new(TallLayout {
             num_master: 1,
             increment_ratio: 0.03,
-            ratio: 0.5
+            ratio: 0.5,
         })
     }
 }
 
 impl Layout for TallLayout {
-    fn apply_layout(&mut self, _: &WindowSystem, screen: Rectangle, _: &GeneralConfig,
-                    stack: &Option<Stack<Window>>) -> Vec<(Window, Rectangle)> {
+    fn apply_layout(
+        &mut self,
+        _: &dyn WindowSystem,
+        screen: Rectangle,
+        _: &GeneralConfig,
+        stack: &Option<Stack<Window>>,
+    ) -> Vec<(Window, Rectangle)> {
         match stack {
             &Some(ref s) => {
                 let ws = s.integrate();
-                s.integrate().iter()
+                s.integrate()
+                    .iter()
                     .zip(tile(self.ratio, screen, self.num_master, ws.len() as u32).iter())
                     .map(|(&x, &y)| (x, y))
                     .collect()
-            },
-            _ => Vec::new()
+            }
+            _ => Vec::new(),
         }
     }
 
-    fn apply_message(&mut self, message: LayoutMessage, _: &WindowSystem,
-                         _: &Option<Stack<Window>>, _: &GeneralConfig) -> bool {
+    fn apply_message(
+        &mut self,
+        message: LayoutMessage,
+        _: &dyn WindowSystem,
+        _: &Option<Stack<Window>>,
+        _: &GeneralConfig,
+    ) -> bool {
         match message {
-            LayoutMessage::Increase => { self.ratio += 0.05; true }
-            LayoutMessage::Decrease => { self.ratio -= 0.05; true }
-            LayoutMessage::IncreaseMaster => { self.num_master += 1; true }
-            LayoutMessage::DecreaseMaster => {
-                if self.num_master > 1 { self.num_master -= 1 } true
+            LayoutMessage::Increase => {
+                self.ratio += 0.05;
+                true
             }
-            _                       => false
+            LayoutMessage::Decrease => {
+                self.ratio -= 0.05;
+                true
+            }
+            LayoutMessage::IncreaseMaster => {
+                self.num_master += 1;
+                true
+            }
+            LayoutMessage::DecreaseMaster => {
+                if self.num_master > 1 {
+                    self.num_master -= 1
+                }
+                true
+            }
+            _ => false,
         }
     }
 
@@ -122,7 +162,7 @@ impl Layout for TallLayout {
         "Tall".to_owned()
     }
 
-    fn copy(&self) -> Box<Layout> {
+    fn copy(&self) -> Box<dyn Layout> {
         Box::new(self.clone())
     }
 }
@@ -133,16 +173,16 @@ pub enum Direction {
     Up,
     Down,
     Left,
-    Right
+    Right,
 }
 
 impl Direction {
     pub fn opposite(&self) -> Direction {
         match self {
-            &Direction::Up    => Direction::Down,
-            &Direction::Down  => Direction::Up,
-            &Direction::Left  => Direction::Right,
-            &Direction::Right => Direction::Left
+            &Direction::Up => Direction::Down,
+            &Direction::Down => Direction::Up,
+            &Direction::Left => Direction::Right,
+            &Direction::Right => Direction::Left,
         }
     }
 }

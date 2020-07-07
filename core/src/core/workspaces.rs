@@ -1,23 +1,23 @@
+use crate::config::GeneralConfig;
+use crate::core::rational_rect::RationalRect;
+use crate::core::screen::Screen;
+use crate::core::stack::Stack;
+use crate::core::workspace::Workspace;
+use crate::layout::{Layout, LayoutMessage};
 use std::collections::BTreeMap;
 use std::iter::repeat;
-use config::GeneralConfig;
-use window_manager::ScreenDetail;
-use window_system::{ Window, WindowSystem };
-use layout::{Layout, LayoutMessage};
-use core::screen::Screen;
-use core::rational_rect::RationalRect;
-use core::workspace::Workspace;
-use core::stack::Stack;
+use crate::window_manager::ScreenDetail;
+use crate::window_system::{Window, WindowSystem};
 
 pub struct Workspaces {
     /// The currently focused and visible screen
-    pub current:  Screen,
+    pub current: Screen,
     /// The other visible, but non-focused screens
-    pub visible:  Vec<Screen>,
+    pub visible: Vec<Screen>,
     /// All remaining workspaces that are currently hidden
-    pub hidden:   Vec<Workspace>,
+    pub hidden: Vec<Workspace>,
     /// A list of all floating windows
-    pub floating: BTreeMap<Window, RationalRect>
+    pub floating: BTreeMap<Window, RationalRect>,
 }
 
 impl Clone for Workspaces {
@@ -25,8 +25,8 @@ impl Clone for Workspaces {
         Workspaces {
             current: self.current.clone(),
             visible: self.visible.clone(),
-            hidden:  self.hidden.clone(),
-            floating: self.floating.clone()
+            hidden: self.hidden.clone(),
+            floating: self.floating.clone(),
         }
     }
 }
@@ -39,21 +39,29 @@ impl Workspaces {
     /// list will be current.
     ///
     /// Xinerama: Virtual workspaces are assigned to physical screens, starting at 0.
-    pub fn new(layout: Box<Layout>, tags: Vec<String>, screens: Vec<ScreenDetail>) -> Workspaces {
+    pub fn new(
+        layout: Box<dyn Layout>,
+        tags: Vec<String>,
+        screens: Vec<ScreenDetail>,
+    ) -> Workspaces {
         debug!("creating new workspaces with {} screen(s)", screens.len());
-        let workspaces : Vec<Workspace> = tags.iter()
+        let workspaces: Vec<Workspace> = tags
+            .iter()
             .enumerate()
             .map(|(id, tag)| Workspace::new(id as u32, tag.clone(), layout.copy(), None))
             .collect();
-        let seen   : Vec<Workspace> = workspaces.iter()
+        let seen: Vec<Workspace> = workspaces
+            .iter()
             .take(screens.len())
             .map(|x| x.clone())
             .collect();
-        let unseen : Vec<Workspace> = workspaces.iter()
+        let unseen: Vec<Workspace> = workspaces
+            .iter()
             .skip(screens.len())
             .map(|x| x.clone())
             .collect();
-        let current : Vec<Screen> = seen.iter()
+        let current: Vec<Screen> = seen
+            .iter()
             .enumerate()
             .zip(screens.iter())
             .map(|((a, b), c)| Screen::new(b.clone(), a as u32, c.clone()))
@@ -63,25 +71,25 @@ impl Workspaces {
             current: current[0].clone(),
             visible: current.iter().skip(1).map(|x| x.clone()).collect(),
             hidden: unseen,
-            floating: BTreeMap::new()
+            floating: BTreeMap::new(),
         }
     }
 
     pub fn from_current(&self, current: Screen) -> Workspaces {
         Workspaces {
-            current: current,
+            current,
             visible: self.visible.clone(),
             hidden: self.hidden.clone(),
-            floating: self.floating.clone()
+            floating: self.floating.clone(),
         }
     }
 
     pub fn from_visible(&self, visible: Vec<Screen>) -> Workspaces {
         Workspaces {
             current: self.current.clone(),
-            visible: visible,
+            visible,
             hidden: self.hidden.clone(),
-            floating: self.floating.clone()
+            floating: self.floating.clone(),
         }
     }
 
@@ -89,8 +97,8 @@ impl Workspaces {
         Workspaces {
             current: self.current.clone(),
             visible: self.visible.clone(),
-            hidden: hidden,
-            floating: self.floating.clone()
+            hidden,
+            floating: self.floating.clone(),
         }
     }
 
@@ -112,24 +120,42 @@ impl Workspaces {
         // it to current and pushing the current one to visible
         if let Some(screen_pos) = self.visible.iter().position(|s| s.workspace.id == index) {
             let screen = self.visible[screen_pos].clone();
-            let visible : Vec<Screen> = self.visible.iter()
+            let visible: Vec<Screen> = self
+                .visible
+                .iter()
                 .enumerate()
                 .filter(|&(x, _)| x != screen_pos)
                 .map(|(_, y)| y.clone())
                 .collect();
 
-            self.from_visible(visible.into_iter().chain((vec!(self.current.clone())).into_iter()).collect())
-                .from_current(screen)
+            self.from_visible(
+                visible
+                    .into_iter()
+                    .chain((vec![self.current.clone()]).into_iter())
+                    .collect(),
+            )
+            .from_current(screen)
         // Desired workspace is hidden. Switch it with the current workspace
         } else if let Some(workspace_pos) = self.hidden.iter().position(|w| w.id == index) {
-            let hidden : Vec<Workspace> = self.hidden.iter()
+            let hidden: Vec<Workspace> = self
+                .hidden
+                .iter()
                 .enumerate()
                 .filter(|&(x, _)| x != workspace_pos)
                 .map(|(_, y)| y.clone())
                 .collect();
 
-            self.from_hidden(hidden.clone().into_iter().chain((vec!(self.current.workspace.clone())).into_iter()).collect())
-                .from_current(self.current.map_workspace(|_| self.hidden[workspace_pos].clone()))
+            self.from_hidden(
+                hidden
+                    .clone()
+                    .into_iter()
+                    .chain((vec![self.current.workspace.clone()]).into_iter())
+                    .collect(),
+            )
+            .from_current(
+                self.current
+                    .map_workspace(|_| self.hidden[workspace_pos].clone()),
+            )
         } else {
             self.clone()
         }
@@ -153,13 +179,14 @@ impl Workspaces {
             current_screen.workspace = desired_workspace;
             screen_with_requested_workspace.workspace = old_workspace;
 
-            self.from_current(current_screen.clone())
-                .from_visible(self.visible.iter()
-                              .filter(|x| x.screen_id != screen_with_requested_workspace.screen_id)
-                              .map(|x| x.clone())
-                              .chain((vec!(screen_with_requested_workspace.clone())).into_iter())
-                              .collect())
-
+            self.from_current(current_screen.clone()).from_visible(
+                self.visible
+                    .iter()
+                    .filter(|x| x.screen_id != screen_with_requested_workspace.screen_id)
+                    .map(|x| x.clone())
+                    .chain((vec![screen_with_requested_workspace.clone()]).into_iter())
+                    .collect(),
+            )
         } else {
             self.clone()
         }
@@ -203,8 +230,8 @@ impl Workspaces {
                     s = s.focus_up();
                 }
                 s
-            },
-            _ => self.clone()
+            }
+            _ => self.clone(),
         }
     }
 
@@ -230,34 +257,50 @@ impl Workspaces {
     }
 
     pub fn modify_stack<F>(&self, f: F) -> Workspaces
-            where F : Fn(Stack<Window>) -> Stack<Window> {
+    where
+        F: Fn(Stack<Window>) -> Stack<Window>,
+    {
         self.from_current(self.current.map(|s| f(s)))
     }
 
     pub fn modify_stack_option<F>(&self, f: F) -> Workspaces
-            where F : Fn(Stack<Window>) -> Option<Stack<Window>> {
+    where
+        F: Fn(Stack<Window>) -> Option<Stack<Window>>,
+    {
         self.from_current(self.current.map_option(|s| f(s)))
     }
 
     pub fn modify_hidden<F>(&self, f: F) -> Workspaces
-            where F : Fn(Stack<Window>) -> Stack<Window> {
+    where
+        F: Fn(Stack<Window>) -> Stack<Window>,
+    {
         self.from_hidden(self.hidden.iter().map(|x| x.map(|s| f(s))).collect())
     }
 
     pub fn modify_hidden_option<F>(&self, f: F) -> Workspaces
-            where F : Fn(Stack<Window>) -> Option<Stack<Window>> {
+    where
+        F: Fn(Stack<Window>) -> Option<Stack<Window>>,
+    {
         self.from_hidden(self.hidden.iter().map(|x| x.map_option(|s| f(s))).collect())
     }
 
-
     pub fn modify_visible<F>(&self, f: F) -> Workspaces
-            where F : Fn(Stack<Window>) -> Stack<Window> {
+    where
+        F: Fn(Stack<Window>) -> Stack<Window>,
+    {
         self.from_visible(self.visible.iter().map(|x| x.map(|s| f(s))).collect())
     }
 
     pub fn modify_visible_option<F>(&self, f: F) -> Workspaces
-            where F : Fn(Stack<Window>) -> Option<Stack<Window>> {
-        self.from_visible(self.visible.iter().map(|x| x.map_option(|s| f(s))).collect())
+    where
+        F: Fn(Stack<Window>) -> Option<Stack<Window>>,
+    {
+        self.from_visible(
+            self.visible
+                .iter()
+                .map(|x| x.map_option(|s| f(s)))
+                .collect(),
+        )
     }
 
     pub fn get_focus_window(&self) -> Option<Window> {
@@ -273,26 +316,32 @@ impl Workspaces {
     /// Apply the given function to the currently focused stack
     /// or return a default if the stack is empty
     pub fn with<T, F>(&self, default: T, f: F) -> T
-            where F : Fn(&Stack<Window>) -> T {
-        self.clone().current.workspace.stack.map_or(default, |x| f(&x))
+    where
+        F: Fn(&Stack<Window>) -> T,
+    {
+        self.clone()
+            .current
+            .workspace
+            .stack
+            .map_or(default, |x| f(&x))
     }
 
     /// Return the number of windows
     /// contained in all workspaces, including floating windows
     pub fn len(&self) -> usize {
-        self.current.len() +
-            self.visible.iter().map(|x| x.len()).fold(0, |a, x| a + x) +
-            self.hidden.iter().map(|x| x.len()).fold(0, |a, x| a + x) +
-            self.floating.len()
+        self.current.len()
+            + self.visible.iter().map(|x| x.len()).fold(0, |a, x| a + x)
+            + self.hidden.iter().map(|x| x.len()).fold(0, |a, x| a + x)
+            + self.floating.len()
     }
 
     /// Checks if any of the workspaces contains the
     /// given window
     pub fn contains(&self, window: Window) -> bool {
-        self.current.contains(window) ||
-            self.visible.iter().any(|x| x.contains(window)) ||
-            self.hidden.iter().any(|x| x.contains(window)) ||
-            self.floating.contains_key(&window)
+        self.current.contains(window)
+            || self.visible.iter().any(|x| x.contains(window))
+            || self.hidden.iter().any(|x| x.contains(window))
+            || self.floating.contains_key(&window)
     }
 
     /// Get the number of managed workspaces.
@@ -310,15 +359,18 @@ impl Workspaces {
     }
 
     pub fn shift_master(&self) -> Workspaces {
-        self.modify_stack(|s| if s.up.len() == 0 {
-            s.clone()
-        } else {
-            let rev : Vec<Window> = s.up.iter()
-                .rev()
-                .chain(s.down.iter())
-                .map(|x| x.clone())
-                .collect();
-            Stack::<Window>::new(s.focus, Vec::<Window>::new(), rev)
+        self.modify_stack(|s| {
+            if s.up.len() == 0 {
+                s.clone()
+            } else {
+                let rev: Vec<Window> =
+                    s.up.iter()
+                        .rev()
+                        .chain(s.down.iter())
+                        .map(|x| x.clone())
+                        .collect();
+                Stack::<Window>::new(s.focus, Vec::<Window>::new(), rev)
+            }
         })
     }
 
@@ -328,7 +380,14 @@ impl Workspaces {
         }
 
         self.from_current(self.current.map_or(Stack::from_element(window), |s| {
-            Stack::<Window>::new(window, s.up, (vec!(s.focus.clone())).into_iter().chain(s.down.clone().into_iter()).collect())
+            Stack::<Window>::new(
+                window,
+                s.up,
+                (vec![s.focus.clone()])
+                    .into_iter()
+                    .chain(s.down.clone().into_iter())
+                    .collect(),
+            )
         }))
     }
 
@@ -342,7 +401,8 @@ impl Workspaces {
     /// return None.
     pub fn find_tag(&self, window: Window) -> Option<u32> {
         debug!("trying to find tag of workspace with window {}", window);
-        self.workspaces().iter()
+        self.workspaces()
+            .iter()
             .filter(|x| x.contains(window))
             .map(|x| x.id)
             .nth(0)
@@ -352,25 +412,32 @@ impl Workspaces {
         if self.current.contains(window) {
             Some(self.current.clone())
         } else {
-            self.visible.iter().filter(|x| x.contains(window)).map(|x| x.clone()).nth(0).clone()
+            self.visible
+                .iter()
+                .filter(|x| x.contains(window))
+                .map(|x| x.clone())
+                .nth(0)
+                .clone()
         }
     }
 
     /// Flatten all workspaces into a list
     pub fn workspaces(&self) -> Vec<Workspace> {
-        let v : Vec<Workspace> = self.visible.iter().map(|x| x.workspace.clone()).collect();
-        (vec!(self.current.workspace.clone())).into_iter().chain(v.into_iter()).chain(self.hidden.clone().into_iter()).collect()
+        let v: Vec<Workspace> = self.visible.iter().map(|x| x.workspace.clone()).collect();
+        (vec![self.current.workspace.clone()])
+            .into_iter()
+            .chain(v.into_iter())
+            .chain(self.hidden.clone().into_iter())
+            .collect()
     }
 
     /// Shift the given window to the given workspace
     pub fn shift_window(&self, index: u32, window: Window) -> Workspaces {
-        let first_closure = (Box::new(move |w: Workspaces| {
-            w.delete(window)
-        })) as Box<Fn(Workspaces,) -> Workspaces + 'static>;
+        let first_closure = (Box::new(move |w: Workspaces| w.delete(window)))
+            as Box<dyn Fn(Workspaces) -> Workspaces + 'static>;
 
-        let second_closure = (Box::new(move |w: Workspaces| {
-            w.insert_up(window)
-        })) as Box<Fn(Workspaces,) -> Workspaces + 'static>;
+        let second_closure = (Box::new(move |w: Workspaces| w.insert_up(window)))
+            as Box<dyn Fn(Workspaces) -> Workspaces + 'static>;
 
         match self.find_tag(window) {
             Some(from) => {
@@ -379,59 +446,88 @@ impl Workspaces {
 
                 debug!("shifting window from {} to {}", from, index);
                 b(a(self.clone()))
-            },
-            None => self.clone()
+            }
+            None => self.clone(),
         }
     }
 
     /// Apply the given function to the given workspace
-    pub fn on_workspace(&self, index: u32, f: Box<Fn(Workspaces,) -> Workspaces + 'static>)
-        -> Box<Fn(Workspaces,) -> Workspaces + 'static> {
-            (Box::new(move |x: Workspaces| {
-                let current_tag = x.current_tag();
-                (*f)(x.view(index)).view(current_tag)
-            })) as Box<Fn(Workspaces,) -> Workspaces + 'static>
+    pub fn on_workspace(
+        &self,
+        index: u32,
+        f: Box<dyn Fn(Workspaces) -> Workspaces + 'static>,
+    ) -> Box<dyn Fn(Workspaces) -> Workspaces + 'static> {
+        (Box::new(move |x: Workspaces| {
+            let current_tag = x.current_tag();
+            (*f)(x.view(index)).view(current_tag)
+        })) as Box<dyn Fn(Workspaces) -> Workspaces + 'static>
     }
 
     /// Return a list of all visible windows.
     /// This is just a convenience function.
     pub fn visible_windows(&self) -> Vec<Window> {
-        self.current.windows().into_iter().chain(self.visible.iter()
-            .flat_map(|x| x.windows().into_iter()))
+        self.current
+            .windows()
+            .into_iter()
+            .chain(self.visible.iter().flat_map(|x| x.windows().into_iter()))
             .collect()
     }
 
     /// Return a list of all windows, hidden, visible and floating.
     pub fn all_windows(&self) -> Vec<Window> {
-        self.visible_windows().into_iter().chain(self.hidden.iter()
-            .flat_map(|x| x.windows().into_iter()))
+        self.visible_windows()
+            .into_iter()
+            .chain(self.hidden.iter().flat_map(|x| x.windows().into_iter()))
             .collect()
     }
 
     /// Returns a list of all windows as tuples together with their
     /// respective workspace IDs
     pub fn all_windows_with_workspaces(&self) -> Vec<(Window, u32)> {
-        self.current.windows().into_iter().rev()
+        self.current
+            .windows()
+            .into_iter()
+            .rev()
             .zip(repeat(self.current.workspace.id))
-            .chain(self.visible.clone().into_iter()
-            .flat_map(|x| x.windows().into_iter().rev().zip(repeat(x.workspace.id))))
-            .chain(self.hidden.iter()
-            .flat_map(|x| x.windows().into_iter().rev().zip(repeat(x.id))))
+            .chain(
+                self.visible
+                    .clone()
+                    .into_iter()
+                    .flat_map(|x| x.windows().into_iter().rev().zip(repeat(x.workspace.id))),
+            )
+            .chain(
+                self.hidden
+                    .iter()
+                    .flat_map(|x| x.windows().into_iter().rev().zip(repeat(x.id))),
+            )
             .collect()
     }
 
     /// Return a list of all screens and their workspaces.
     /// Mostly used by layout.
     pub fn screens(&self) -> Vec<Screen> {
-        (vec!(self.current.clone())).into_iter().chain(self.visible.clone().into_iter()).collect()
+        (vec![self.current.clone()])
+            .into_iter()
+            .chain(self.visible.clone().into_iter())
+            .collect()
     }
 
-    pub fn send_layout_message(&self, message: LayoutMessage, window_system: &WindowSystem,
-                                   config: &GeneralConfig) -> Workspaces {
-        self.from_current(self.current.send_layout_message(message, window_system, config))
+    pub fn send_layout_message(
+        &self,
+        message: LayoutMessage,
+        window_system: &dyn WindowSystem,
+        config: &GeneralConfig,
+    ) -> Workspaces {
+        self.from_current(
+            self.current
+                .send_layout_message(message, window_system, config),
+        )
     }
 
-    pub fn with_focused<F>(&self, f: F) -> Workspaces where F : Fn(Window) {
+    pub fn with_focused<F>(&self, f: F) -> Workspaces
+    where
+        F: Fn(Window),
+    {
         if let Some(window) = self.peek() {
             f(window);
         }
@@ -446,7 +542,7 @@ impl Workspaces {
             current: self.current.clone(),
             visible: self.visible.clone(),
             hidden: self.hidden.clone(),
-            floating: map
+            floating: map,
         }
     }
 }

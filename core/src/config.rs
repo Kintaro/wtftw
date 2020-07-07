@@ -1,31 +1,31 @@
-extern crate serde_json;
-extern crate dylib;
 extern crate dirs;
+extern crate dylib;
+extern crate serde_json;
 
-use std::env;
+use crate::core::workspaces::Workspaces;
+use crate::handlers::default::{exit, restart, start_terminal};
+use crate::handlers::{KeyHandler, LogHook, ManageHook, MouseHandler, StartupHook};
+use crate::layout::{Layout, TallLayout};
 use std::borrow::ToOwned;
 use std::collections::BTreeMap;
-use core::workspaces::Workspaces;
-use window_system::{ WindowSystem, KeyModifiers, KeyCommand, MouseCommand, MouseButton, MOD1MASK, SHIFTMASK, Window };
-use window_manager::WindowManager;
-use handlers::{ KeyHandler, MouseHandler, ManageHook, StartupHook, LogHook };
-use handlers::default::{ exit, restart, start_terminal };
-use layout::{ Layout, TallLayout };
+use crate::window_manager::WindowManager;
+use crate::window_system::{
+    KeyCommand, KeyModifiers, MouseButton, MouseCommand, Window, WindowSystem
+};
 
-use std::mem;
-use std::error::Error;
-use std::fs::File;
-use std::io::Write;
-use std::fs::{ read_dir, create_dir_all };
-use std::process::Command;
-use std::process::Child;
 use self::dylib::DynamicLibrary;
+use std::fs::metadata;
+use std::fs::File;
+use std::fs::{create_dir_all, read_dir};
+use std::io::Write;
+use std::mem;
+use std::path::Path;
+use std::path::PathBuf;
+use std::process::Child;
+use std::process::Command;
 use std::rc::Rc;
 use std::sync::RwLock;
 use std::thread::spawn;
-use std::path::PathBuf;
-use std::path::Path;
-use std::fs::metadata;
 
 pub struct GeneralConfig {
     /// Whether focus follows mouse movements or
@@ -48,7 +48,7 @@ pub struct GeneralConfig {
     pub launcher: String,
     pub mod_mask: KeyModifiers,
     pub pipes: Vec<Rc<RwLock<Child>>>,
-    pub layout: Box<Layout>
+    pub layout: Box<dyn Layout>,
 }
 
 impl Clone for GeneralConfig {
@@ -64,7 +64,7 @@ impl Clone for GeneralConfig {
             launcher: self.launcher.clone(),
             mod_mask: self.mod_mask.clone(),
             pipes: self.pipes.clone(),
-            layout: self.layout.copy()
+            layout: self.layout.copy(),
         }
     }
 }
@@ -85,10 +85,10 @@ impl InternalConfig {
             library: None,
             key_handlers: BTreeMap::new(),
             mouse_handlers: BTreeMap::new(),
-            manage_hook: manage_hook,
-            startup_hook: startup_hook,
+            manage_hook,
+            startup_hook,
             loghook: None,
-            wtftw_dir: format!("{}/.wtftw", home)
+            wtftw_dir: format!("{}/.wtftw", home),
         }
     }
 }
@@ -96,62 +96,84 @@ impl InternalConfig {
 /// Common configuration options for the window manager.
 pub struct Config {
     pub general: GeneralConfig,
-    pub internal: InternalConfig
+    pub internal: InternalConfig,
 }
 
 impl Config {
     /// Create the Config from a json file
     pub fn initialize() -> Config {
-        let home = dirs::home_dir().unwrap_or(PathBuf::from("./")).into_os_string().into_string().unwrap();
+        let home = dirs::home_dir()
+            .unwrap_or(PathBuf::from("./"))
+            .into_os_string()
+            .into_string()
+            .unwrap();
         // Default version of the config, for fallback
-        let general_config =
-            GeneralConfig {
-                focus_follows_mouse: true,
-                focus_border_color:  0x00B6FFB0,
-                border_color:        0x00444444,
-                border_width:        2,
-                mod_mask:            MOD1MASK,
-                terminal:            ("xterm".to_owned(), "".to_owned()),
-                logfile:             format!("{}/.wtftw.log", home),
-                tags:                vec!(
-                    "1: term".to_owned(),
-                    "2: web".to_owned(),
-                    "3: code".to_owned(),
-                    "4: media".to_owned()),
-                launcher:            "dmenu_run".to_owned(),
-                pipes:               Vec::new(),
-                layout:              Box::new(TallLayout { num_master: 1, increment_ratio: 0.3/100.0, ratio: 0.5 }),
-            };
+        let general_config = GeneralConfig {
+            focus_follows_mouse: true,
+            focus_border_color: 0x00B6FFB0,
+            border_color: 0x00444444,
+            border_width: 2,
+            mod_mask: KeyModifiers::MOD1MASK,
+            terminal: ("xterm".to_owned(), "".to_owned()),
+            logfile: format!("{}/.wtftw.log", home),
+            tags: vec![
+                "1: term".to_owned(),
+                "2: web".to_owned(),
+                "3: code".to_owned(),
+                "4: media".to_owned(),
+            ],
+            launcher: "dmenu_run".to_owned(),
+            pipes: Vec::new(),
+            layout: Box::new(TallLayout {
+                num_master: 1,
+                increment_ratio: 0.3 / 100.0,
+                ratio: 0.5,
+            }),
+        };
 
         let internal_config = InternalConfig::new(
             Box::new(move |a, _, _| a.clone()),
             Box::new(move |a, _, _| a.clone()),
             //Box::new(Config::default_manage_hook),
             //Box::new(Config::default_startup_hook),
-            home);
+            home,
+        );
 
         Config {
             general: general_config,
-            internal: internal_config
+            internal: internal_config,
         }
     }
 
-    pub fn default_manage_hook(m: Workspaces, _: Rc<WindowSystem>, _: Window) -> Workspaces {
+    pub fn default_manage_hook(m: Workspaces, _: Rc<dyn WindowSystem>, _: Window) -> Workspaces {
         m
     }
 
-    pub fn default_startup_hook(m: WindowManager, _: Rc<WindowSystem>, _: &Config) -> WindowManager {
+    pub fn default_startup_hook(
+        m: WindowManager,
+        _: Rc<dyn WindowSystem>,
+        _: &Config,
+    ) -> WindowManager {
         m
     }
 
-    pub fn default_configuration(&mut self, w: &WindowSystem) {
+    pub fn default_configuration(&mut self, w: &dyn WindowSystem) {
         let mod_mask = self.general.mod_mask.clone();
-        self.add_key_handler(w.get_keycode_from_string("Return"), mod_mask | SHIFTMASK,
-            Box::new(|m, ws, c| start_terminal(m, ws, c)));
-        self.add_key_handler(w.get_keycode_from_string("q"), mod_mask,
-            Box::new(|m, ws, c| restart(m, ws, c)));
-        self.add_key_handler(w.get_keycode_from_string("q"), mod_mask | SHIFTMASK,
-            Box::new(|m, ws, c| exit(m, ws, c)));
+        self.add_key_handler(
+            w.get_keycode_from_string("Return"),
+            mod_mask | KeyModifiers::SHIFTMASK,
+            Box::new(|m, ws, c| start_terminal(m, ws, c)),
+        );
+        self.add_key_handler(
+            w.get_keycode_from_string("q"),
+            mod_mask,
+            Box::new(|m, ws, c| restart(m, ws, c)),
+        );
+        self.add_key_handler(
+            w.get_keycode_from_string("q"),
+            mod_mask | KeyModifiers::SHIFTMASK,
+            Box::new(|m, ws, c| exit(m, ws, c)),
+        );
     }
 
     pub fn get_mod_mask(&self) -> KeyModifiers {
@@ -159,12 +181,20 @@ impl Config {
     }
 
     pub fn add_key_handler(&mut self, key: u64, mask: KeyModifiers, keyhandler: KeyHandler) {
-        self.internal.key_handlers.insert(KeyCommand::new(key, mask), keyhandler);
+        self.internal
+            .key_handlers
+            .insert(KeyCommand::new(key, mask), keyhandler);
     }
 
-    pub fn add_mouse_handler(&mut self, button: MouseButton, mask: KeyModifiers,
-                             mousehandler: MouseHandler) {
-        self.internal.mouse_handlers.insert(MouseCommand::new(button, mask), mousehandler);
+    pub fn add_mouse_handler(
+        &mut self,
+        button: MouseButton,
+        mask: KeyModifiers,
+        mousehandler: MouseHandler,
+    ) {
+        self.internal
+            .mouse_handlers
+            .insert(MouseCommand::new(button, mask), mousehandler);
     }
 
     pub fn set_manage_hook(&mut self, hook: ManageHook) {
@@ -175,19 +205,25 @@ impl Config {
         self.internal.loghook = Some(hook);
     }
 
-    pub fn compile_and_call(&mut self, m: &mut WindowManager, w: &WindowSystem) {
+    pub fn compile_and_call(&mut self, m: &mut WindowManager, w: &dyn WindowSystem) {
         let toml = format!("{}/Cargo.toml", self.internal.wtftw_dir.clone());
 
         if !path_exists(&self.internal.wtftw_dir.clone()) {
             match create_dir_all(Path::new(&self.internal.wtftw_dir.clone())) {
                 Ok(()) => (),
-                Err(e) => panic!(format!("mkdir: {} failed with error {}", self.internal.wtftw_dir.clone(), e))
+                Err(e) => panic!(format!(
+                    "mkdir: {} failed with error {}",
+                    self.internal.wtftw_dir.clone(),
+                    e
+                )),
             }
         }
 
         if !path_exists(&toml.clone()) {
             let file = File::create(Path::new(&toml).as_os_str());
-            file.unwrap().write("[project]\n\
+            file.unwrap()
+                .write(
+                    "[project]\n\
                                      name = \"config\"\n\
                                      version = \"0.0.0\"\n\
                                      authors = [\"wtftw\"]\n\n\
@@ -197,7 +233,10 @@ impl Config {
                                      git = \"https://github.com/Kintaro/wtftw.git\"\n\n\
                                      [lib]\n\
                                      name = \"config\"\n\
-                                     crate-type = [\"dylib\"]".as_bytes()).unwrap();
+                                     crate-type = [\"dylib\"]"
+                        .as_bytes(),
+                )
+                .unwrap();
         }
 
         let config_source = format!("{}/src/config.rs", self.internal.wtftw_dir.clone());
@@ -214,11 +253,12 @@ impl Config {
             .current_dir(&Path::new(&self.internal.wtftw_dir.clone()))
             .arg("update")
             .env("RUST_LOG", "none")
-            .output().unwrap();
+            .output()
+            .unwrap();
         info!("compiling config module");
         let output = Command::new("cargo")
             .current_dir(&Path::new(&self.internal.wtftw_dir.clone()))
-            .arg("build")//.arg("--release")
+            .arg("build") //.arg("--release")
             .env("RUST_LOG", "none")
             .output();
 
@@ -235,33 +275,53 @@ impl Config {
                     });
                     false
                 }
-            },
+            }
             Err(err) => {
                 error!("error compiling config module");
                 spawn(move || {
-                    Command::new("xmessage").arg(err.description()).spawn().unwrap();
+                    Command::new("xmessage")
+                        .arg(format!("{}", err))
+                        .spawn()
+                        .unwrap();
                 });
                 false
             }
         }
     }
 
-    pub fn call(&mut self, m: &mut WindowManager, w: &WindowSystem) {
+    pub fn call(&mut self, m: &mut WindowManager, w: &dyn WindowSystem) {
         debug!("looking for config module");
-        let mut contents = read_dir(&Path::new(&format!("{}/target/debug", self.internal.wtftw_dir.clone()))).unwrap();
-        let libname = contents.find(|x| {
-                            match x {
-                                &Ok(ref y) => y.path().into_os_string().as_os_str().to_str().unwrap().contains("libconfig.so"),
-                                &Err(_) => false
-                            }
+        let mut contents = read_dir(&Path::new(&format!(
+            "{}/target/debug",
+            self.internal.wtftw_dir.clone()
+        )))
+        .unwrap();
+        let libname = contents.find(|x| match x {
+            &Ok(ref y) => y
+                .path()
+                .into_os_string()
+                .as_os_str()
+                .to_str()
+                .unwrap()
+                .contains("libconfig.so"),
+            &Err(_) => false,
         });
 
-        if let Ok(lib) = DynamicLibrary::open(Some(&Path::new(&libname.unwrap().unwrap().path().as_os_str().to_str().unwrap()))) {
+        if let Ok(lib) = DynamicLibrary::open(Some(&Path::new(
+            &libname
+                .unwrap()
+                .unwrap()
+                .path()
+                .as_os_str()
+                .to_str()
+                .unwrap(),
+        ))) {
             unsafe {
                 if let Ok(symbol) = lib.symbol("configure") {
-                    let result = mem::transmute::<*mut u8, extern fn(&mut WindowManager,
-                                                        &WindowSystem,
-                                                        &mut Config)>(symbol);
+                    let result = mem::transmute::<
+                        *mut u8,
+                        extern "C" fn(&mut WindowManager, &dyn WindowSystem, &mut Config),
+                    >(symbol);
 
                     self.internal.library = Some(lib);
                     result(m, w, self);

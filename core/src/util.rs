@@ -1,13 +1,13 @@
-use std::process::Command;
+use crate::config::Config;
+use crate::core::workspaces::Workspaces;
+use std::convert::AsRef;
+use std::ffi::OsStr;
 use std::process::Child;
+use std::process::Command;
 use std::process::Stdio;
 use std::rc::Rc;
 use std::sync::RwLock;
-use std::ffi::OsStr;
-use std::convert::AsRef;
-use core::workspaces::Workspaces;
-use config::Config;
-use window_system::*;
+use crate::window_system::*;
 
 #[macro_export]
 macro_rules! add_key_handler_str(
@@ -46,19 +46,30 @@ macro_rules! run(
 
 pub fn run<S: AsRef<OsStr>>(program: S, args: Vec<String>) {
     match Command::new(program).args(&args).spawn() {
-        _ => ()
+        _ => (),
     }
 }
 
-pub fn spawn_pipe<S: AsRef<OsStr>>(config: &mut Config, program: S, args: Vec<String>) -> Rc<RwLock<Child>> {
+pub fn spawn_pipe<S: AsRef<OsStr>>(
+    config: &mut Config,
+    program: S,
+    args: Vec<String>,
+) -> Rc<RwLock<Child>> {
     let result = Command::new(program)
-        .args(&args).stdin(Stdio::piped()).spawn().unwrap();
+        .args(&args)
+        .stdin(Stdio::piped())
+        .spawn()
+        .unwrap();
     let rc = Rc::new(RwLock::new(result));
     config.general.pipes.push(rc.clone());
     rc
 }
 
-pub fn spawn_on(workspaces: Workspaces, _: &WindowSystem,
-                window: Window, workspace_id: u32) -> Workspaces {
+pub fn spawn_on(
+    workspaces: Workspaces,
+    _: &dyn WindowSystem,
+    window: Window,
+    workspace_id: u32,
+) -> Workspaces {
     workspaces.focus_window(window).shift(workspace_id)
 }

@@ -3,18 +3,19 @@
 name = "wtftw"
 version = "0.4.4"
 authors = ["Simon Wollwage"]
+edition = "2018"
 
 [dependencies]
-bitflags = "0.5"
-serde_json = "1.0.16"
-getopts = "*"
-log = "*"
-libc = "*"
-dylib = "*"
-simplelog = "*"
-zombie = "*"
+bitflags = "1.2.1"
+serde_json = "1.0.56"
+getopts = "0.2.21"
+log = "0.4.8"
+libc = "0.2.71"
+dylib = "0.0.3"
+simplelog = "0.8.0"
+zombie = "0.0.4"
 wtftw_core = { path = "core" }
-dirs = "1"
+dirs = "3.0.1"
 
 [dependencies.wtftw_xlib]
 path = "xlib"

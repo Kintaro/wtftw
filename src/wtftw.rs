@@ -26,7 +26,7 @@ pub fn parse_window_ids(ids: &str) -> Vec<(Window, u32)> {
 fn init_terminal_logger(verbose_mode_enabled: bool) {
     let level =  if verbose_mode_enabled { simplelog::LevelFilter::Debug } else { simplelog::LevelFilter::Warn };
     simplelog::CombinedLogger::init(vec![
-        simplelog::TermLogger::new(level, simplelog::Config::default()).unwrap(),
+        simplelog::TermLogger::new(level, simplelog::Config::default(), simplelog::TerminalMode::Mixed),
     ]).unwrap();
 }
 
@@ -50,7 +50,7 @@ fn main() {
     // Initialize window system. Use xlib here for now
     debug!("initialize window system");
     let xlib = XlibWindowSystem::new();
-    let window_system : Rc<WindowSystem> = Rc::new(xlib);
+    let window_system : Rc<dyn WindowSystem> = Rc::new(xlib);
     // Create the actual window manager
     debug!("create window manager");
     let mut window_manager = WindowManager::new(window_system.deref(), &config.general);
