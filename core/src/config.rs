@@ -6,12 +6,12 @@ use crate::core::workspaces::Workspaces;
 use crate::handlers::default::{exit, restart, start_terminal};
 use crate::handlers::{KeyHandler, LogHook, ManageHook, MouseHandler, StartupHook};
 use crate::layout::{Layout, TallLayout};
-use std::borrow::ToOwned;
-use std::collections::BTreeMap;
 use crate::window_manager::WindowManager;
 use crate::window_system::{
-    KeyCommand, KeyModifiers, MouseButton, MouseCommand, Window, WindowSystem
+    KeyCommand, KeyModifiers, MouseButton, MouseCommand, Window, WindowSystem,
 };
+use std::borrow::ToOwned;
+use std::collections::BTreeMap;
 
 use self::dylib::DynamicLibrary;
 use std::fs::metadata;
@@ -62,7 +62,7 @@ impl Clone for GeneralConfig {
             logfile: self.logfile.clone(),
             tags: self.tags.clone(),
             launcher: self.launcher.clone(),
-            mod_mask: self.mod_mask.clone(),
+            mod_mask: self.mod_mask,
             pipes: self.pipes.clone(),
             layout: self.layout.copy(),
         }
@@ -103,7 +103,7 @@ impl Config {
     /// Create the Config from a json file
     pub fn initialize() -> Config {
         let home = dirs::home_dir()
-            .unwrap_or(PathBuf::from("./"))
+            .unwrap_or_else(|| PathBuf::from("./"))
             .into_os_string()
             .into_string()
             .unwrap();
@@ -132,8 +132,8 @@ impl Config {
         };
 
         let internal_config = InternalConfig::new(
-            Box::new(move |a, _, _| a.clone()),
-            Box::new(move |a, _, _| a.clone()),
+            Box::new(move |a, _, _| a),
+            Box::new(move |a, _, _| a),
             //Box::new(Config::default_manage_hook),
             //Box::new(Config::default_startup_hook),
             home,
@@ -158,7 +158,7 @@ impl Config {
     }
 
     pub fn default_configuration(&mut self, w: &dyn WindowSystem) {
-        let mod_mask = self.general.mod_mask.clone();
+        let mod_mask = self.general.mod_mask;
         self.add_key_handler(
             w.get_keycode_from_string("Return"),
             mod_mask | KeyModifiers::SHIFTMASK,
@@ -177,7 +177,7 @@ impl Config {
     }
 
     pub fn get_mod_mask(&self) -> KeyModifiers {
-        self.general.mod_mask.clone()
+        self.general.mod_mask
     }
 
     pub fn add_key_handler(&mut self, key: u64, mask: KeyModifiers, keyhandler: KeyHandler) {
@@ -219,10 +219,10 @@ impl Config {
             }
         }
 
-        if !path_exists(&toml.clone()) {
+        if !path_exists(&toml) {
             let file = File::create(Path::new(&toml).as_os_str());
             file.unwrap()
-                .write(
+                .write_all(
                     "[project]\n\
                                      name = \"config\"\n\
                                      version = \"0.0.0\"\n\
@@ -239,7 +239,7 @@ impl Config {
                 .unwrap();
         }
 
-        let config_source = format!("{}/src/config.rs", self.internal.wtftw_dir.clone());
+        let config_source = format!("{}/src/lib.rs", self.internal.wtftw_dir.clone());
         if path_exists(&config_source) && self.compile() {
             self.call(m, w)
         } else {
@@ -296,15 +296,15 @@ impl Config {
             self.internal.wtftw_dir.clone()
         )))
         .unwrap();
-        let libname = contents.find(|x| match x {
-            &Ok(ref y) => y
+        let libname = contents.find(|x| match *x {
+            Ok(ref y) => y
                 .path()
                 .into_os_string()
                 .as_os_str()
                 .to_str()
                 .unwrap()
                 .contains("libconfig.so"),
-            &Err(_) => false,
+            Err(_) => false,
         });
 
         if let Ok(lib) = DynamicLibrary::open(Some(&Path::new(
@@ -333,6 +333,6 @@ impl Config {
     }
 }
 
-fn path_exists(path: &String) -> bool {
+fn path_exists(path: &str) -> bool {
     metadata(path).is_ok()
 }

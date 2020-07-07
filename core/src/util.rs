@@ -45,9 +45,7 @@ macro_rules! run(
 );
 
 pub fn run<S: AsRef<OsStr>>(program: S, args: Vec<String>) {
-    match Command::new(program).args(&args).spawn() {
-        _ => (),
-    }
+    Command::new(program).args(&args).spawn().unwrap();
 }
 
 pub fn spawn_pipe<S: AsRef<OsStr>>(

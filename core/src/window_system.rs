@@ -2,8 +2,8 @@ extern crate libc;
 
 use self::libc::{c_int, c_ulong};
 use crate::config::GeneralConfig;
-use std::fmt::{Debug, Error, Formatter};
 use crate::window_manager::WindowManager;
+use std::fmt::{Debug, Error, Formatter};
 
 pub type Window = u64;
 
@@ -80,15 +80,15 @@ impl MouseCommand {
 
 bitflags! {
     pub struct KeyModifiers : u32 {
-        const NONEMASK    = (0 << 0);
-        const SHIFTMASK   = (1 << 0);
-        const LOCKMASK    = (1 << 1);
-        const CONTROLMASK = (1 << 2);
-        const MOD1MASK    = (1 << 3);
-        const MOD2MASK    = (1 << 4);
-        const MOD3MASK    = (1 << 5);
-        const MOD4MASK    = (1 << 6);
-        const MOD5MASK    = (1 << 7);
+        const NONEMASK    = 0;
+        const SHIFTMASK   = 1;
+        const LOCKMASK    = 2;
+        const CONTROLMASK = 4;
+        const MOD1MASK    = 8;
+        const MOD2MASK    = 16;
+        const MOD3MASK    = 32;
+        const MOD4MASK    = 64;
+        const MOD5MASK    = 128;
     }
 }
 

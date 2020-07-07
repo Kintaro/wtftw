@@ -56,7 +56,11 @@ impl Workspace {
 
     /// Returns the number of windows contained in this workspace
     pub fn len(&self) -> usize {
-        self.stack.clone().map_or(0, |x| x.len())
+        self.stack.clone().map_or(0usize, |x| x.len())
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 
     /// Checks if the workspace contains the given window
@@ -92,7 +96,7 @@ impl Workspace {
             self.id,
             self.tag.clone(),
             self.layout.copy(),
-            self.stack.clone().map_or(None, |x| f(x)),
+            self.stack.clone().and_then(|x| f(x)),
         )
     }
 

@@ -38,7 +38,7 @@ pub fn tile(ratio: f32, screen: ScreenDetail, num_master: u32, num_windows: u32)
         let (r1, r2) = split_horizontally_by(ratio, screen);
         let v1 = split_vertically(num_master, r1);
         let v2 = split_vertically(num_windows - num_master, r2);
-        v1.iter().chain(v2.iter()).map(|&x| x).collect()
+        v1.iter().chain(v2.iter()).copied().collect()
     }
 }
 
@@ -52,7 +52,7 @@ pub fn split_vertically(num: u32, screen: ScreenDetail) -> Vec<Rectangle> {
     (vec![Rectangle(sx, sy, sw, smallh)])
         .iter()
         .chain(split_vertically(num - 1, Rectangle(sx, sy + smallh as i32, sw, sh - smallh)).iter())
-        .map(|&x| x)
+        .copied()
         .collect()
 }
 
@@ -98,7 +98,7 @@ pub struct TallLayout {
 }
 
 impl TallLayout {
-    pub fn new() -> Box<dyn Layout> {
+    pub fn boxed_new() -> Box<dyn Layout> {
         Box::new(TallLayout {
             num_master: 1,
             increment_ratio: 0.03,
@@ -115,8 +115,8 @@ impl Layout for TallLayout {
         _: &GeneralConfig,
         stack: &Option<Stack<Window>>,
     ) -> Vec<(Window, Rectangle)> {
-        match stack {
-            &Some(ref s) => {
+        match *stack {
+            Some(ref s) => {
                 let ws = s.integrate();
                 s.integrate()
                     .iter()
@@ -163,7 +163,7 @@ impl Layout for TallLayout {
     }
 
     fn copy(&self) -> Box<dyn Layout> {
-        Box::new(self.clone())
+        Box::new(*self)
     }
 }
 
@@ -178,11 +178,11 @@ pub enum Direction {
 
 impl Direction {
     pub fn opposite(&self) -> Direction {
-        match self {
-            &Direction::Up => Direction::Down,
-            &Direction::Down => Direction::Up,
-            &Direction::Left => Direction::Right,
-            &Direction::Right => Direction::Left,
+        match *self {
+            Direction::Up => Direction::Down,
+            Direction::Down => Direction::Up,
+            Direction::Left => Direction::Right,
+            Direction::Right => Direction::Left,
         }
     }
 }

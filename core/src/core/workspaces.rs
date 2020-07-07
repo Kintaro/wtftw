@@ -53,23 +53,23 @@ impl Workspaces {
         let seen: Vec<Workspace> = workspaces
             .iter()
             .take(screens.len())
-            .map(|x| x.clone())
+            .cloned()
             .collect();
         let unseen: Vec<Workspace> = workspaces
             .iter()
             .skip(screens.len())
-            .map(|x| x.clone())
+            .cloned()
             .collect();
         let current: Vec<Screen> = seen
             .iter()
             .enumerate()
             .zip(screens.iter())
-            .map(|((a, b), c)| Screen::new(b.clone(), a as u32, c.clone()))
+            .map(|((a, b), c)| Screen::new(b.clone(), a as u32, *c))
             .collect();
 
         Workspaces {
             current: current[0].clone(),
-            visible: current.iter().skip(1).map(|x| x.clone()).collect(),
+            visible: current.iter().skip(1).cloned().collect(),
             hidden: unseen,
             floating: BTreeMap::new(),
         }
@@ -147,7 +147,6 @@ impl Workspaces {
 
             self.from_hidden(
                 hidden
-                    .clone()
                     .into_iter()
                     .chain((vec![self.current.workspace.clone()]).into_iter())
                     .collect(),
@@ -179,11 +178,11 @@ impl Workspaces {
             current_screen.workspace = desired_workspace;
             screen_with_requested_workspace.workspace = old_workspace;
 
-            self.from_current(current_screen.clone()).from_visible(
+            self.from_current(current_screen).from_visible(
                 self.visible
                     .iter()
                     .filter(|x| x.screen_id != screen_with_requested_workspace.screen_id)
-                    .map(|x| x.clone())
+                    .cloned()
                     .chain((vec![screen_with_requested_workspace.clone()]).into_iter())
                     .collect(),
             )
@@ -330,9 +329,13 @@ impl Workspaces {
     /// contained in all workspaces, including floating windows
     pub fn len(&self) -> usize {
         self.current.len()
-            + self.visible.iter().map(|x| x.len()).fold(0, |a, x| a + x)
-            + self.hidden.iter().map(|x| x.len()).fold(0, |a, x| a + x)
+            + self.visible.iter().map(|x| x.len()).sum::<usize>()
+            + self.hidden.iter().map(|x| x.len()).sum::<usize>()
             + self.floating.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.current.len() == 0
     }
 
     /// Checks if any of the workspaces contains the
@@ -360,14 +363,14 @@ impl Workspaces {
 
     pub fn shift_master(&self) -> Workspaces {
         self.modify_stack(|s| {
-            if s.up.len() == 0 {
-                s.clone()
+            if s.up.is_empty() {
+                s
             } else {
                 let rev: Vec<Window> =
                     s.up.iter()
                         .rev()
                         .chain(s.down.iter())
-                        .map(|x| x.clone())
+                        .copied()
                         .collect();
                 Stack::<Window>::new(s.focus, Vec::<Window>::new(), rev)
             }
@@ -383,9 +386,9 @@ impl Workspaces {
             Stack::<Window>::new(
                 window,
                 s.up,
-                (vec![s.focus.clone()])
+                (vec![s.focus])
                     .into_iter()
-                    .chain(s.down.clone().into_iter())
+                    .chain(s.down.into_iter())
                     .collect(),
             )
         }))
@@ -405,7 +408,7 @@ impl Workspaces {
             .iter()
             .filter(|x| x.contains(window))
             .map(|x| x.id)
-            .nth(0)
+            .next()
     }
 
     pub fn find_screen(&self, window: Window) -> Option<Screen> {
@@ -415,9 +418,7 @@ impl Workspaces {
             self.visible
                 .iter()
                 .filter(|x| x.contains(window))
-                .map(|x| x.clone())
-                .nth(0)
-                .clone()
+                .cloned().next()
         }
     }
 

@@ -72,7 +72,7 @@ fn main() {
     debug!("Size of keyhandlers after config.generaluration: {}", config.internal.key_handlers.len());
 
     for (command, _) in config.internal.key_handlers.iter() {
-        window_system.grab_keys(vec!(command.clone()));
+        window_system.grab_keys(vec!(*command));
     }
 
     for (&command, _) in config.internal.mouse_handlers.iter() {
@@ -185,7 +185,7 @@ fn main() {
             WindowSystemEvent::ButtonReleased => {
                 // If we were dragging, release the pointer and
                 // reset the dragging closure
-                if let Some(_) = window_manager.dragging {
+                if window_manager.dragging.is_some() {
                     window_system.ungrab_pointer();
                     window_manager.dragging = None;
                 }

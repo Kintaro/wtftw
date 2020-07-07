@@ -60,20 +60,19 @@ impl<T: Clone + Eq> Stack<T> {
         let lrs: Vec<T> = (vec![self.focus.clone()])
             .iter()
             .chain(self.down.iter())
-            .filter(|&x| f(x))
-            .map(|x| x.clone())
+            .filter(|&x| f(x)).cloned()
             .collect();
 
-        if lrs.len() > 0 {
+        if !lrs.is_empty() {
             let first: T = lrs[0].clone();
-            let rest: Vec<T> = lrs.iter().skip(1).map(|x| x.clone()).collect();
+            let rest: Vec<T> = lrs.iter().skip(1).cloned().collect();
             let filtered: Vec<T> = self.up.iter().filter(|&x| f(x)).cloned().collect();
             let stack: Stack<T> = Stack::<T>::new(first, filtered, rest);
 
             Some(stack)
         } else {
             let filtered: Vec<T> = self.up.clone().into_iter().filter(|x| f(x)).collect();
-            if filtered.len() > 0 {
+            if !filtered.is_empty() {
                 let first: T = filtered[0].clone();
                 let rest: Vec<T> = filtered.iter().skip(1).cloned().collect();
                 Some(Stack::<T>::new(first, rest, Vec::new()))
@@ -136,9 +135,9 @@ impl<T: Clone + Eq> Stack<T> {
             return self.clone();
         }
 
-        let r: Vec<T> = self.up.iter().rev().map(|x| x.clone()).collect();
+        let r: Vec<T> = self.up.iter().rev().cloned().collect();
         let x: T = r[0].clone();
-        let xs: Vec<T> = r.iter().skip(1).map(|x| x.clone()).collect();
+        let xs: Vec<T> = r.iter().skip(1).cloned().collect();
         let rs: Vec<T> = xs
             .into_iter()
             .chain((vec![x]).into_iter())
@@ -157,6 +156,10 @@ impl<T: Clone + Eq> Stack<T> {
     /// Return the number of elements tracked by the stack
     pub fn len(&self) -> usize {
         1 + self.up.len() + self.down.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 
     /// Checks if the given window is tracked by the stack

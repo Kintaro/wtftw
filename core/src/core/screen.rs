@@ -16,7 +16,7 @@ impl Clone for Screen {
         Screen {
             workspace: self.workspace.clone(),
             screen_id: self.screen_id,
-            screen_detail: self.screen_detail.clone(),
+            screen_detail: self.screen_detail,
         }
     }
 }
@@ -42,6 +42,10 @@ impl Screen {
     /// screen's workspace
     pub fn len(&self) -> usize {
         self.workspace.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.workspace.is_empty()
     }
 
     pub fn windows(&self) -> Vec<Window> {

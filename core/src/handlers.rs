@@ -56,12 +56,12 @@ pub mod default {
                 Command::new(&terminal).args(&arguments[..]).spawn()
             };
 
-            if let Err(_) = command {
+            if command.is_err() {
                 panic!("unable to start terminal")
             }
         });
 
-        window_manager.clone()
+        window_manager
     }
 
     pub fn start_launcher(
@@ -78,7 +78,7 @@ pub mod default {
             }
         });
 
-        window_manager.clone()
+        window_manager
     }
 
     pub fn switch_to_workspace(
@@ -103,7 +103,7 @@ pub mod default {
     /// with the new one in memory.
     /// Pass a list of all windows to it via command line arguments
     /// so it may resume work as usual.
-    pub fn restart<'a>(
+    pub fn restart(
         window_manager: WindowManager,
         _: Rc<dyn WindowSystem>,
         c: &GeneralConfig,
@@ -122,23 +122,24 @@ pub mod default {
         let filename_c =
             CString::new(filename.into_os_string().into_string().unwrap().as_bytes()).unwrap();
 
-        for ref p in c.pipes.iter() {
-            match p.write().unwrap().wait() {
-                _ => (),
-            }
+        for p in c.pipes.iter() {
+            p.write().unwrap().wait().unwrap();
         }
+
+        let resume_str = CString::new(resume.as_bytes()).unwrap();
+        let windows_str = CString::new(windows.as_bytes()).unwrap();
 
         unsafe {
             let slice: &mut [*const i8; 4] = &mut [
                 filename_c.as_ptr(),
-                CString::new(resume.as_bytes()).unwrap().as_ptr(),
-                CString::new(windows.as_bytes()).unwrap().as_ptr(),
+                resume_str.as_ptr(),
+                windows_str.as_ptr(),
                 null(),
             ];
             execvp(filename_c.as_ptr(), slice.as_mut_ptr());
         }
 
-        window_manager.clone()
+        window_manager
     }
 
     /// Stop the window manager
@@ -147,7 +148,7 @@ pub mod default {
             running: false,
             dragging: None,
             workspaces: w.workspaces,
-            waiting_unmap: w.waiting_unmap.clone(),
+            waiting_unmap: w.waiting_unmap,
         }
     }
 
