@@ -1,4 +1,0 @@
-cargo:rustc-link-search=native=/usr/lib/x86_64-linux-gnu
-cargo:rustc-link-lib=X11
-cargo:rustc-link-search=native=/usr/lib/x86_64-linux-gnu
-cargo:rustc-link-lib=Xinerama
