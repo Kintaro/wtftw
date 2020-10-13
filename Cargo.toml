@@ -7,7 +7,7 @@ edition = "2018"
 
 [dependencies]
 bitflags = "1.2.1"
-serde_json = "1.0.56"
+serde_json = "1.0.59"
 getopts = "0.2.21"
 log = "0.4.8"
 libc = "0.2.71"
