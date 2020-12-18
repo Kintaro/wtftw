@@ -12,7 +12,7 @@ getopts = "0.2.21"
 log = "0.4.8"
 libc = "0.2.71"
 dylib = "0.0.3"
-simplelog = "0.8.0"
+simplelog = "0.9.0"
 zombie = "0.0.4"
 wtftw_core = { path = "core" }
 dirs = "3.0.1"
