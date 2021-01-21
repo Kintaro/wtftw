@@ -19,7 +19,7 @@ Window Tiling For The Win. A tiling window manager written in Rust
 To build it, just run
 
 ```
-cargo build
+cargo build --release
 ```
 
 ### Common build issues
