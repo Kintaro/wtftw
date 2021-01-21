@@ -6,11 +6,12 @@ authors = ["Simon Wollwage"]
 edition = "2018"
 
 [dependencies]
+anyhow = "1.0.34"
 bitflags = "1.2.1"
-serde_json = "1.0.56"
+serde_json = "1.0.59"
 getopts = "0.2.21"
-log = "0.4.8"
-libc = "0.2.71"
+log = "0.4.11"
+libc = "0.2.80"
 dylib = "0.0.3"
 simplelog = "0.8.0"
 zombie = "0.0.4"
@@ -22,7 +23,7 @@ path = "xlib"
 
 [lib]
 name = "wtftw"
-path = "core/src/wtftw.rs"
+path = "core/src/lib.rs"
 
 [[bin]]
 name = "wtftw"

@@ -3,12 +3,13 @@ extern crate serde_json;
 
 use crate::config::{Config, GeneralConfig};
 use crate::core::workspaces::Workspaces;
-use std::rc::Rc;
 use crate::window_manager::WindowManager;
 use crate::window_system::Window;
 use crate::window_system::WindowSystem;
+use std::rc::Rc;
 
-pub type KeyHandler = Box<dyn Fn(WindowManager, Rc<dyn WindowSystem>, &GeneralConfig) -> WindowManager>;
+pub type KeyHandler =
+    Box<dyn Fn(WindowManager, Rc<dyn WindowSystem>, &GeneralConfig) -> WindowManager>;
 pub type MouseHandler =
     Box<dyn Fn(WindowManager, Rc<dyn WindowSystem>, &GeneralConfig, Window) -> WindowManager>;
 pub type ManageHook = Box<dyn Fn(Workspaces, Rc<dyn WindowSystem>, Window) -> Workspaces>;
@@ -24,6 +25,10 @@ pub mod default {
     use crate::config::GeneralConfig;
     use crate::core::workspaces::Workspaces;
     use crate::handlers::libc::execvp;
+    use crate::window_manager::WindowManager;
+    use crate::window_system::Window;
+    use crate::window_system::WindowSystem;
+    use anyhow::Result;
     use std::borrow::ToOwned;
     use std::env;
     use std::ffi::CString;
@@ -32,9 +37,6 @@ pub mod default {
     use std::ptr::null;
     use std::rc::Rc;
     use std::thread::spawn;
-    use crate::window_manager::WindowManager;
-    use crate::window_system::Window;
-    use crate::window_system::WindowSystem;
 
     pub fn start_terminal(
         window_manager: WindowManager,
@@ -107,11 +109,9 @@ pub mod default {
         window_manager: WindowManager,
         _: Rc<dyn WindowSystem>,
         c: &GeneralConfig,
-    ) -> WindowManager {
+    ) -> Result<WindowManager> {
         // Get absolute path to binary
-        let filename = env::current_dir()
-            .unwrap()
-            .join(&env::current_exe().unwrap());
+        let filename = env::current_dir()?.join(&env::current_exe()?);
         // Collect all managed windows
         let window_ids: String =
             json!(&window_manager.workspaces.all_windows_with_workspaces()).to_string();
@@ -119,15 +119,14 @@ pub mod default {
         // Create arguments
         let resume = &"--resume";
         let windows = window_ids;
-        let filename_c =
-            CString::new(filename.into_os_string().into_string().unwrap().as_bytes()).unwrap();
+        let filename_c = CString::new(filename.into_os_string().into_string().unwrap().as_bytes())?;
 
         for p in c.pipes.iter() {
-            p.write().unwrap().wait().unwrap();
+            p.write().unwrap().wait()?;
         }
 
-        let resume_str = CString::new(resume.as_bytes()).unwrap();
-        let windows_str = CString::new(windows.as_bytes()).unwrap();
+        let resume_str = CString::new(resume.as_bytes())?;
+        let windows_str = CString::new(windows.as_bytes())?;
 
         unsafe {
             let slice: &mut [*const i8; 4] = &mut [
@@ -139,7 +138,7 @@ pub mod default {
             execvp(filename_c.as_ptr(), slice.as_mut_ptr());
         }
 
-        window_manager
+        Ok(window_manager)
     }
 
     /// Stop the window manager

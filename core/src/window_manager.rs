@@ -1,19 +1,19 @@
 //extern crate collections;
 
+use crate::config::GeneralConfig;
 use crate::core::rational_rect::RationalRect;
 use crate::core::screen::Screen;
 use crate::core::workspace::Workspace;
 use crate::core::workspaces::Workspaces;
-use crate::config::GeneralConfig;
 use crate::layout::LayoutMessage;
 use crate::window_system::Rectangle;
 use crate::window_system::Window;
 use crate::window_system::WindowSystem;
 
-use std::rc::Rc;
+use std::cmp;
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
-use std::cmp;
+use std::rc::Rc;
 
 pub type ScreenDetail = Rectangle;
 pub type MouseDrag = Box<dyn Fn(u32, u32, WindowManager, &dyn WindowSystem) -> WindowManager>;
@@ -23,7 +23,7 @@ pub struct WindowManager {
     pub running: bool,
     pub dragging: Option<Rc<MouseDrag>>,
     pub workspaces: Workspaces,
-    pub waiting_unmap: BTreeMap<Window, Window>
+    pub waiting_unmap: BTreeMap<Window, Window>,
 }
 
 impl WindowManager {
@@ -32,10 +32,12 @@ impl WindowManager {
         WindowManager {
             running: true,
             dragging: None,
-            workspaces: Workspaces::new(config.layout.copy(),
-                                        config.tags.clone(),
-                                        window_system.get_screen_infos()),
-            waiting_unmap: BTreeMap::new()
+            workspaces: Workspaces::new(
+                config.layout.copy(),
+                config.tags.clone(),
+                window_system.get_screen_infos(),
+            ),
+            waiting_unmap: BTreeMap::new(),
         }
     }
 
@@ -47,19 +49,29 @@ impl WindowManager {
     /// Switch to the workspace given by index. If index is out of bounds,
     /// just do nothing and return.
     /// Then, reapply the layout to show the changes.
-    pub fn view(&self, window_system: &dyn WindowSystem, index: u32,
-                config: &GeneralConfig) -> WindowManager {
+    pub fn view(
+        &self,
+        window_system: &dyn WindowSystem,
+        index: u32,
+        config: &GeneralConfig,
+    ) -> WindowManager {
         if index < self.workspaces.number_workspaces() {
-            debug!("switching to workspace {}", config.tags[index as usize].clone());
+            debug!(
+                "switching to workspace {}",
+                config.tags[index as usize].clone()
+            );
             self.windows(window_system, config, &|w: &Workspaces| w.view(index))
         } else {
             self.clone()
         }
     }
 
-    pub fn move_window_to_workspace(&self, window_system: &dyn WindowSystem,
-                                    config: &GeneralConfig,
-                                    index: u32) -> WindowManager {
+    pub fn move_window_to_workspace(
+        &self,
+        window_system: &dyn WindowSystem,
+        config: &GeneralConfig,
+        index: u32,
+    ) -> WindowManager {
         self.windows(window_system, config, &|w| w.shift(index))
     }
 
@@ -67,16 +79,19 @@ impl WindowManager {
     /// Needs to be called when the screen arrangement changes.
     pub fn rescreen(&self, window_system: &dyn WindowSystem) -> WindowManager {
         let screens = window_system.get_screen_infos();
-        let visible : Vec<Workspace> = (vec!(self.workspaces.current.clone())).iter()
+        let visible: Vec<Workspace> = (vec![self.workspaces.current.clone()])
+            .iter()
             .chain(self.workspaces.visible.iter())
             .map(|x| x.workspace.clone())
             .collect();
-        let hidden : Vec<Workspace> = visible.iter()
+        let hidden: Vec<Workspace> = visible
+            .iter()
             .chain(self.workspaces.hidden.iter())
             .skip(screens.len())
             .cloned()
             .collect();
-        let sc : Vec<Screen> = visible.iter()
+        let sc: Vec<Screen> = visible
+            .iter()
             .chain(self.workspaces.hidden.iter())
             .take(screens.len())
             .cloned()
@@ -89,26 +104,45 @@ impl WindowManager {
             let mut r = w.clone();
             r.current = sc.first().unwrap().clone();
             r.visible = sc.iter().skip(1).cloned().collect();
-            r.hidden  = hidden.clone();
+            r.hidden = hidden.clone();
             r
         })
     }
 
-    pub fn update_layouts(&self, window_system: &dyn WindowSystem,
-                          config: &GeneralConfig) -> WindowManager {
-        let screens : Vec<Screen> = self.workspaces.screens().into_iter().map(|mut s| {
-            s.workspace.layout.apply_layout(window_system, s.screen_detail, config,
-                    &self.workspaces.view(s.workspace.id).current.workspace.stack
-                        .and_then(|x| x.filter(|w| !self.workspaces.floating.contains_key(w))));
-            s
-        }).collect();
+    pub fn update_layouts(
+        &self,
+        window_system: &dyn WindowSystem,
+        config: &GeneralConfig,
+    ) -> WindowManager {
+        let screens: Vec<Screen> = self
+            .workspaces
+            .screens()
+            .into_iter()
+            .map(|mut s| {
+                s.workspace.layout.apply_layout(
+                    window_system,
+                    s.screen_detail,
+                    config,
+                    &self
+                        .workspaces
+                        .view(s.workspace.id)
+                        .current
+                        .workspace
+                        .stack
+                        .and_then(|x| x.filter(|w| !self.workspaces.floating.contains_key(w))),
+                );
+                s
+            })
+            .collect();
 
         WindowManager {
             running: self.running,
             dragging: self.dragging.clone(),
-            workspaces: self.workspaces.from_current(screens[0].clone())
+            workspaces: self
+                .workspaces
+                .from_current(screens[0].clone())
                 .from_visible(screens.into_iter().skip(1).collect()),
-            waiting_unmap: self.waiting_unmap.clone()
+            waiting_unmap: self.waiting_unmap.clone(),
         }
     }
 
@@ -120,8 +154,12 @@ impl WindowManager {
 
     /// Manage a new window that was either created just now or already present
     /// when the WM started.
-    pub fn manage(&self, window_system: &dyn WindowSystem, window: Window,
-                  config: &GeneralConfig) -> WindowManager {
+    pub fn manage(
+        &self,
+        window_system: &dyn WindowSystem,
+        window: Window,
+        config: &GeneralConfig,
+    ) -> WindowManager {
         fn adjust(RationalRect(x, y, w, h): RationalRect) -> RationalRect {
             if x + w > 1.0 || y + h > 1.0 || x < 0.0 || y < 0.0 {
                 RationalRect(0.5 - w / 2.0, 0.5 - h / 2.0, w, h)
@@ -133,14 +171,17 @@ impl WindowManager {
         let size_hints = window_system.get_size_hints(window);
 
         let is_transient = false;
-        let is_fixed_size = size_hints.min_size.is_some() && size_hints.min_size == size_hints.max_size;
+        let is_fixed_size =
+            size_hints.min_size.is_some() && size_hints.min_size == size_hints.max_size;
 
         debug!("setting focus to newly managed window {}", window);
 
         let result = if is_transient || is_fixed_size {
             let r = adjust(self.float_location(window_system, window));
-            self.windows(window_system, config, &|x| x.insert_up(window).float(window, r))
-                .focus(window, window_system, config)
+            self.windows(window_system, config, &|x| {
+                x.insert_up(window).float(window, r)
+            })
+            .focus(window, window_system, config)
         } else {
             self.windows(window_system, config, &|x| x.insert_up(window))
                 .focus(window, window_system, config)
@@ -152,8 +193,12 @@ impl WindowManager {
     }
 
     /// Unmanage a window. This happens when a window is closed.
-    pub fn unmanage(&self, window_system: &dyn WindowSystem, window: Window,
-                    config: &GeneralConfig) -> WindowManager {
+    pub fn unmanage(
+        &self,
+        window_system: &dyn WindowSystem,
+        window: Window,
+        config: &GeneralConfig,
+    ) -> WindowManager {
         if self.workspaces.contains(window) {
             debug!("unmanaging window {}", window);
             self.windows(window_system, config, &|x| x.delete(window))
@@ -162,14 +207,19 @@ impl WindowManager {
         }
     }
 
-    pub fn focus(&self, window: Window, window_system: &dyn WindowSystem,
-                 config: &GeneralConfig) -> WindowManager {
+    pub fn focus(
+        &self,
+        window: Window,
+        window_system: &dyn WindowSystem,
+        config: &GeneralConfig,
+    ) -> WindowManager {
         if let Some(screen) = self.workspaces.find_screen(window) {
-            if screen.screen_id == self.workspaces.current.screen_id &&
-               screen.workspace.peek() != Some(window) {
-                return self.windows(window_system, config, &|w| w.focus_window(window))
+            if screen.screen_id == self.workspaces.current.screen_id
+                && screen.workspace.peek() != Some(window)
+            {
+                return self.windows(window_system, config, &|w| w.focus_window(window));
             } else if window == window_system.get_root() {
-                return self.windows(window_system, config, &|w| w.view(screen.workspace.id))
+                return self.windows(window_system, config, &|w| w.view(screen.workspace.id));
             }
         }
         self.clone()
@@ -183,12 +233,15 @@ impl WindowManager {
         self.modify_workspaces(|x| x.focus_up())
     }
 
-    pub fn modify_workspaces<F>(&self, f: F) -> WindowManager where F : Fn(&Workspaces) -> Workspaces {
+    pub fn modify_workspaces<F>(&self, f: F) -> WindowManager
+    where
+        F: Fn(&Workspaces) -> Workspaces,
+    {
         WindowManager {
             running: self.running,
             dragging: self.dragging.clone(),
             workspaces: f(&self.workspaces),
-            waiting_unmap: self.waiting_unmap.clone()
+            waiting_unmap: self.waiting_unmap.clone(),
         }
     }
 
@@ -197,12 +250,28 @@ impl WindowManager {
         self.clone()
     }
 
-    pub fn windows<F>(&self, window_system: &dyn WindowSystem, config: &GeneralConfig,
-                   f: &F) -> WindowManager where F : Fn(&Workspaces) -> Workspaces {
+    pub fn windows<F>(
+        &self,
+        window_system: &dyn WindowSystem,
+        config: &GeneralConfig,
+        f: &F,
+    ) -> WindowManager
+    where
+        F: Fn(&Workspaces) -> Workspaces,
+    {
         let ws = f(&self.workspaces);
-        let old_visible = self.workspaces.visible_windows().into_iter().collect::<BTreeSet<_>>();
-        let new_windows = ws.visible_windows().into_iter().collect::<BTreeSet<_>>()
-            .difference(&old_visible).copied().collect::<Vec<Window>>();
+        let old_visible = self
+            .workspaces
+            .visible_windows()
+            .into_iter()
+            .collect::<BTreeSet<_>>();
+        let new_windows = ws
+            .visible_windows()
+            .into_iter()
+            .collect::<BTreeSet<_>>()
+            .difference(&old_visible)
+            .copied()
+            .collect::<Vec<Window>>();
 
         // Initialize all new windows
         for &window in new_windows.iter() {
@@ -211,35 +280,59 @@ impl WindowManager {
         }
 
         let all_screens = ws.screens();
-        let summed_visible = (vec!(BTreeSet::new()))
+        let summed_visible = (vec![BTreeSet::new()])
             .into_iter()
-            .chain(all_screens.iter().scan(Vec::new(), |acc, x| {
-                acc.extend(x.workspace.windows().into_iter());
-                Some(acc.clone())
-            })
-            .map(|x| x.into_iter().collect::<BTreeSet<_>>()))
+            .chain(
+                all_screens
+                    .iter()
+                    .scan(Vec::new(), |acc, x| {
+                        acc.extend(x.workspace.windows().into_iter());
+                        Some(acc.clone())
+                    })
+                    .map(|x| x.into_iter().collect::<BTreeSet<_>>()),
+            )
             .collect::<Vec<_>>();
 
-        let rects = all_screens.iter().zip(summed_visible.iter()).flat_map(|(w, vis)| {
-            let mut wsp = w.workspace.clone();
-            let this = ws.view(wsp.id);
-            let tiled = this.clone().current.workspace.stack
-                .and_then(|x| x.filter(|win| !ws.floating.contains_key(win)))
-                .and_then(|x| x.filter(|win| !vis.contains(win)));
-            let view_rect = w.screen_detail;
+        let rects = all_screens
+            .iter()
+            .zip(summed_visible.iter())
+            .flat_map(|(w, vis)| {
+                let mut wsp = w.workspace.clone();
+                let this = ws.view(wsp.id);
+                let tiled = this
+                    .clone()
+                    .current
+                    .workspace
+                    .stack
+                    .and_then(|x| x.filter(|win| !ws.floating.contains_key(win)))
+                    .and_then(|x| x.filter(|win| !vis.contains(win)));
+                let view_rect = w.screen_detail;
 
-            let rs = wsp.layout.apply_layout(window_system, view_rect, config, &tiled);
+                let rs = wsp
+                    .layout
+                    .apply_layout(window_system, view_rect, config, &tiled);
 
-            let flt = this.with(Vec::new(), |x| x.integrate()).into_iter()
-                .filter(|x| self.workspaces.floating.contains_key(x))
-                .map(|x| (x, WindowManager::scale_rational_rect(view_rect, self.workspaces.floating[&x])))
-                .collect::<Vec<_>>();
+                let flt = this
+                    .with(Vec::new(), |x| x.integrate())
+                    .into_iter()
+                    .filter(|x| self.workspaces.floating.contains_key(x))
+                    .map(|x| {
+                        (
+                            x,
+                            WindowManager::scale_rational_rect(
+                                view_rect,
+                                self.workspaces.floating[&x],
+                            ),
+                        )
+                    })
+                    .collect::<Vec<_>>();
 
-            let vs : Vec<(Window, Rectangle)> = flt.into_iter().chain(rs.into_iter()).collect();
-            window_system.restack_windows(vs.iter().map(|x| x.0).collect());
+                let vs: Vec<(Window, Rectangle)> = flt.into_iter().chain(rs.into_iter()).collect();
+                window_system.restack_windows(vs.iter().map(|x| x.0).collect());
 
-            vs.into_iter()
-        }).collect::<Vec<_>>();
+                vs.into_iter()
+            })
+            .collect::<Vec<_>>();
 
         let visible = rects.iter().map(|x| x.0).collect::<Vec<_>>();
 
@@ -247,8 +340,12 @@ impl WindowManager {
             WindowManager::tile_window(window_system, config, window, rect);
         }
 
-        visible.iter().fold((),|_, &x| window_system.set_window_border_color(x, config.border_color));
-        visible.iter().fold((),|_, &x| window_system.set_window_border_width(x, config.border_width));
+        visible.iter().fold((), |_, &x| {
+            window_system.set_window_border_color(x, config.border_color)
+        });
+        visible.iter().fold((), |_, &x| {
+            window_system.set_window_border_width(x, config.border_width)
+        });
 
         for &win in visible.iter() {
             window_system.show_window(win);
@@ -258,12 +355,17 @@ impl WindowManager {
             Some(focused_window) => {
                 window_system.set_window_border_color(focused_window, config.focus_border_color);
                 window_system.focus_window(focused_window, self);
-            },
-            None => window_system.focus_window(window_system.get_root(), self)
+            }
+            None => window_system.focus_window(window_system.get_root(), self),
         }
 
-        let to_hide = old_visible.union(&new_windows.into_iter().collect()).copied().collect::<BTreeSet<_>>()
-            .difference(&visible.into_iter().collect()).copied().collect::<Vec<_>>();
+        let to_hide = old_visible
+            .union(&new_windows.into_iter().collect())
+            .copied()
+            .collect::<BTreeSet<_>>()
+            .difference(&visible.into_iter().collect())
+            .copied()
+            .collect::<Vec<_>>();
 
         for &win in to_hide.iter() {
             window_system.hide_window(win);
@@ -273,60 +375,96 @@ impl WindowManager {
             window_system.remove_enter_events();
         }
 
-        let modified = self.modify_workspaces(|_| ws.clone()).update_layouts(window_system, config);
+        let modified = self
+            .modify_workspaces(|_| ws.clone())
+            .update_layouts(window_system, config);
 
-        to_hide.into_iter().fold(modified, |a, x| a.insert_or_update_unmap(x))
+        to_hide
+            .into_iter()
+            .fold(modified, |a, x| a.insert_or_update_unmap(x))
     }
 
     /// Send the given message to the current layout
-    pub fn send_layout_message(&self, message: LayoutMessage, window_system: &dyn WindowSystem,
-                               config: &GeneralConfig) -> WindowManager {
+    pub fn send_layout_message(
+        &self,
+        message: LayoutMessage,
+        window_system: &dyn WindowSystem,
+        config: &GeneralConfig,
+    ) -> WindowManager {
         self.modify_workspaces(|w| w.send_layout_message(message, window_system, config))
     }
 
     /// Close the currently focused window
     pub fn close_window(&self, window_system: &dyn WindowSystem) -> WindowManager {
-        self.workspaces.with_focused(|w| window_system.close_client(w));
+        self.workspaces
+            .with_focused(|w| window_system.close_client(w));
         self.clone()
     }
 
     /// Kill the currently focused window
     pub fn kill_window(&self, window_system: &dyn WindowSystem) -> WindowManager {
-        self.workspaces.with_focused(|w| window_system.kill_client(w));
+        self.workspaces
+            .with_focused(|w| window_system.kill_client(w));
         self.clone()
     }
 
-    fn scale_rational_rect(Rectangle(sx, sy, sw, sh): Rectangle,
-                           RationalRect(rx, ry, rw, rh): RationalRect) -> Rectangle {
-        fn scale(s: u32, r: f32) -> u32 { ((s as f32) * r) as u32 }
-        Rectangle(sx + scale(sw, rx) as i32, sy + scale(sh, ry) as i32, scale(sw, rw), scale(sh, rh))
+    fn scale_rational_rect(
+        Rectangle(sx, sy, sw, sh): Rectangle,
+        RationalRect(rx, ry, rw, rh): RationalRect,
+    ) -> Rectangle {
+        fn scale(s: u32, r: f32) -> u32 {
+            ((s as f32) * r) as u32
+        }
+        Rectangle(
+            sx + scale(sw, rx) as i32,
+            sy + scale(sh, ry) as i32,
+            scale(sw, rw),
+            scale(sh, rh),
+        )
     }
 
-    fn tile_window(window_system: &dyn WindowSystem, config: &GeneralConfig,
-                   window: Window, Rectangle(x, y, w, h): Rectangle) {
-        window_system.resize_window(window, w - 2 * config.border_width,
-                                            h - 2 * config.border_width);
+    fn tile_window(
+        window_system: &dyn WindowSystem,
+        config: &GeneralConfig,
+        window: Window,
+        Rectangle(x, y, w, h): Rectangle,
+    ) {
+        window_system.resize_window(
+            window,
+            w - 2 * config.border_width,
+            h - 2 * config.border_width,
+        );
         window_system.move_window(window, x, y);
         window_system.show_window(window);
     }
 
     pub fn float_location(&self, window_system: &dyn WindowSystem, window: Window) -> RationalRect {
-        let Rectangle(sx, sy, sw, sh)   = self.workspaces.current.screen_detail;
+        let Rectangle(sx, sy, sw, sh) = self.workspaces.current.screen_detail;
         let Rectangle(rx, ry, rw, rh) = window_system.get_geometry(window);
 
-        RationalRect((rx as f32 - sx as f32) / sw as f32,
-                     (ry as f32 - sy as f32) / sh as f32,
-                      rw as f32 / sw as f32,
-                      rh as f32 / sh as f32)
+        RationalRect(
+            (rx as f32 - sx as f32) / sw as f32,
+            (ry as f32 - sy as f32) / sh as f32,
+            rw as f32 / sw as f32,
+            rh as f32 / sh as f32,
+        )
     }
 
-    pub fn float(&self, window_system: &dyn WindowSystem, config: &GeneralConfig,
-                 window: Window) -> WindowManager {
+    pub fn float(
+        &self,
+        window_system: &dyn WindowSystem,
+        config: &GeneralConfig,
+        window: Window,
+    ) -> WindowManager {
         let rect = self.float_location(window_system, window);
         self.windows(window_system, config, &|w| w.float(window, rect))
     }
 
-    pub fn mouse_drag(&self, window_system: &dyn WindowSystem, f: Box<dyn Fn(u32, u32, WindowManager, &dyn WindowSystem) -> WindowManager>) -> WindowManager {
+    pub fn mouse_drag(
+        &self,
+        window_system: &dyn WindowSystem,
+        f: Box<dyn Fn(u32, u32, WindowManager, &dyn WindowSystem) -> WindowManager>,
+    ) -> WindowManager {
         window_system.grab_pointer();
 
         let motion = Rc::new(Box::new(move |x, y, window_manager, w: &dyn WindowSystem| {
@@ -339,32 +477,60 @@ impl WindowManager {
             running: self.running,
             dragging: Some(motion),
             workspaces: self.workspaces.clone(),
-            waiting_unmap: self.waiting_unmap.clone()
+            waiting_unmap: self.waiting_unmap.clone(),
         }
     }
 
-    pub fn mouse_move_window(&self, window_system: &dyn WindowSystem, config: &GeneralConfig,
-                             window: Window) -> WindowManager {
+    pub fn mouse_move_window(
+        &self,
+        window_system: &dyn WindowSystem,
+        config: &GeneralConfig,
+        window: Window,
+    ) -> WindowManager {
         let (ox, oy) = window_system.get_pointer(window);
         let Rectangle(x, y, _, _) = window_system.get_geometry(window);
 
-        self.mouse_drag(window_system, Box::new(move |ex: u32, ey: u32, m: WindowManager, w: &dyn WindowSystem| {
-            w.move_window(window, x + (ex as i32 - ox as i32), y + (ey as i32 - oy as i32));
-            m.modify_workspaces(|wsp| wsp.update_floating_rect(window, m.float_location(w, window)))
-        })).float(window_system, config, window)
+        self.mouse_drag(
+            window_system,
+            Box::new(
+                move |ex: u32, ey: u32, m: WindowManager, w: &dyn WindowSystem| {
+                    w.move_window(
+                        window,
+                        x + (ex as i32 - ox as i32),
+                        y + (ey as i32 - oy as i32),
+                    );
+                    m.modify_workspaces(|wsp| {
+                        wsp.update_floating_rect(window, m.float_location(w, window))
+                    })
+                },
+            ),
+        )
+        .float(window_system, config, window)
     }
 
-    pub fn mouse_resize_window(&self, window_system: &dyn WindowSystem, config: &GeneralConfig,
-                             window: Window) -> WindowManager {
+    pub fn mouse_resize_window(
+        &self,
+        window_system: &dyn WindowSystem,
+        config: &GeneralConfig,
+        window: Window,
+    ) -> WindowManager {
         let Rectangle(x, y, w, h) = window_system.get_geometry(window);
 
         window_system.warp_pointer(window, w, h);
-        self.mouse_drag(window_system, Box::new(move |ex: u32, ey: u32, m: WindowManager, w: &dyn WindowSystem| {
-            let nx = cmp::max(0, ex as i32 - x) as u32;
-            let ny = cmp::max(0, ey as i32 - y) as u32;
-            w.resize_window(window, nx, ny);
-            m.modify_workspaces(|wsp| wsp.update_floating_rect(window, m.float_location(w, window)))
-        })).float(window_system, config, window)
+        self.mouse_drag(
+            window_system,
+            Box::new(
+                move |ex: u32, ey: u32, m: WindowManager, w: &dyn WindowSystem| {
+                    let nx = cmp::max(0, ex as i32 - x) as u32;
+                    let ny = cmp::max(0, ey as i32 - y) as u32;
+                    w.resize_window(window, nx, ny);
+                    m.modify_workspaces(|wsp| {
+                        wsp.update_floating_rect(window, m.float_location(w, window))
+                    })
+                },
+            ),
+        )
+        .float(window_system, config, window)
     }
 
     // Checks if the window is awaiting an unmap operation
@@ -391,7 +557,7 @@ impl WindowManager {
             running: self.running,
             dragging: self.dragging.clone(),
             workspaces: self.workspaces.clone(),
-            waiting_unmap: new_map
+            waiting_unmap: new_map,
         }
     }
 
@@ -404,7 +570,7 @@ impl WindowManager {
             running: self.running,
             dragging: self.dragging.clone(),
             workspaces: self.workspaces.clone(),
-            waiting_unmap: new_map
+            waiting_unmap: new_map,
         }
     }
 
@@ -417,7 +583,7 @@ impl WindowManager {
             running: self.running,
             dragging: self.dragging.clone(),
             workspaces: self.workspaces.clone(),
-            waiting_unmap: new_map
+            waiting_unmap: new_map,
         }
     }
 }

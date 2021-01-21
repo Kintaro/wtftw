@@ -1,7 +1,3 @@
-extern crate dirs;
-extern crate dylib;
-extern crate serde_json;
-
 use crate::core::workspaces::Workspaces;
 use crate::handlers::default::{exit, restart, start_terminal};
 use crate::handlers::{KeyHandler, LogHook, ManageHook, MouseHandler, StartupHook};
@@ -13,7 +9,8 @@ use crate::window_system::{
 use std::borrow::ToOwned;
 use std::collections::BTreeMap;
 
-use self::dylib::DynamicLibrary;
+use anyhow::Result;
+use dylib::DynamicLibrary;
 use std::fs::metadata;
 use std::fs::File;
 use std::fs::{create_dir_all, read_dir};
@@ -101,12 +98,12 @@ pub struct Config {
 
 impl Config {
     /// Create the Config from a json file
-    pub fn initialize() -> Config {
+    pub fn initialize() -> Result<Config> {
         let home = dirs::home_dir()
             .unwrap_or_else(|| PathBuf::from("./"))
             .into_os_string()
             .into_string()
-            .unwrap();
+            .expect("unable to find config directory");
         // Default version of the config, for fallback
         let general_config = GeneralConfig {
             focus_follows_mouse: true,
@@ -139,10 +136,10 @@ impl Config {
             home,
         );
 
-        Config {
+        Ok(Config {
             general: general_config,
             internal: internal_config,
-        }
+        })
     }
 
     pub fn default_manage_hook(m: Workspaces, _: Rc<dyn WindowSystem>, _: Window) -> Workspaces {
@@ -167,7 +164,7 @@ impl Config {
         self.add_key_handler(
             w.get_keycode_from_string("q"),
             mod_mask,
-            Box::new(|m, ws, c| restart(m, ws, c)),
+            Box::new(|m, ws, c| restart(m, ws, c).expect("error while restarting wtftw")),
         );
         self.add_key_handler(
             w.get_keycode_from_string("q"),
@@ -205,7 +202,7 @@ impl Config {
         self.internal.loghook = Some(hook);
     }
 
-    pub fn compile_and_call(&mut self, m: &mut WindowManager, w: &dyn WindowSystem) {
+    pub fn compile_and_call(&mut self, m: &mut WindowManager, w: &dyn WindowSystem) -> Result<()> {
         let toml = format!("{}/Cargo.toml", self.internal.wtftw_dir.clone());
 
         if !path_exists(&self.internal.wtftw_dir.clone()) {
@@ -221,9 +218,8 @@ impl Config {
 
         if !path_exists(&toml) {
             let file = File::create(Path::new(&toml).as_os_str());
-            file.unwrap()
-                .write_all(
-                    "[project]\n\
+            file?.write_all(
+                "[project]\n\
                                      name = \"config\"\n\
                                      version = \"0.0.0\"\n\
                                      authors = [\"wtftw\"]\n\n\
@@ -234,27 +230,26 @@ impl Config {
                                      [lib]\n\
                                      name = \"config\"\n\
                                      crate-type = [\"dylib\"]"
-                        .as_bytes(),
-                )
-                .unwrap();
+                    .as_bytes(),
+            )?;
         }
 
         let config_source = format!("{}/src/lib.rs", self.internal.wtftw_dir.clone());
-        if path_exists(&config_source) && self.compile() {
-            self.call(m, w)
+        if path_exists(&config_source) && self.compile()? {
+            self.call(m, w)?;
         } else {
             self.default_configuration(w);
         }
+        Ok(())
     }
 
-    pub fn compile(&self) -> bool {
+    pub fn compile(&self) -> Result<bool> {
         info!("updating dependencies");
         Command::new("cargo")
             .current_dir(&Path::new(&self.internal.wtftw_dir.clone()))
             .arg("update")
             .env("RUST_LOG", "none")
-            .output()
-            .unwrap();
+            .output()?;
         info!("compiling config module");
         let output = Command::new("cargo")
             .current_dir(&Path::new(&self.internal.wtftw_dir.clone()))
@@ -262,7 +257,7 @@ impl Config {
             .env("RUST_LOG", "none")
             .output();
 
-        match output {
+        Ok(match output {
             Ok(o) => {
                 if o.status.success() {
                     info!("config module compiled");
@@ -286,24 +281,23 @@ impl Config {
                 });
                 false
             }
-        }
+        })
     }
 
-    pub fn call(&mut self, m: &mut WindowManager, w: &dyn WindowSystem) {
+    pub fn call(&mut self, m: &mut WindowManager, w: &dyn WindowSystem) -> Result<()> {
         debug!("looking for config module");
         let mut contents = read_dir(&Path::new(&format!(
             "{}/target/debug",
             self.internal.wtftw_dir.clone()
-        )))
-        .unwrap();
+        )))?;
         let libname = contents.find(|x| match *x {
             Ok(ref y) => y
                 .path()
                 .into_os_string()
                 .as_os_str()
                 .to_str()
-                .unwrap()
-                .contains("libconfig.so"),
+                .map(|x| x.contains("libconfig.so"))
+                .unwrap_or(false),
             Err(_) => false,
         });
 
@@ -330,6 +324,8 @@ impl Config {
                 }
             }
         }
+
+        Ok(())
     }
 }
 

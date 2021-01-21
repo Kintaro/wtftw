@@ -7,6 +7,7 @@ extern crate wtftw_xlib;
 extern crate zombie;
 extern crate simplelog;
 
+use anyhow::Result;
 use std::env;
 use std::rc::Rc;
 use std::ops::Deref;
@@ -30,7 +31,7 @@ fn init_terminal_logger(verbose_mode_enabled: bool) {
     ]).unwrap();
 }
 
-fn main() {
+fn main() -> Result<()> {
     // Parse command line arguments
     let args : Vec<String> = env::args().collect();
 
@@ -46,7 +47,7 @@ fn main() {
     init_terminal_logger(matches.opt_present("v"));
 
     // Create a default config.generaluration
-    let mut config = Config::initialize();
+    let mut config = Config::initialize()?;
     // Initialize window system. Use xlib here for now
     debug!("initialize window system");
     let xlib = XlibWindowSystem::new();
@@ -213,4 +214,6 @@ fn main() {
 
         window_system.update_server_state(&window_manager);
     }
+
+    Ok(())
 }

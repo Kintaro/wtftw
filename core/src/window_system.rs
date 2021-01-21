@@ -54,7 +54,7 @@ impl KeyCommand {
 
 impl Debug for KeyCommand {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        f.write_str(&format!("{:}", self.key)).unwrap();
+        f.write_str(&format!("{:}", self.key))?;
         Ok(())
     }
 }
